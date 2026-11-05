@@ -1,0 +1,17 @@
+{
+  "name": "Thoka Affi Deal Manager",
+  "slug": "affi-deal-manager",
+  "version": "0.1.0",
+  "download_url": "https://mediainfo.space/Thoka_Plugins/affi-deal-manager/affi-deal-manager-0.1.0.zip",
+  "sha256": "45832569a808ef061c00138c9420c5cbe983d215ada613306f561da31f748340",
+  "homepage": "https://mediainfo.space/Thoka_Plugins/",
+  "author": "Thoka Network",
+  "requires": "6.0",
+  "tested": "6.8",
+  "requires_php": "7.4",
+  "last_updated": "2026-11-05",
+  "sections": {
+    "description": "<p>Gleicht täglich die Deals von AppSumo ab (Sitemap und strukturierte Produktdaten), führt Status, Preise und Bewertungen in einer eigenen Tabelle und baut Impact-Affiliate-Links.</p>",
+    "changelog": "<h4>0.1.0</h4><ul><li>Erste Version</li><li>Täglicher Abgleich mit der AppSumo-Sitemap, Abruf der Produktseiten in kleinen Schritten alle 5 Minuten</li><li>Übernahme von Name, Marke, Kurzbeschreibung, Preis, Verfügbarkeit, Bewertung, Kategorie, FAQ, Rückgabefrist und Testvideos</li><li>Status kaufbar, ausgelaufen, ungeprüft, ignoriert</li><li>Impact-Deep-Links mit subId1 und Shortcode [adm_link]</li><li>Deal-Liste im Menü „Thoka“, Störungs-Mail höchstens einmal am Tag</li></ul>"
+  }
+}

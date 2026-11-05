@@ -1,0 +1,65 @@
+<?php
+/**
+ * Plugin Name: Thoka Affi Deal Manager
+ * Description: Gleicht täglich die Deals von AppSumo ab (Sitemap und strukturierte Produktdaten), führt Status, Preise und Bewertungen in einer eigenen Tabelle und baut Impact-Affiliate-Links.
+ * Version: 0.1.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Author: Thoka Network
+ * Author URI: https://thoka.network
+ * Text Domain: affi-deal-manager
+ * Update URI: https://mediainfo.space/Thoka_Plugins/affi-deal-manager/
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Gemeinsames Admin-Menü „Thoka“ (Bibliothek thoka-menu, lädt die höchste vorhandene Version).
+require_once __DIR__ . '/thoka-menu/loader.php';
+
+define( 'ADM_VERSION', '0.1.0' );
+define( 'ADM_DB_VERSION', '1' );
+define( 'ADM_DIR', plugin_dir_path( __FILE__ ) );
+define( 'ADM_FILE', __FILE__ );
+
+require_once ADM_DIR . 'includes/class-adm-settings.php';
+require_once ADM_DIR . 'includes/class-adm-db.php';
+require_once ADM_DIR . 'includes/class-adm-parser.php';
+require_once ADM_DIR . 'includes/class-adm-links.php';
+require_once ADM_DIR . 'includes/class-adm-sync.php';
+require_once ADM_DIR . 'includes/class-adm-updater.php';
+require_once ADM_DIR . 'includes/class-adm-admin.php';
+
+register_activation_hook( __FILE__, array( 'ADM_DB', 'install' ) );
+register_activation_hook( __FILE__, array( 'ADM_Sync', 'schedule' ) );
+register_deactivation_hook( __FILE__, array( 'ADM_Sync', 'unschedule' ) );
+
+add_action( 'plugins_loaded', function () {
+	ADM_DB::maybe_upgrade();
+	ADM_Sync::init();
+	ADM_Links::init();
+	ADM_Updater::init();
+	ADM_Admin::init();
+} );
+
+/**
+ * Liefert einen Deal als Array oder null. Für Vorlagen und spätere Module (Tool-Profile, Roundup-Quelle).
+ *
+ * @param string $slug AppSumo-Slug, z. B. "neuronwriter".
+ * @return array|null
+ */
+function adm_get_deal( $slug ) {
+	return ADM_DB::get_by_slug( $slug );
+}
+
+/**
+ * Affiliate-Link für eine AppSumo-Adresse.
+ *
+ * @param string $url   AppSumo-Produktadresse.
+ * @param string $subid Kennung der Seite für die Auswertung in Impact (subId1).
+ * @return string
+ */
+function adm_affiliate_url( $url, $subid = '' ) {
+	return ADM_Links::url( $url, $subid );
+}

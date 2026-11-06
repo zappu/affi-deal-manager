@@ -622,7 +622,7 @@ class ADM_Profiles {
 			$sec  .= '<h3>' . esc_html( $title ) . '</h3>[adm_video id="' . esc_attr( $v['id'] ) . '" title="' . esc_attr( str_replace( array( '"', '[', ']' ), '', $title ) ) . '"]';
 			$text  = ! empty( $v['summary'] ) ? ( ! empty( $texts[ $v['id'] ] ) ? $texts[ $v['id'] ] : self::plain( $v['summary'], 600 ) ) : '';
 			if ( '' !== $text ) {
-				$sec .= '<p>' . esc_html( $text ) . '</p>';
+				$sec .= '<p>' . esc_html( ADM_Style::video_wording( $text ) ) . '</p>';
 			}
 			$meta = array_filter( array(
 				! empty( $v['channel'] ) ? 'Kanal: ' . $v['channel'] : '',

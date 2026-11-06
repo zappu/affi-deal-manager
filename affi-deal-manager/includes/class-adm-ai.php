@@ -129,7 +129,8 @@ class ADM_AI {
 		$model  = preg_replace( '/[^A-Za-z0-9._\-]/', '', (string) ADM_Settings::get( 'gemini_model' ) );
 		$model  = '' !== $model ? $model : 'gemini-flash-latest';
 		$prompt = 'Sieh dir dieses Video über das Tool „' . $tool . '“ an. Fasse auf Deutsch in 2 bis 3 sachlichen Sätzen zusammen, '
-			. 'was im Video gezeigt wird: welche Funktionen vorgeführt werden und welche Einschätzung die sprechende Person äußert. '
+			. 'was im Video gezeigt wird: welche Funktionen vorgeführt werden und welche Einschätzung im Video geäußert wird. '
+			. 'Schreib über das Video („Das Video zeigt …“, „Im Video wird gelobt, dass …“), nicht über „die sprechende Person“. '
 			. 'Nur was im Video tatsächlich vorkommt. Keine wörtlichen Zitate, keine Namen von Personen, keine Preise, Rabattcodes oder Links. '
 			. 'Schreib ohne Gedankenstriche und ohne Werbesprache, sprich die Leser mit „du“ an, falls nötig. '
 			. 'Ist das Video überwiegend Werbung für ein Angebot oder eine Rabattaktion statt eine Vorstellung des Tools, setze „werbung“ auf true. '

@@ -83,6 +83,7 @@ adm_check( false === strpos( $c, 'PROMOvideo3' ) && false === strpos( $c, 'SHORT
 adm_check( false !== strpos( $c, '<h2>Videos zu LeadOcean</h2>' ) && false === strpos( $c, 'Testvideos' ) && false === strpos( $c, '🚀' ), 'Abschnitt „Videos zu …“, Emoji aus dem Titel entfernt' );
 adm_check( false !== strpos( $c, 'Das Video zeigt die Einrichtung auf Deutsch.' ) && false !== strpos( $c, 'Kanal: Kanal DE' ) && false !== strpos( $c, 'Sprache: Deutsch' ) && false !== strpos( $c, 'Länge: 8 Minuten' ) && false === strpos( $c, 'Zusammenfassung automatisch' ), 'Video: Zusammenfassung mit Kanal, Sprache und Länge' );
 adm_check( false !== strpos( $c, 'Sprache: Englisch' ) && 1 === substr_count( $c, 'Das Video wirbt für ein Angebot' ), 'Werbevideo laut Gemini gekennzeichnet' );
+adm_check( false === strpos( $c, 'sprechende Person' ), 'Videotext ohne „die sprechende Person“' );
 $gem = $GLOBALS['adm_test_gemini_requests'];
 adm_check( 2 === count( $gem ) && 'gem-key' === $gem[0]['headers']['x-goog-api-key'] && 'https://www.youtube.com/watch?v=DEvideo0001' === $gem[0]['body']['contents'][0]['parts'][0]['file_data']['file_uri'] && 'MEDIA_RESOLUTION_LOW' === $gem[0]['body']['generationConfig']['mediaResolution'] && false !== strpos( $gem[0]['url'], 'gemini-3.6-flash:generateContent' ) && false === strpos( $gem[0]['url'], 'gem-key' ), 'Gemini: YouTube-Adresse, niedrige Auflösung, Schlüssel im Header' );
 adm_check( false !== strpos( implode( ' ', $GLOBALS['adm_test_yt_requests'] ), 'youtube/v3/videos' ), 'YouTube: Details (Dauer, Sprache) abgefragt' );
@@ -239,6 +240,7 @@ ADM_Profiles::process_queue();
 $c_new = get_post( $pid_lo )->post_content;
 adm_check( 1 === substr_count( $c_new, 'id="videos"' ) && strpos( $c_new, 'id="videos"' ) < strpos( $c_new, 'id="details"' ) && false !== strpos( $c_new, 'Im Video wird LeadOcean eingerichtet' ) && array() === $GLOBALS['adm_test_ai_requests'], 'Videos nachgetragen vor den Deal-Details, Zusammenfassung aus Gemini, Text unverändert' );
 adm_check( array() === ADM_Style::check( '<p>Für SEO-Experten und Entwickler.</p>' ) && 1 === count( ADM_Style::check( '<p>Experten empfehlen das Tool.</p>' ) ), 'Stilprüfung: „SEO-Experten“ kein Fehlalarm, „Experten empfehlen“ schon' );
+adm_check( 'Die Person im Video lobt den Export, der Person im Video fehlt eine App.' === ADM_Style::video_wording( 'Die sprechende Person lobt den Export, der sprechenden Person fehlt eine App.' ), 'Videotext: „die sprechende Person“ wird zu „die Person im Video“' );
 
 // Abgebrochener Lauf (Zeitlimit) wird gemeldet
 ADM_Profiles::clear_queue();

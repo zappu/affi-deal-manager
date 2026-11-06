@@ -43,6 +43,15 @@ class ADM_Style {
 		);
 	}
 
+	/** „die sprechende Person“ aus Videozusammenfassungen durch „die Person im Video“ ersetzen. */
+	public static function video_wording( $text ) {
+		return preg_replace(
+			array( '/\b([Dd])ie sprechende Person\b/u', '/\b([Dd])er sprechenden Person\b/u' ),
+			array( '$1ie Person im Video', '$1er Person im Video' ),
+			(string) $text
+		);
+	}
+
 	/** fix() auf alle Zeichenketten einer KI-Antwort anwenden. */
 	public static function fix_all( $data ) {
 		if ( is_array( $data ) ) {

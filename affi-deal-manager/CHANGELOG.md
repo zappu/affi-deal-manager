@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.6.3 (06.11.2026)
+
+- Videotexte: „die sprechende Person“ wird zu „die Person im Video“, der Gemini-Prompt schreibt über das Video statt über die sprechende Person
+
 ## 0.6.2 (06.11.2026)
 
 - YouTube-API: Anfragen senden die Adresse der eigenen Website als Referer. Schlüssel mit Website-Einschränkung („HTTP-Verweis-URLs“) funktionieren damit auch bei Abrufen vom Server (vorher HTTP 403). Anpassbar über den Filter `adm_youtube_referer`

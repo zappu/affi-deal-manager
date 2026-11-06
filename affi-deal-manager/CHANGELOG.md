@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.7 (06.11.2026)
+
+- Quellenzeile unter „Was Käufer sagen“ endet mit „Die Bewertungen stammen von AppSumo.“ (gilt für neu erzeugte Texte)
+
 ## 0.5.6 (06.11.2026)
 
 - Kopfbereich: Zusatz „nicht selbst getestet“ entfällt; die Arbeitsweise steht künftig zentral auf der Seite „Über uns“

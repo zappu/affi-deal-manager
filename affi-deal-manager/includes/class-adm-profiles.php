@@ -516,7 +516,7 @@ class ADM_Profiles {
 
 		if ( $stats['used'] > 0 ) {
 			$intro = sprintf(
-				'Auswertung von %d der %s Bewertungen bei AppSumo (die %d neuesten und die %d kritischsten), Stand %s. Die Bewertungen stammen von AppSumo, wir haben sie nicht selbst geprüft.',
+				'Auswertung von %d der %s Bewertungen bei AppSumo (die %d neuesten und die %d kritischsten), Stand %s. Die Bewertungen stammen von AppSumo.',
 				$stats['used'],
 				number_format_i18n( max( $stats['total'], $stats['used'] ) ),
 				$stats['newest'],

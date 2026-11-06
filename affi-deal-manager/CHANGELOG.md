@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.3 (06.11.2026)
+
+- Bausteine nutzen eigene Schriftvariablen (`--adm-body-font` Inter, `--adm-head-font` Space Grotesk) statt der Standardschrift des Kits
+- Kleinere Innenabstände auf dem Handy
+- Prompt: keine Bewertungsnoten und keine Anzahl von Bewertungen im Fließtext (stehen live im Kasten)
+
 ## 0.5.2 (06.11.2026)
 
 - Videozusammenfassung: nur Videos bis 25 Minuten, Zeitlimit 100 Sekunden, nach einer Zeitüberschreitung keine zweite Anfrage im selben Lauf

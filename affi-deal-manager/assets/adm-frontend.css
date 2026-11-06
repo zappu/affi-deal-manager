@@ -1,6 +1,6 @@
 /* Thoka Affi Deal Manager: Bausteine der Tool-Profile (Gestaltung „Verzeichnis“).
    Farben und Schriften über CSS-Variablen, im Theme oder in Elementor überschreibbar. */
-:root{--adm-ink:#17212b;--adm-muted:#55616c;--adm-bg:#eef1f3;--adm-card:#fff;--adm-soft:#f5f7f8;--adm-line:#e4e9ec;--adm-accent:#0b5f67;--adm-accent-dark:#074349;--adm-lime:#e2f56b;--adm-pro-bg:#edf7f1;--adm-pro:#136b3c;--adm-con-bg:#fbf0ea;--adm-con:#9a3a12;--adm-radius:18px;--adm-head-font:"Space Grotesk",Inter,system-ui,sans-serif}
+:root{--adm-ink:#17212b;--adm-muted:#55616c;--adm-bg:#eef1f3;--adm-card:#fff;--adm-soft:#f5f7f8;--adm-line:#e4e9ec;--adm-accent:#0b5f67;--adm-accent-dark:#074349;--adm-lime:#e2f56b;--adm-pro-bg:#edf7f1;--adm-pro:#136b3c;--adm-con-bg:#fbf0ea;--adm-con:#9a3a12;--adm-radius:18px;--adm-head-font:"Space Grotesk",Inter,system-ui,sans-serif;--adm-body-font:Inter,system-ui,sans-serif}
 .adm,.adm *,.adm-sec,.adm-sec *,.adm-glance,.adm-glance *{box-sizing:border-box}
 .adm a,.adm-sec a,.adm-glance a{color:var(--adm-accent)}.adm a:hover,.adm-sec a:hover{color:var(--adm-accent-dark)}
 .adm-sec,.adm-glance,.adm-box,.adm-head__card{background:var(--adm-card);border-radius:var(--adm-radius);padding:26px;margin:0 0 20px;color:var(--adm-ink)}
@@ -91,3 +91,8 @@ body.adm-layout{background:var(--adm-bg)}
 .adm-page__side{flex:1 1 300px;min-width:280px;position:sticky;top:24px}
 .adm-page__side .adm-box{margin:0}
 @media (max-width:860px){.adm-page__side{display:none}}
+
+/* Schrift der Bausteine und kleinere Innenabstände auf dem Handy */
+.adm-page,.adm-sec,.adm-glance,.adm-box,.adm-head,.adm-toc,.adm-alts,.adm-video{font-family:var(--adm-body-font)}
+.adm-sec h2,.adm-glance h2,.adm-head h1,.adm-box__name,.adm-box__price{font-family:var(--adm-head-font)}
+@media (max-width:600px){.adm-sec,.adm-glance,.adm-box,.adm-head__card{padding:20px;border-radius:14px}.adm-head__lead{font-size:1em}}

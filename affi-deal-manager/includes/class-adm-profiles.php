@@ -496,7 +496,7 @@ class ADM_Profiles {
 			if ( $kri ) {
 				$cols .= '<div class="adm-glance__col adm-glance__col--con"><p class="adm-glance__label">Schwächen</p>' . self::ul( $kri ) . '</div>';
 			}
-			$h[] = '<section class="adm-glance" id="auf-einen-blick"><h2>Auf einen Blick</h2><div class="adm-glance__cols">' . $cols . '</div><p class="adm-source">Aus den neuesten und den kritischsten Bewertungen bei AppSumo, Stand ' . esc_html( $date ) . '.</p></section>';
+			$h[] = '<section class="adm-glance" id="auf-einen-blick"><h2>Auf einen Blick</h2><div class="adm-glance__cols">' . $cols . '</div></section>';
 		}
 		$h[] = '[adm_toc]';
 

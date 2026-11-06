@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.9 (06.11.2026)
+
+- „Auf einen Blick“ ohne Quellenzeile (die Quelle steht unter „Was Käufer sagen“)
+
 ## 0.5.8 (06.11.2026)
 
 - Videos: Zusatz „Zusammenfassung automatisch aus dem Video erstellt“ entfällt (gilt für neu erzeugte Texte)

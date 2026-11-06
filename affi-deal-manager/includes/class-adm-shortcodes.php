@@ -7,9 +7,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Live-Bausteine für Tool-Profile. Preise, Status und Links kommen immer aus der Deal-Tabelle.
  *
  * [adm_deal_box]      Kasten oben: Typ, Preis, Bewertung, Status mit Grund, Kauf-Button
- * [adm_deal_details]  Tabelle mit Preis, Rückgabefrist, Angebotsende, Kategorie
+ * [adm_deal_details]  Tabelle mit Preis, Rückgabefrist, Angebotsende, Rubrik
  * [adm_video id=""]   YouTube-Video über youtube-nocookie.com
- * [adm_alternatives]  bis zu drei andere Tool-Profile aus derselben Kategorie, kaufbare zuerst
+ * [adm_alternatives]  bis zu drei andere Tool-Profile aus derselben Rubrik, kaufbare zuerst;
+ *                     heading="1" setzt die Überschrift davor, ohne Alternativen bleibt alles leer
  *
  * Alle Bausteine nehmen optional deal="<slug>"; ohne Angabe gilt der Deal des aktuellen Profils.
  */
@@ -76,7 +77,7 @@ class ADM_Shortcodes {
 		$out .= '<div class="adm-box adm-box--' . esc_attr( $deal['status'] ) . '">';
 		$out .= '<div class="adm-box__head"><span class="adm-box__type">' . esc_html( ADM_DB::type_label( $deal['deal_type'] ) ) . '</span>';
 		$out .= '<span class="adm-box__status">' . esc_html( 'kaufbar' === $deal['status'] ? 'Erhältlich' : ( 'ausgelaufen' === $deal['status'] ? 'Ausgelaufen' : 'Nicht verfügbar' ) ) . '</span></div>';
-		$out .= '<p class="adm-box__name">' . esc_html( $deal['name'] ) . '</p>';
+		$out .= '<p class="adm-box__name">' . esc_html( $deal['title'] ) . '</p>';
 		foreach ( $lines as $l ) {
 			$out .= '<p class="adm-box__line">' . esc_html( $l ) . '</p>';
 		}
@@ -84,8 +85,12 @@ class ADM_Shortcodes {
 		if ( 'kaufbar' === $deal['status'] ) {
 			$out .= '<p><a class="adm-btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zum Angebot bei AppSumo' . $mark . '</a></p>';
 		} else {
-			$out .= '<p><a class="adm-btn" href="#alternativen">Kaufbare Alternativen ansehen</a></p>';
-			$out .= '<p class="adm-box__small"><a href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a></p>';
+			if ( self::find_alternatives( $deal, 1 ) ) {
+				$out .= '<p><a class="adm-btn" href="#alternativen">Kaufbare Alternativen ansehen</a></p>';
+				$out .= '<p class="adm-box__small"><a href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a></p>';
+			} else {
+				$out .= '<p><a class="adm-btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a></p>';
+			}
 		}
 		$out .= '<p class="adm-box__small">' . esc_html( trim( self::checked( $deal ) . '. ' . self::NOTE ) ) . '</p>';
 		$out .= '</div>';
@@ -107,13 +112,18 @@ class ADM_Shortcodes {
 			'Angebot endet'  => $deal['available_until'] ? wp_date( 'd.m.Y', strtotime( $deal['available_until'] . ' UTC' ) ) : '',
 			'Rückgabefrist'  => $deal['return_days'] ? (int) $deal['return_days'] . ' Tage bei AppSumo' : '',
 			'Bewertung'      => self::rating( $deal ),
-			'Kategorie bei AppSumo' => $deal['category'],
 		);
 		$out = self::css() . '<table class="adm-details"><tbody>';
 		foreach ( $rows as $label => $value ) {
 			if ( '' !== (string) $value ) {
 				$out .= '<tr><th scope="row">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
 			}
+		}
+		$rubric = ADM_Rubrics::for_deal( $deal );
+		if ( '' !== $rubric ) {
+			$term = get_term_by( 'slug', $rubric, ADM_Rubrics::TAX );
+			$link = $term && ! is_wp_error( $term ) && $term->count ? get_term_link( $term ) : '';
+			$out .= '<tr><th scope="row">Rubrik</th><td>' . ( $link && ! is_wp_error( $link ) ? '<a href="' . esc_url( $link ) . '">' . esc_html( $term->name ) . '</a>' : esc_html( ADM_Rubrics::label( $rubric ) ) ) . '</td></tr>';
 		}
 		$out .= '</tbody></table><p class="adm-box__small">' . esc_html( self::checked( $deal ) ) . '. Preise in US-Dollar laut AppSumo, je nach Land zuzüglich Steuern.</p>';
 		return $out;
@@ -133,19 +143,19 @@ class ADM_Shortcodes {
 	}
 
 	public static function alternatives( $atts ) {
-		$atts = shortcode_atts( array( 'deal' => '', 'limit' => 3 ), $atts, 'adm_alternatives' );
+		$atts = shortcode_atts( array( 'deal' => '', 'limit' => 3, 'heading' => '0' ), $atts, 'adm_alternatives' );
 		$deal = self::deal( $atts );
 		if ( ! $deal ) {
 			return '';
 		}
 		$list = self::find_alternatives( $deal, max( 1, min( 6, (int) $atts['limit'] ) ) );
 		if ( ! $list ) {
-			return '<p>Zu dieser Kategorie gibt es noch keine weiteren Profile.</p>';
+			return '';
 		}
-		$out = self::css() . '<ul class="adm-alts">';
+		$out = self::css() . ( '1' === (string) $atts['heading'] ? '<h2 id="alternativen">Alternativen</h2>' : '' ) . '<ul class="adm-alts">';
 		foreach ( $list as $alt ) {
 			$bits = array_filter( array( self::price( $alt ), 'kaufbar' === $alt['status'] ? 'erhältlich' : 'ausgelaufen' ) );
-			$out .= '<li><a href="' . esc_url( get_permalink( (int) $alt['post_id'] ) ) . '">' . esc_html( $alt['name'] ) . '</a> <span class="adm-alts__meta">' . esc_html( implode( ', ', $bits ) ) . '</span>';
+			$out .= '<li><a href="' . esc_url( get_permalink( (int) $alt['post_id'] ) ) . '">' . esc_html( $alt['title'] ) . '</a> <span class="adm-alts__meta">' . esc_html( implode( ', ', $bits ) ) . '</span>';
 			if ( '' !== $alt['description'] ) {
 				$out .= '<br><span class="adm-alts__desc">' . esc_html( wp_trim_words( $alt['description'], 18 ) ) . '</span>';
 			}
@@ -155,7 +165,8 @@ class ADM_Shortcodes {
 	}
 
 	/**
-	 * Veröffentlichte Profile aus derselben Kategorie (erst gleiche Unterkategorie, dann gleicher Bereich), kaufbare zuerst.
+	 * Veröffentlichte Profile aus derselben Rubrik, sonst aus derselben AppSumo-Kategorie
+	 * (erst gleiche Unterkategorie, dann gleicher Bereich), kaufbare zuerst.
 	 */
 	public static function find_alternatives( array $deal, $limit ) {
 		global $wpdb;
@@ -164,6 +175,38 @@ class ADM_Shortcodes {
 		$out   = array();
 		$seen  = array( (int) $deal['id'] => true );
 		$tries = array();
+
+		$rubric = ADM_Rubrics::for_deal( $deal );
+		if ( '' !== $rubric ) {
+			$ids = get_posts( array(
+				'post_type'      => ADM_Profiles::CPT,
+				'post_status'    => 'publish',
+				'posts_per_page' => 50,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				'post__not_in'   => (int) $deal['post_id'] ? array( (int) $deal['post_id'] ) : array(),
+				'tax_query'      => array( array( 'taxonomy' => ADM_Rubrics::TAX, 'field' => 'slug', 'terms' => $rubric ) ), // phpcs:ignore WordPress.DB.SlowDBQuery
+			) );
+			if ( $ids ) {
+				$ids  = array_map( 'intval', $ids );
+				$rows = $wpdb->get_results(
+					"SELECT * FROM {$t} WHERE post_id IN (" . implode( ',', $ids ) . ") AND status IN ('kaufbar','ausgelaufen') ORDER BY (status = 'kaufbar') DESC, review_count DESC", // phpcs:ignore
+					ARRAY_A
+				);
+				foreach ( (array) $rows as $r ) {
+					if ( count( $out ) >= $limit ) {
+						return $out;
+					}
+					if ( ! isset( $seen[ (int) $r['id'] ] ) ) {
+						$seen[ (int) $r['id'] ] = true;
+						$out[]                  = ADM_DB::decode( $r );
+					}
+				}
+			}
+			if ( count( $out ) >= $limit ) {
+				return $out;
+			}
+		}
 		if ( count( $parts ) >= 2 ) {
 			$tries[] = $parts[0] . ' > ' . $parts[1];
 		}

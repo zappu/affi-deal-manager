@@ -7,6 +7,7 @@
 define( 'THOKA_OPENROUTER_API_KEY', 'test-key' );
 define( 'THOKA_ANTHROPIC_API_KEY', 'neu-key' );
 define( 'THOKA_YOUTUBE_API_KEY', 'yt-key' );
+define( 'THOKA_GEMINI_API_KEY', 'gem-key' );
 
 add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 	$json = function ( $data, $code = 200 ) {
@@ -20,10 +21,10 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		}
 		$answer = wp_json_encode( array(
 			'kurz'              => '<p>LeadOcean liefert Firmen- und Kontaktdaten über eine Schnittstelle.</p><script>alert(1)</script><p>Du fragst Leads direkt aus Claude oder ChatGPT ab.</p>',
-			'passt'             => array( 'Agenturen mit eigenem CRM', 'Vertriebsteams, die Daten anreichern wollen' ),
+			'passt'             => array( 'Agenturen mit eigenem CRM', 'Vertriebsteams, für die Du Daten anreichern willst' ),
 			'passt_nicht'       => array( 'Wer ein komplettes CRM sucht' ),
 			'funktionen'        => '<ul><li>693 Millionen Personenprofile</li><li>Export als CSV</li></ul>',
-			'kaeufer_text'      => '<p>Die neuesten Stimmen sind überwiegend positiv. In der kritischen Gruppe geht es vor allem um Limits.</p>',
+			'kaeufer_text'      => '<p>Die neuesten Stimmen sind überwiegend positiv – in der kritischen Gruppe geht es vor allem um Limits.</p>',
 			'kaeufer_lob'       => array( 'Große Datenbasis', 'Einfache Anbindung per MCP' ),
 			'kaeufer_kritik'    => array( 'Limits werden schnell erreicht' ),
 			'videos'            => array( array( 'id' => 'DEvideo0001', 'text' => 'Das Video zeigt die Einrichtung auf Deutsch.' ) ),
@@ -36,6 +37,29 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		}
 		return $json( array( 'choices' => array( array( 'message' => array( 'content' => "```json\n" . $answer . "\n```" ) ) ) ) );
 	}
+	// Gemini: Videozusammenfassung
+	if ( false !== strpos( $url, 'generativelanguage.googleapis.com' ) ) {
+		$body = json_decode( $args['body'], true );
+		$GLOBALS['adm_test_gemini_requests'][] = array( 'url' => $url, 'headers' => $args['headers'], 'body' => $body );
+		$uri  = isset( $body['contents'][0]['parts'][0]['file_data']['file_uri'] ) ? $body['contents'][0]['parts'][0]['file_data']['file_uri'] : '';
+		$en   = false !== strpos( $uri, 'ENvideo0002' );
+		$out  = $en ? array( 'text' => 'Der Sprecher zeigt die Suche und lobt die Datenmenge. Am Ende verweist er auf einen Rabatt.', 'werbung' => true, 'sprache' => 'en' )
+			: array( 'text' => 'Im Video wird LeadOcean eingerichtet und die Suche nach Firmen gezeigt. Du siehst auch den Export als CSV.', 'werbung' => false, 'sprache' => 'de' );
+		return $json( array( 'candidates' => array( array( 'content' => array( 'parts' => array( array( 'text' => wp_json_encode( $out, JSON_UNESCAPED_UNICODE ) ) ) ) ) ) ) );
+	}
+	// YouTube: Details zu Videos
+	if ( false !== strpos( $url, 'googleapis.com/youtube/v3/videos' ) ) {
+		$GLOBALS['adm_test_yt_requests'][] = $url;
+		$d = function ( $id, $title, $desc, $lang, $dur, $date ) {
+			return array( 'id' => $id, 'snippet' => array( 'title' => $title, 'description' => $desc, 'channelTitle' => 'Kanal ' . substr( $id, 0, 2 ), 'publishedAt' => $date . 'T10:00:00Z', 'defaultAudioLanguage' => $lang ), 'contentDetails' => array( 'duration' => $dur ) );
+		};
+		return $json( array( 'items' => array(
+			$d( 'DEvideo0001', 'LeadOcean Tutorial deutsch 🚀', 'Einrichtung Schritt für Schritt', 'de', 'PT8M10S', '2026-10-20' ),
+			$d( 'ENvideo0002', 'LeadOcean review', 'Honest review', 'en', 'PT12M', '2026-09-01' ),
+			$d( 'PROMOvideo3', 'LeadOcean AppSumo Lifetime Deal', 'Get it https://a.example https://b.example https://c.example https://d.example', 'en', 'PT5M', '2026-10-25' ),
+			$d( 'SHORTvideo4', 'LeadOcean in 30 seconds', 'Short', 'en', 'PT45S', '2026-10-26' ),
+		) ) );
+	}
 	// YouTube-Suche
 	if ( false !== strpos( $url, 'googleapis.com/youtube' ) ) {
 		$GLOBALS['adm_test_yt_requests'][] = $url;
@@ -44,6 +68,8 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 			array( 'id' => array( 'videoId' => 'DEvideo0001' ), 'snippet' => array( 'title' => 'LeadOcean Tutorial deutsch', 'description' => 'Einrichtung', 'channelTitle' => 'Kanal DE', 'publishedAt' => '2026-10-20T10:00:00Z' ) ),
 			array( 'id' => array( 'videoId' => 'XXunrelated' ), 'snippet' => array( 'title' => 'Ganz anderes Thema', 'description' => 'Kochen', 'channelTitle' => 'X', 'publishedAt' => '2026-10-01T10:00:00Z' ) ),
 		) : array(
+			array( 'id' => array( 'videoId' => 'PROMOvideo3' ), 'snippet' => array( 'title' => 'LeadOcean AppSumo Lifetime Deal', 'description' => 'Get it now', 'channelTitle' => 'Kanal PR', 'publishedAt' => '2026-10-25T10:00:00Z' ) ),
+			array( 'id' => array( 'videoId' => 'SHORTvideo4' ), 'snippet' => array( 'title' => 'LeadOcean in 30 seconds', 'description' => 'Short', 'channelTitle' => 'Kanal SH', 'publishedAt' => '2026-10-26T10:00:00Z' ) ),
 			array( 'id' => array( 'videoId' => 'ENvideo0002' ), 'snippet' => array( 'title' => 'LeadOcean review', 'description' => 'Honest review', 'channelTitle' => 'Kanal EN', 'publishedAt' => '2026-09-01T10:00:00Z' ) ),
 		) ) );
 	}

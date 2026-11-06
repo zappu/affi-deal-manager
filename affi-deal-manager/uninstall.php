@@ -10,7 +10,7 @@ global $wpdb;
 $wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'adm_deals' ); // phpcs:ignore WordPress.DB
 
 // Tool-Profile (Beiträge) bleiben erhalten, sie sind redaktionelle Inhalte.
-foreach ( array( 'adm_settings', 'adm_db_version', 'adm_health', 'adm_sitemap_read', 'adm_sitemap_retry', 'adm_last_tick', 'adm_profile_queue', 'adm_profile_log', 'adm_profile_paused', 'adm_rewrite_version' ) as $opt ) {
+foreach ( array( 'adm_settings', 'adm_db_version', 'adm_health', 'adm_sitemap_read', 'adm_sitemap_retry', 'adm_last_tick', 'adm_profile_queue', 'adm_profile_log', 'adm_profile_paused', 'adm_rewrite_version', 'adm_rubrics_version' ) as $opt ) {
 	delete_option( $opt );
 }
 delete_transient( 'adm_sync_lock' );
@@ -18,3 +18,6 @@ delete_transient( 'adm_update_manifest' );
 wp_clear_scheduled_hook( 'adm_sync_tick' );
 wp_clear_scheduled_hook( 'adm_profile_tick' );
 delete_transient( 'adm_profile_lock' );
+// Zwischengespeicherte Videozusammenfassungen.
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_adm\\_vsum\\_%' OR option_name LIKE '\\_transient\\_timeout\\_adm\\_vsum\\_%'" ); // phpcs:ignore WordPress.DB
+// Rubriken (Begriffe) bleiben wie die Tool-Profile erhalten.

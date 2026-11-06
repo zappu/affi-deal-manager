@@ -40,6 +40,7 @@ class ADM_DB {
 			url varchar(255) NOT NULL,
 			slug varchar(191) NOT NULL DEFAULT '',
 			name varchar(255) NOT NULL DEFAULT '',
+			display_name varchar(255) NOT NULL DEFAULT '',
 			brand varchar(255) NOT NULL DEFAULT '',
 			description text NULL,
 			price decimal(10,2) NULL,
@@ -90,6 +91,7 @@ class ADM_DB {
 			// Neue Spalte sitemap_priority: Sitemap beim nächsten Schritt neu lesen.
 			delete_option( 'adm_sitemap_read' );
 		}
+		// Version 5: Spalte display_name (Anzeigename) kommt über dbDelta, keine Datenänderung nötig.
 		if ( $old && version_compare( (string) $old, '3', '<' ) ) {
 			global $wpdb;
 			$t = self::table();
@@ -198,7 +200,49 @@ class ADM_DB {
 			$row[ $k ] = is_array( $v ) ? $v : array();
 		}
 		$row['reason'] = self::reason( $row );
+		$row['title']  = self::display_name( $row );
 		return $row;
+	}
+
+	/**
+	 * Name für die Website: eigener Anzeigename oder der bereinigte Name von AppSumo.
+	 *
+	 * @param array $row Zeile der Deal-Tabelle.
+	 * @return string
+	 */
+	public static function display_name( array $row ) {
+		$own = isset( $row['display_name'] ) ? trim( (string) $row['display_name'] ) : '';
+		if ( '' !== $own ) {
+			return $own;
+		}
+		$type = isset( $row['deal_type'] ) ? (string) $row['deal_type'] : '';
+		return self::clean_name( isset( $row['name'] ) ? (string) $row['name'] : '', in_array( $type, array( 'software', '' ), true ) );
+	}
+
+	/**
+	 * Entfernt Zusätze aus AppSumo-Namen: „Plus exclusive“, „Lifetime Deal“, „(fka …)“, „Plan“ am Ende
+	 * und bei Software den Werbezusatz nach Bindestrich oder Doppelpunkt („Writeseed - AI Content Writer“ → „Writeseed“).
+	 * Bei Kursen und E-Books bleibt der Titel stehen, nur die Zusätze fallen weg.
+	 *
+	 * @param string $name     Name von AppSumo.
+	 * @param bool   $software Werbezusatz abtrennen.
+	 * @return string
+	 */
+	public static function clean_name( $name, $software = true ) {
+		$orig = trim( preg_replace( '/\s+/u', ' ', (string) $name ) );
+		$n    = $orig;
+		$n    = preg_replace( '/\s*\((?:fka|formerly|früher|ehemals)\b[^)]*\)/iu', '', $n );
+		$n    = preg_replace( '/\s*[-–—|:]\s*plus\s+exclusive\s*$/iu', '', $n );
+		$n    = preg_replace( '/(?:\s+|\s*[-–—|:(]\s*)(?:lifetime\s+deal|ltd)\)?\s*$/iu', '', $n );
+		if ( $software ) {
+			$parts = preg_split( '/\s+[-–—|]\s+|:\s+/u', $n, 2 );
+			if ( 2 === count( $parts ) && mb_strlen( trim( $parts[0] ) ) >= 2 ) {
+				$n = $parts[0];
+			}
+			$n = preg_replace( '/\s+plans?$/iu', '', $n );
+		}
+		$n = trim( preg_replace( '/^[\s\-–—|:]+|[\s\-–—|:]+$/u', '', $n ) );
+		return mb_strlen( $n ) >= 2 ? $n : $orig;
 	}
 
 	/**

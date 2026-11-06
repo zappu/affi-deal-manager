@@ -27,7 +27,7 @@ class ADM_List_Table extends WP_List_Table {
 		return array(
 			'name'         => 'Deal',
 			'deal_type'    => 'Typ',
-			'category'     => 'Kategorie bei AppSumo',
+			'category'     => 'Rubrik und AppSumo-Kategorie',
 			'price'        => 'Preis',
 			'rating'       => 'Bewertung',
 			'status'       => 'Status',
@@ -144,8 +144,11 @@ class ADM_List_Table extends WP_List_Table {
 	}
 
 	protected function column_name( $item ) {
-		$name = '' !== $item['name'] ? $item['name'] : $item['slug'];
+		$name = '' !== $item['name'] ? ADM_DB::display_name( $item ) : $item['slug'];
 		$out  = '<strong>' . esc_html( $name ) . '</strong>';
+		if ( '' !== $item['name'] && $name !== $item['name'] ) {
+			$out .= ' <span style="color:#646970">(' . esc_html( $item['name'] ) . ')</span>';
+		}
 		if ( '' !== $item['description'] ) {
 			$out .= '<br><span style="color:#646970">' . esc_html( wp_trim_words( $item['description'], 14 ) ) . '</span>';
 		}
@@ -168,14 +171,16 @@ class ADM_List_Table extends WP_List_Table {
 				return empty( $v['appsumo'] );
 			} ) );
 			if ( $n ) {
-				$actions['videos'] = esc_html( $n . ' Testvideo' . ( 1 === $n ? '' : 's' ) );
+				$actions['videos'] = esc_html( $n . ' Video' . ( 1 === $n ? '' : 's' ) . ' bei AppSumo' );
 			}
 		}
 		return $out . $this->row_actions( $actions );
 	}
 
 	protected function column_category( $item ) {
-		return esc_html( $item['category'] );
+		$rubric = ADM_Rubrics::for_category( $item['category'] );
+		$label  = '' !== $rubric ? '<strong>' . esc_html( ADM_Rubrics::label( $rubric ) ) . '</strong>' : ( '' !== $item['category'] ? '<span style="color:#b32d2e">keine Rubrik</span>' : '' );
+		return $label . ( '' !== $item['category'] ? '<br><span style="color:#646970">' . esc_html( $item['category'] ) . '</span>' : '' );
 	}
 
 	protected function column_price( $item ) {

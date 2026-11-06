@@ -1,5 +1,15 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.4.4 (06.11.2026)
+
+- Anzeigename: Zusätze aus AppSumo-Namen fallen weg („WP Reset Pro Plan“ → „WP Reset Pro“, „Screpy - Plus Exclusive“ → „Screpy“, bei Software auch der Werbezusatz nach Bindestrich oder Doppelpunkt); eigener Anzeigename im Kasten „Deal bei AppSumo“ am Profil; Datenbank Version 5 (Spalte `display_name`)
+- Rubriken: Taxonomie „Rubrik“ (`/rubrik/<name>/`) mit den 10 Rubriken aus dem Projektplan; AppSumo-Kategorien werden beim Erzeugen zugeordnet, von Hand gesetzte Rubriken bleiben; Deal-Details zeigen die Rubrik statt der englischen AppSumo-Kategorie; Deal-Liste zeigt Rubrik und Kategorie
+- Alternativen kommen aus derselben Rubrik; ohne Alternativen bleibt der Abschnitt samt Überschrift weg, bei ausgelaufenen Deals führt der Knopf dann direkt zur Warteliste
+- Videos: Abschnitt „Videos zu <Name>“ statt „Was Testvideos zeigen“; Auswahl nach Punkten (deutsch, Test oder Anleitung, Länge, Alter), Werbevideos nach hinten, Shorts fallen weg; Dauer und Sprache über die YouTube-API
+- Videozusammenfassung mit Gemini (optional, `THOKA_GEMINI_API_KEY`): Gemini sieht das Video an, die Zusammenfassung ist gekennzeichnet und fließt in die Funktionen ein; ohne Schlüssel kein Text zum Videoinhalt; Ergebnisse 60 Tage zwischengespeichert
+- Prompt: kleines „du“, Aussagen aus Bewertungen immer mit Gruppe, „Für wen es passt“ nur aus Herstellerangaben oder mehrfach genannten Punkten, weitere Regeln aus „vermenschlichen“
+- Stilprüfung nach jeder Erzeugung (Gedankenstriche, „nicht nur … sondern“, großes „Du“, Floskeln, unbestimmte Quellen, behauptete Tests); Hinweise im Protokoll und am Profil, großes „Du“ mitten im Satz wird automatisch korrigiert
+
 ## 0.4.3 (06.11.2026)
 
 - Fehler behoben: Claude Sonnet 5.5 lehnt den Parameter `temperature` ab (HTTP 400). Die Anfragen kommen jetzt bei allen Anbietern ohne ihn aus

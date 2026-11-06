@@ -36,6 +36,17 @@ $lo = adm_get_deal( 'leadocean' );
 adm_check( $lo && 'kaufbar' === $lo['status'] && 265008 === (int) $lo['appsumo_id'], 'LeadOcean kaufbar, Deal-Nummer 265008 gespeichert' );
 
 adm_check( post_type_exists( 'adm_tool' ), 'Beitragstyp adm_tool registriert' );
+adm_check( taxonomy_exists( 'adm_rubrik' ) && 10 === count( get_terms( array( 'taxonomy' => 'adm_rubrik', 'hide_empty' => false ) ) ), 'Taxonomie Rubrik mit 10 Rubriken aus dem Projektplan' );
+adm_check( 'seo' === ADM_Rubrics::for_category( 'Marketing > SEO & Analytics > Website Analytics' ) && 'wordpress-plugins' === ADM_Rubrics::for_category( 'Build & Code > Website Builders & WordPress > WordPress' ) && 'seo' === ADM_Rubrics::for_category( 'Build & Code > Website Builders & WordPress > SEO' ) && 'marketing-und-werbung' === ADM_Rubrics::for_category( 'Marketing > Social Media > Social Proof' ) && 'social-media' === ADM_Rubrics::for_category( 'Marketing > Social Media > Scheduling' ) && '' === ADM_Rubrics::for_category( 'Build & Code > Developer Tools > Dev Utilities' ), 'Zuordnung AppSumo-Kategorie zu Rubrik' );
+$names = array( 'WP Reset Pro Plan' => 'WP Reset Pro', 'Screpy - Plus Exclusive' => 'Screpy', 'Writeseed - AI Content Writer' => 'Writeseed', 'Sonny: White-Label Helpdesk' => 'Sonny', 'AutoScaled (fka SlideFill)' => 'AutoScaled', 'testimonials.ltd' => 'testimonials.ltd', 'Reoon Lead Scraper (YellowPages)' => 'Reoon Lead Scraper (YellowPages)', 'NeuronWriter' => 'NeuronWriter' );
+$bad   = array();
+foreach ( $names as $in => $want ) {
+	if ( ADM_DB::clean_name( $in ) !== $want ) {
+		$bad[] = $in . ' → ' . ADM_DB::clean_name( $in );
+	}
+}
+adm_check( ! $bad && 'How to Start: A Beginner Guide' === ADM_DB::clean_name( 'How to Start: A Beginner Guide - Plus exclusive', false ), 'Namen bereinigt, Kurstitel bleiben ' . implode( ', ', $bad ) );
+adm_check( 'Du sagst, du kannst.' === ADM_Style::fix( 'Du sagst, Du kannst.' ) && array() === ADM_Style::check( '<p>Das Tool ist schnell.</p>' ), 'Stil: großes Du mitten im Satz korrigiert, sauberer Text ohne Hinweise' );
 $pto = get_post_type_object( 'adm_tool' );
 adm_check( 'tools' === $pto->rewrite['slug'] && 'tools' === $pto->has_archive && $pto->show_in_rest, 'Pfad /tools/, Archiv, REST für Editor' );
 
@@ -46,7 +57,10 @@ adm_check( 1 === ADM_Profiles::enqueue( $best ) && 0 === ADM_Profiles::enqueue( 
 adm_check( (bool) wp_next_scheduled( ADM_Profiles::QUEUE_HOOK ), 'Verarbeitung eingeplant' );
 
 // Erzeugen
-$GLOBALS['adm_test_ai_requests'] = array();
+$GLOBALS['adm_test_ai_requests']     = array();
+$GLOBALS['adm_test_gemini_requests'] = array();
+$GLOBALS['adm_test_yt_requests']     = array();
+$GLOBALS['wpdb']->query( "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '%adm\\_vsum%'" );
 ADM_Profiles::process_queue();
 adm_check( array() === ADM_Profiles::queue(), 'Warteschlange abgearbeitet' );
 $lo   = adm_get_deal( 'leadocean' );
@@ -58,15 +72,27 @@ adm_check( 0 === strpos( get_post_meta( $post->ID, 'rank_math_description', true
 adm_check( 'Firmen- und Kontaktdaten als API ohne Abo.' === $post->post_excerpt, 'Auszug gesetzt' );
 
 $c = $post->post_content;
-adm_check( 0 === strpos( $c, '[adm_deal_box]' ) && false !== strpos( $c, '[adm_deal_details]' ) && false !== strpos( $c, '[adm_alternatives]' ), 'Live-Shortcodes im Text' );
+adm_check( 0 === strpos( $c, '[adm_deal_box]' ) && false !== strpos( $c, '[adm_deal_details]' ) && false !== strpos( $c, '[adm_alternatives ' ), 'Live-Shortcodes im Text' );
 adm_check( false === strpos( $c, '<script' ) && false === strpos( $c, 'alert(1)' ), 'Script aus KI-Antwort samt Inhalt entfernt' );
 adm_check( false !== strpos( $c, '<h2>Für wen LeadOcean passt</h2>' ) && false !== strpos( $c, '<h3>Für wen eher nicht</h3>' ), 'Abschnitt Zielgruppe' );
 adm_check( false !== strpos( $c, 'Auswertung von 5 der 144 Bewertungen bei AppSumo (die 3 neuesten und die 2 kritischsten)' ), 'Käuferstimmen: Quelle und Umfang (Vergütete, Antworten, zu kurze und doppelte entfernt)' );
 adm_check( false !== strpos( $c, '<h3>Häufig gelobt</h3>' ) && false !== strpos( $c, '<h3>Häufige Kritik</h3>' ), 'Lob und Kritik' );
-adm_check( false !== strpos( $c, '[adm_video id="DEvideo0001"]' ) && false !== strpos( $c, '[adm_video id="ENvideo0002"]' ) && false === strpos( $c, 'XXunrelated' ), 'Videos: deutsches zuerst, fremdes Thema verworfen' );
-adm_check( false !== strpos( $c, 'Das Video zeigt die Einrichtung auf Deutsch.' ) && false !== strpos( $c, 'Kanal: Kanal DE' ), 'Video-Zusammenfassung und Kanal' );
+adm_check( strpos( $c, '[adm_video id="DEvideo0001"]' ) < strpos( $c, '[adm_video id="ENvideo0002"]' ) && false === strpos( $c, 'XXunrelated' ), 'Videos: deutsches zuerst, fremdes Thema verworfen' );
+adm_check( false === strpos( $c, 'PROMOvideo3' ) && false === strpos( $c, 'SHORTvideo4' ), 'Werbevideo nach hinten, Short verworfen' );
+adm_check( false !== strpos( $c, '<h2>Videos zu LeadOcean</h2>' ) && false === strpos( $c, 'Testvideos' ) && false === strpos( $c, '🚀' ), 'Abschnitt „Videos zu …“, Emoji aus dem Titel entfernt' );
+adm_check( false !== strpos( $c, 'Das Video zeigt die Einrichtung auf Deutsch.' ) && false !== strpos( $c, 'Kanal: Kanal DE' ) && false !== strpos( $c, 'Sprache: Deutsch' ) && false !== strpos( $c, 'Länge: 8 Minuten' ) && false !== strpos( $c, 'Zusammenfassung automatisch aus dem Video erstellt' ), 'Video: Zusammenfassung mit Kanal, Sprache, Länge und Kennzeichnung' );
+adm_check( false !== strpos( $c, 'Sprache: Englisch' ) && 1 === substr_count( $c, 'Das Video wirbt für ein Angebot' ), 'Werbevideo laut Gemini gekennzeichnet' );
+$gem = $GLOBALS['adm_test_gemini_requests'];
+adm_check( 2 === count( $gem ) && 'gem-key' === $gem[0]['headers']['x-goog-api-key'] && 'https://www.youtube.com/watch?v=DEvideo0001' === $gem[0]['body']['contents'][0]['parts'][0]['file_data']['file_uri'] && 'MEDIA_RESOLUTION_LOW' === $gem[0]['body']['generationConfig']['mediaResolution'] && false !== strpos( $gem[0]['url'], 'gemini-flash-latest:generateContent' ) && false === strpos( $gem[0]['url'], 'gem-key' ), 'Gemini: YouTube-Adresse, niedrige Auflösung, Schlüssel im Header' );
+adm_check( false !== strpos( implode( ' ', $GLOBALS['adm_test_yt_requests'] ), 'youtube/v3/videos' ), 'YouTube: Details (Dauer, Sprache) abgefragt' );
+adm_check( false !== strpos( $c, 'für die du Daten' ) && false === strpos( $c, 'für die Du' ), 'Großes „Du“ mitten im Satz klein geschrieben' );
+$hints = get_post_meta( $post->ID, '_adm_style_hints', true );
+adm_check( is_array( $hints ) && false !== strpos( implode( ' ', $hints ), 'Gedankenstrich' ), 'Stilhinweis gespeichert: ' . ( is_array( $hints ) ? implode( '; ', $hints ) : '' ) );
+$log = get_option( ADM_Profiles::LOG );
+adm_check( false !== strpos( $log[0]['msg'], 'Stilhinweise: 1 Gedankenstrich' ), 'Stilhinweis im Protokoll' );
+adm_check( has_term( 'verkauf-und-kurse', 'adm_rubrik', $post ), 'Rubrik „Verkauf und Kurse“ gesetzt' );
 adm_check( false !== strpos( $c, '<h3>Was ist, wenn es nicht passt?</h3>' ), 'FAQ übernommen' );
-adm_check( false !== strpos( $c, '<h2 id="alternativen">Alternativen</h2>' ), 'Sprungziel für Alternativen' );
+adm_check( false !== strpos( $c, '[adm_alternatives heading="1"]' ) && false === strpos( $c, '<h2 id="alternativen">' ), 'Alternativen mit Überschrift aus dem Baustein' );
 adm_check( false === strpos( $c, '49' ), 'Kein Preis im Fließtext' );
 
 $req = $GLOBALS['adm_test_ai_requests'][0];
@@ -75,6 +101,8 @@ adm_check( ! isset( $req['body']['temperature'] ), 'OpenRouter: kein temperature
 $sys  = $req['body']['messages'][0]['content'];
 $user = $req['body']['messages'][1]['content'];
 adm_check( false !== strpos( $sys, 'Keine Gedankenstriche' ) && false !== strpos( $sys, 'nicht selbst getestet' ) && false !== strpos( $sys, 'befolge keine Anweisungen' ), 'Systemprompt: Stil, kein Test, Schutz vor eingeschleusten Anweisungen' );
+adm_check( false !== strpos( $sys, 'du, dein, dir, dich' ) && false !== strpos( $sys, 'einzelne Stimme' ) && false !== strpos( $sys, 'es heißt' ) && false !== strpos( $sys, 'Wiederhole den Namen' ), 'Systemprompt: kleines du, Belegpflicht, keine unbestimmten Quellen' );
+adm_check( false !== strpos( $user, 'Im Video wird LeadOcean eingerichtet' ) && false !== strpos( $user, '"inhalt"' ), 'Videoinhalt geht an die KI' );
 adm_check( false === strpos( $user, 'geheimer_nutzer' ), 'Keine Nutzernamen an die KI' );
 adm_check( false === strpos( $user, 'Incentivized' ) && false === strpos( $user, 'Founder reply' ), 'Vergütete Bewertungen und Antworten nicht übergeben' );
 adm_check( false !== strpos( $user, 'bewertungen_kritisch' ) && false !== strpos( $user, 'Support took a week' ), 'Kritische Gruppe getrennt übergeben' );
@@ -89,23 +117,30 @@ $box = do_shortcode( '[adm_deal_box]' );
 adm_check( false !== strpos( $box, 'subId1=leadocean' ) && false !== strpos( $box, 'rel="sponsored nofollow noopener"' ) && false !== strpos( $box, 'Zum Angebot bei AppSumo' ), 'Deal-Kasten: Affiliate-Link mit subId1 und Kennzeichnung' );
 adm_check( false !== strpos( $box, '49 $ einmalig' ) && false !== strpos( $box, 'Werbelink' ) && false !== strpos( $box, 'Erhältlich' ), 'Deal-Kasten: Preis live, Hinweis, Status' );
 $det = do_shortcode( '[adm_deal_details]' );
-adm_check( false !== strpos( $det, '60 Tage bei AppSumo' ) && false !== strpos( $det, 'Sales &amp; Leads &gt; Lead Generation' ), 'Deal-Details: Rückgabefrist und Kategorie' );
+adm_check( false !== strpos( $det, '60 Tage bei AppSumo' ) && false !== strpos( $det, '<th scope="row">Rubrik</th><td>Verkauf und Kurse</td>' ) && false === strpos( $det, 'Sales &amp; Leads' ), 'Deal-Details: Rückgabefrist und Rubrik statt AppSumo-Kategorie' );
 $vid = do_shortcode( '[adm_video id="DEvideo0001"]' ) . do_shortcode( '[adm_video id="<script>"]' );
 adm_check( 1 === substr_count( $vid, 'youtube-nocookie.com/embed/DEvideo0001' ) && false === strpos( $vid, 'script' ), 'Video über youtube-nocookie, ungültige ID verworfen' );
 
 ADM_DB::update( (int) $lo['id'], array( 'status' => 'ausgelaufen', 'in_sitemap' => 0, 'last_changed' => ADM_DB::now() ) );
 $box = do_shortcode( '[adm_deal_box]' );
-adm_check( false !== strpos( $box, 'Kaufbare Alternativen ansehen' ) && false !== strpos( $box, 'Zur Warteliste bei AppSumo' ) && false !== strpos( $box, 'Ausgelaufen' ), 'Ausgelaufen: Alternativen und Warteliste' );
-ADM_DB::update( (int) $lo['id'], array( 'status' => 'kaufbar', 'in_sitemap' => 1 ) );
+adm_check( false === strpos( $box, 'Kaufbare Alternativen ansehen' ) && false !== strpos( $box, 'class="adm-btn" href="https://appsumo.8odi.net' ) && false !== strpos( $box, 'Zur Warteliste bei AppSumo' ) && false !== strpos( $box, 'Ausgelaufen' ), 'Ausgelaufen ohne Alternativen: nur Warteliste als Knopf' );
+adm_check( '' === do_shortcode( '[adm_alternatives heading="1"]' ), 'Keine Alternativen: Abschnitt bleibt ganz leer' );
 
 // Alternativen: veröffentlichtes Profil aus derselben Kategorie
 global $wpdb;
-$wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/other-leads/', 'slug' => 'other-leads', 'name' => 'Other Leads', 'description' => 'Lead lists for sales teams', 'price' => 39, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'category' => 'Sales & Leads > Lead Generation > Prospecting', 'first_seen' => ADM_DB::now() ) );
+// Kategorie passt nicht, die Rubrik ist von Hand gesetzt: gefunden wird es über die Rubrik.
+$wpdb->delete( ADM_DB::table(), array( 'slug' => 'other-leads' ) );
+$wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/other-leads/', 'slug' => 'other-leads', 'name' => 'Other Leads - Plus exclusive', 'description' => 'Lead lists for sales teams', 'price' => 39, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'category' => 'Operations > Something Else', 'first_seen' => ADM_DB::now() ) );
 $other_id = (int) $wpdb->insert_id;
 $other_post = wp_insert_post( array( 'post_type' => 'adm_tool', 'post_status' => 'publish', 'post_title' => 'Other Leads ohne Abo', 'post_name' => 'other-leads', 'post_content' => '[adm_deal_box]' ) );
+wp_set_object_terms( $other_post, array( 'verkauf-und-kurse' ), 'adm_rubrik' );
 ADM_DB::update( $other_id, array( 'post_id' => $other_post ) );
-$alt = do_shortcode( '[adm_alternatives]' );
-adm_check( false !== strpos( $alt, 'Other Leads' ) && false !== strpos( $alt, '39 $ einmalig' ), 'Alternativen: Profil aus gleicher Kategorie mit Live-Preis' );
+$alt = do_shortcode( '[adm_alternatives heading="1"]' );
+adm_check( false !== strpos( $alt, '>Other Leads</a>' ) && false === strpos( $alt, 'Plus exclusive' ) && false !== strpos( $alt, '39 $ einmalig' ) && 0 === strpos( preg_replace( '#<style.*?</style>#s', '', $alt ), '<h2 id="alternativen">Alternativen</h2>' ), 'Alternativen: über die Rubrik, bereinigter Name, Live-Preis, Überschrift' );
+$box = do_shortcode( '[adm_deal_box]' );
+adm_check( false !== strpos( $box, 'Kaufbare Alternativen ansehen' ) && false !== strpos( $box, 'Zur Warteliste bei AppSumo' ), 'Ausgelaufen mit Alternativen: Knopf zu den Alternativen und Warteliste' );
+ADM_DB::update( (int) $lo['id'], array( 'status' => 'kaufbar', 'in_sitemap' => 1 ) );
+adm_check( false !== strpos( do_shortcode( '[adm_deal_box deal="other-leads"]' ), 'adm-box__name">Other Leads</p>' ), 'Deal-Kasten zeigt den bereinigten Namen' );
 $alt2 = do_shortcode( '[adm_alternatives deal="other-leads"]' );
 adm_check( false === strpos( $alt2, 'LeadOcean' ), 'Alternativen: nur veröffentlichte Profile (LeadOcean ist Entwurf)' );
 wp_reset_postdata();
@@ -117,9 +152,31 @@ adm_check( is_wp_error( $r ) && 'adm_profile_published' === $r->get_error_code()
 adm_check( 0 === ADM_Profiles::enqueue( array( (int) $lo['id'] ) ), 'Veröffentlichtes Profil lässt sich nicht vormerken' );
 wp_update_post( array( 'ID' => $post->ID, 'post_status' => 'draft' ) );
 
-// Neu erzeugen aktualisiert denselben Entwurf
+// Neu erzeugen aktualisiert denselben Entwurf, Videozusammenfassungen kommen aus dem Zwischenspeicher
+$GLOBALS['adm_test_gemini_requests'] = array();
 $r = ADM_Profiles::generate( (int) $lo['id'] );
+adm_check( array() === $GLOBALS['adm_test_gemini_requests'], 'Videozusammenfassung zwischengespeichert, keine zweite Gemini-Anfrage' );
 adm_check( (int) $r === (int) $post->ID && 1 === count( get_posts( array( 'post_type' => 'adm_tool', 'post_status' => 'draft', 'name' => 'leadocean' ) ) ), 'Neu erzeugen überschreibt den Entwurf, kein Duplikat' );
+
+// Anzeigename im Profil-Kasten speichern
+wp_set_current_user( 1 );
+$_POST = array( 'adm_display_name' => 'Lead Ocean', 'adm_display_name_nonce' => wp_create_nonce( 'adm_display_name' ) );
+ADM_Profiles::save_meta_box( $post->ID, get_post( $post->ID ) );
+$_POST = array();
+$lo    = adm_get_deal( 'leadocean' );
+adm_check( 'Lead Ocean' === $lo['display_name'] && 'Lead Ocean' === $lo['title'] && 'LeadOcean' === $lo['name'], 'Anzeigename gespeichert, AppSumo-Name bleibt' );
+
+// Ohne Videozusammenfassung: keine Inhaltsangabe, auch wenn die KI eine liefert
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'video_summaries' => 0, 'mode' => 'wpcron' ) ) );
+$GLOBALS['adm_test_ai_requests'] = array();
+$GLOBALS['adm_test_gemini_requests'] = array();
+$r  = ADM_Profiles::generate( (int) $lo['id'] );
+$c2 = get_post( $post->ID )->post_content;
+$u2 = $GLOBALS['adm_test_ai_requests'][0]['body']['messages'][1]['content'];
+adm_check( ! is_wp_error( $r ) && array() === $GLOBALS['adm_test_gemini_requests'] && false === strpos( $c2, 'Das Video zeigt die Einrichtung' ) && false === strpos( $c2, 'Zusammenfassung automatisch' ) && false !== strpos( $c2, '[adm_video id="DEvideo0001"]' ), 'Ohne Zusammenfassung: Video ohne Inhaltsangabe' );
+adm_check( false !== strpos( $c2, '<h2>Videos zu Lead Ocean</h2>' ) && false !== strpos( $u2, 'leeres Array' ), 'Neuer Anzeigename im Text, KI soll keine Videotexte liefern' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'video_summaries' => 1, 'mode' => 'wpcron' ) ) );
+ADM_DB::update( (int) $lo['id'], array( 'display_name' => '' ) );
 
 // Fehlerfälle
 update_option( 'adm_test_ai', 'error' );

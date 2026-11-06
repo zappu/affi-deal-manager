@@ -47,6 +47,9 @@ class ADM_Settings {
 	/** YouTube-Schlüssel (optional) in der wp-config.php. */
 	const YOUTUBE_CONSTANT = 'THOKA_YOUTUBE_API_KEY';
 
+	/** Gemini-Schlüssel (optional) für Videozusammenfassungen. */
+	const GEMINI_CONSTANT = 'THOKA_GEMINI_API_KEY';
+
 	/** Schlüssel aus der wp-config.php; Schlüssel werden nie in der Datenbank gespeichert. */
 	public static function constant_key( $constant ) {
 		return defined( $constant ) && is_string( constant( $constant ) ) ? trim( (string) constant( $constant ) ) : '';
@@ -60,6 +63,10 @@ class ADM_Settings {
 
 	public static function youtube_key() {
 		return self::constant_key( self::YOUTUBE_CONSTANT );
+	}
+
+	public static function gemini_key() {
+		return self::constant_key( self::GEMINI_CONSTANT );
 	}
 
 	/** Version 0.4.0 speicherte Schlüssel in der Datenbank: einmalig entfernen. */
@@ -98,6 +105,8 @@ class ADM_Settings {
 			'auto_profiles'         => 0,
 			'reviews_newest'        => 60,
 			'reviews_critical'      => 40,
+			'video_summaries'       => 1,
+			'gemini_model'          => 'gemini-flash-latest',
 		);
 	}
 
@@ -176,6 +185,8 @@ class ADM_Settings {
 			'auto_profiles'         => array_key_exists( 'mode', $in ) ? ( empty( $in['auto_profiles'] ) ? 0 : 1 ) : (int) $cur['auto_profiles'],
 			'reviews_newest'        => self::range( $in, 'reviews_newest', 0, 100, $cur['reviews_newest'] ),
 			'reviews_critical'      => self::range( $in, 'reviews_critical', 0, 100, $cur['reviews_critical'] ),
+			'video_summaries'       => array_key_exists( 'mode', $in ) ? ( empty( $in['video_summaries'] ) ? 0 : 1 ) : (int) $cur['video_summaries'],
+			'gemini_model'          => isset( $in['gemini_model'] ) && '' !== trim( (string) $in['gemini_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._\-]/', '', (string) $in['gemini_model'] ), 0, 80 ) : $cur['gemini_model'],
 		);
 		update_option( self::OPTION, $out, false );
 		return $out;

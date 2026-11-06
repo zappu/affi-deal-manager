@@ -385,6 +385,12 @@ class ADM_Admin {
 					self::field( 'reviews_critical', 'Kritischste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
 					?>
 					<tr>
+						<th scope="row">Videos zusammenfassen</th>
+						<td><label><input type="checkbox" name="adm[video_summaries]" value="1" <?php checked( $s['video_summaries'] ); ?>> Gemini sieht sich die ausgewählten YouTube-Videos an und fasst sie zusammen</label>
+						<p class="description">Braucht <code><?php echo esc_html( ADM_Settings::GEMINI_CONSTANT ); ?></code> in der wp-config.php (<?php echo '' !== ADM_Settings::gemini_key() ? 'gesetzt' : 'fehlt'; ?>). Schlüssel bei aistudio.google.com. Ohne Schlüssel zeigt das Profil die Videos ohne Inhaltsangabe.</p></td>
+					</tr>
+					<?php self::field( 'gemini_model', 'Gemini-Modell', $s, 'Standard: gemini-flash-latest.' ); ?>
+					<tr>
 						<th scope="row">Automatik</th>
 						<td><label><input type="checkbox" name="adm[auto_profiles]" value="1" <?php checked( $s['auto_profiles'] ); ?>> Neue kaufbare Software-Deals bekommen automatisch einen Profil-Entwurf</label>
 						<p class="description">Erst einschalten, wenn du die ersten Texte abgenommen hast.</p></td>
@@ -532,6 +538,7 @@ class ADM_Admin {
 			$rows[] = array( $p['label'], $p['constant'], '' !== ADM_Settings::ai_key( $key ) );
 		}
 		$rows[] = array( 'YouTube (optional)', ADM_Settings::YOUTUBE_CONSTANT, '' !== ADM_Settings::youtube_key() );
+		$rows[] = array( 'Gemini (optional, Videos)', ADM_Settings::GEMINI_CONSTANT, '' !== ADM_Settings::gemini_key() );
 		echo '<table class="widefat striped" style="max-width:640px"><tbody>';
 		foreach ( $rows as $r ) {
 			printf(
@@ -548,7 +555,7 @@ class ADM_Admin {
 		foreach ( $rows as $r ) {
 			echo esc_html( "define( '" . $r[1] . "', 'DEIN-SCHLÜSSEL' );" ) . "\n";
 		}
-		echo '</pre><p class="description">Nötig ist nur der Schlüssel des oben gewählten Anbieters. Ohne YouTube-Schlüssel kommen die Videos aus der AppSumo-Liste.</p>';
+		echo '</pre><p class="description">Nötig ist nur der Schlüssel des oben gewählten Anbieters. Ohne YouTube-Schlüssel kommen die Videos aus der AppSumo-Liste, ohne Gemini-Schlüssel gibt es keine Videozusammenfassung.</p>';
 	}
 
 	/** Zeitstempel in Ortszeit. */

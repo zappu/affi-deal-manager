@@ -195,7 +195,6 @@ class ADM_Shortcodes {
 		$meta   = array_filter( array(
 			$gen ? 'Stand ' . wp_date( 'd.m.Y', $gen ) : '',
 			is_array( $stats ) && ! empty( $stats['used'] ) ? 'Auswertung von ' . number_format_i18n( (int) $stats['used'] ) . ' Bewertungen bei AppSumo' . ( is_array( $videos ) && $videos ? ' und ' . count( $videos ) . ( 1 === count( $videos ) ? ' Video' : ' Videos' ) : '' ) : '',
-			'nicht selbst getestet',
 		) );
 		$lead = has_excerpt( $post ) ? get_the_excerpt( $post ) : $deal['description'];
 

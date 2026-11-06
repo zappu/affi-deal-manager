@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.6 (06.11.2026)
+
+- Kopfbereich: Zusatz „nicht selbst getestet“ entfällt; die Arbeitsweise steht künftig zentral auf der Seite „Über uns“
+
 ## 0.5.5 (06.11.2026)
 
 - Videozusammenfassung: Gemini meldet die im Video gesprochene Sprache (vorher kam die Sprache der Zusammenfassung zurück, englische Videos standen als „Deutsch“ da); alter Zwischenspeicher wird nicht mehr verwendet

@@ -6,9 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Abgleich mit AppSumo.
  *
- * Alle 5 Minuten (WP-Cron) ein kleiner Schritt:
- * 1. höchstens einmal am Tag die Sitemap lesen: neue Produkte anlegen, geänderte (lastmod) fällig setzen,
- *    verschwundene kaufbare Deals auf „ausgelaufen“ setzen;
+ * Jeder Schritt (Takt und Zeitfenster einstellbar, über WP-Cron oder Server-Cron):
+ * 1. einmal am Tag ab der eingestellten Uhrzeit die Sitemap lesen: neue Produkte anlegen,
+ *    geänderte (lastmod) fällig setzen, verschwundene kaufbare Deals auf „ausgelaufen“ setzen;
  * 2. die fälligen Produktseiten abrufen (Anzahl und Pause einstellbar) und die schema.org-Daten übernehmen.
  */
 class ADM_Sync {
@@ -17,61 +17,147 @@ class ADM_Sync {
 	const LOCK          = 'adm_sync_lock';
 	const HEALTH        = 'adm_health';
 	const SITEMAP_READ  = 'adm_sitemap_read';
+	const SITEMAP_RETRY = 'adm_sitemap_retry';
 	const FAIL_LIMIT    = 10;
+	const TIME_BUDGET   = 200; // Sekunden pro Schritt
+	const REST_NS       = 'affi-deal-manager/v1';
 
 	public static function init() {
 		add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) );
-		add_action( self::HOOK, array( __CLASS__, 'tick' ) );
-		if ( ! wp_next_scheduled( self::HOOK ) ) {
-			self::schedule();
-		}
+		add_action( self::HOOK, array( __CLASS__, 'cron_tick' ) );
+		add_action( 'rest_api_init', array( __CLASS__, 'rest_routes' ) );
+		self::ensure_schedule();
 	}
 
+	/** Für jeden wählbaren Takt einen eigenen WP-Cron-Zeitplan. */
 	public static function schedules( $s ) {
-		$s['adm_five_minutes'] = array( 'interval' => 5 * MINUTE_IN_SECONDS, 'display' => 'Alle 5 Minuten (Affi Deal Manager)' );
+		foreach ( ADM_Settings::INTERVALS as $min => $label ) {
+			$s[ 'adm_every_' . $min ] = array( 'interval' => $min * MINUTE_IN_SECONDS, 'display' => 'Affi Deal Manager: ' . $label );
+		}
 		return $s;
 	}
 
-	public static function schedule() {
-		add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) );
-		if ( ! wp_next_scheduled( self::HOOK ) ) {
-			wp_schedule_event( time() + 60, 'adm_five_minutes', self::HOOK );
+	public static function recurrence() {
+		return 'adm_every_' . (int) ADM_Settings::get( 'interval' );
+	}
+
+	/** Plant den WP-Cron passend zu Modus und Takt (oder entfernt ihn). */
+	public static function ensure_schedule() {
+		$event = function_exists( 'wp_get_scheduled_event' ) ? wp_get_scheduled_event( self::HOOK ) : false;
+		if ( 'wpcron' !== ADM_Settings::get( 'mode' ) ) {
+			if ( $event ) {
+				wp_clear_scheduled_hook( self::HOOK );
+			}
+			return;
 		}
+		if ( $event && $event->schedule === self::recurrence() ) {
+			return;
+		}
+		self::reschedule();
+	}
+
+	public static function reschedule() {
+		add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) );
+		wp_clear_scheduled_hook( self::HOOK );
+		if ( 'wpcron' === ADM_Settings::get( 'mode' ) ) {
+			wp_schedule_event( time() + 60, self::recurrence(), self::HOOK );
+		}
+	}
+
+	/** Aktivierung. */
+	public static function schedule() {
+		self::reschedule();
 	}
 
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::HOOK );
 	}
 
+	public static function cron_tick() {
+		self::tick( false, 'wpcron' );
+	}
+
+	/* ---------------- Server-Cron ---------------- */
+
+	public static function rest_routes() {
+		register_rest_route( self::REST_NS, '/tick', array(
+			'methods'             => array( 'GET', 'POST' ),
+			'callback'            => array( __CLASS__, 'rest_tick' ),
+			'permission_callback' => array( __CLASS__, 'rest_permission' ),
+		) );
+	}
+
+	public static function rest_permission( WP_REST_Request $req ) {
+		$key = (string) $req->get_header( 'x_adm_key' );
+		if ( '' === $key ) {
+			$key = (string) $req->get_param( 'key' );
+		}
+		$secret = (string) ADM_Settings::get( 'cron_secret' );
+		if ( '' === $secret || '' === $key || ! hash_equals( $secret, $key ) ) {
+			return new WP_Error( 'adm_forbidden', 'Schlüssel fehlt oder ist falsch.', array( 'status' => 403 ) );
+		}
+		return true;
+	}
+
+	public static function rest_tick( WP_REST_Request $req ) {
+		if ( 'servercron' !== ADM_Settings::get( 'mode' ) ) {
+			return new WP_REST_Response( array( 'skipped' => 'Modus „Server-Cron“ ist nicht eingeschaltet.' ), 409 );
+		}
+		return new WP_REST_Response( self::tick( false, 'servercron' ), 200 );
+	}
+
+	public static function server_cron_url() {
+		return rest_url( self::REST_NS . '/tick' );
+	}
+
+	/* ---------------- Ablauf ---------------- */
+
 	/**
 	 * Ein Abgleichschritt.
 	 *
-	 * @param bool $force Auch ausführen, wenn der Abgleich ausgeschaltet ist (Knopf „Jetzt abgleichen“).
+	 * @param bool   $force  Auch außerhalb von Modus und Zeitfenster ausführen (Knopf „Jetzt abgleichen“).
+	 * @param string $source wpcron, servercron oder manuell.
 	 * @return array Kurzbericht.
 	 */
-	public static function tick( $force = false ) {
-		$report = array( 'sitemap' => '', 'checked' => 0, 'errors' => 0, 'skipped' => '' );
-		if ( ! $force && ! ADM_Settings::get( 'enabled' ) ) {
-			$report['skipped'] = 'Abgleich ist ausgeschaltet.';
-			return $report;
+	public static function tick( $force = false, $source = 'manuell' ) {
+		$report = array( 'sitemap' => '', 'checked' => 0, 'errors' => 0, 'skipped' => '', 'source' => $source );
+		if ( ! $force ) {
+			$mode = ADM_Settings::get( 'mode' );
+			if ( 'off' === $mode ) {
+				$report['skipped'] = 'Abgleich ist ausgeschaltet.';
+				return $report;
+			}
+			if ( $mode !== $source ) {
+				$report['skipped'] = 'Aufruf passt nicht zum eingestellten Modus.';
+				return $report;
+			}
+			if ( ! ADM_Settings::in_window( (int) wp_date( 'G' ) ) ) {
+				$report['skipped'] = 'Außerhalb des Zeitfensters.';
+				return $report;
+			}
 		}
 		if ( get_transient( self::LOCK ) ) {
 			$report['skipped'] = 'Ein Abgleich läuft bereits.';
 			return $report;
 		}
-		set_transient( self::LOCK, 1, 4 * MINUTE_IN_SECONDS );
+		set_transient( self::LOCK, 1, self::TIME_BUDGET + 2 * MINUTE_IN_SECONDS );
 		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 240 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			@set_time_limit( self::TIME_BUDGET + 60 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 		}
+		$start = time();
 
 		try {
-			$last = (int) get_option( self::SITEMAP_READ, 0 );
-			if ( time() - $last > DAY_IN_SECONDS ) {
+			if ( self::sitemap_due() ) {
 				$report['sitemap'] = self::read_sitemap();
 			}
 			$rows  = ADM_DB::due( (int) ADM_Settings::get( 'batch_size' ) );
 			$delay = (int) ADM_Settings::get( 'delay' );
 			foreach ( $rows as $i => $row ) {
+				// Platz für einen weiteren Abruf (bis 20 s) lassen, Rest im nächsten Schritt.
+				if ( time() - $start > self::TIME_BUDGET - 25 ) {
+					$report['skipped'] = 'Zeitlimit erreicht, der Rest folgt im nächsten Schritt.';
+					break;
+				}
 				if ( $i > 0 && $delay > 0 ) {
 					sleep( $delay );
 				}
@@ -88,14 +174,32 @@ class ADM_Sync {
 		return $report;
 	}
 
+	/**
+	 * Sitemap fällig? Einmal pro Kalendertag ab der eingestellten Stunde (Ortszeit),
+	 * nach einem Fehler frühestens nach einer Stunde erneut, spätestens nach zwei Tagen in jedem Fall.
+	 */
+	public static function sitemap_due( $now = null ) {
+		$now   = null === $now ? time() : (int) $now;
+		$retry = (int) get_option( self::SITEMAP_RETRY, 0 );
+		if ( $retry ) {
+			return $now >= $retry;
+		}
+		$last = (int) get_option( self::SITEMAP_READ, 0 );
+		if ( ! $last || $now - $last > 2 * DAY_IN_SECONDS ) {
+			return true;
+		}
+		return wp_date( 'Y-m-d', $last ) !== wp_date( 'Y-m-d', $now ) && (int) wp_date( 'G', $now ) >= (int) ADM_Settings::get( 'sitemap_hour' );
+	}
+
 	/** Sitemap lesen und mit der Tabelle abgleichen. */
 	public static function read_sitemap() {
 		$res = self::fetch( ADM_Settings::get( 'sitemap_url' ) );
 		if ( is_wp_error( $res ) ) {
 			self::failure( 'Sitemap nicht abrufbar: ' . $res->get_error_message() );
-			update_option( self::SITEMAP_READ, time() - DAY_IN_SECONDS + HOUR_IN_SECONDS, false ); // in einer Stunde erneut
+			update_option( self::SITEMAP_RETRY, time() + HOUR_IN_SECONDS, false ); // in einer Stunde erneut
 			return 'Fehler: ' . $res->get_error_message();
 		}
+		delete_option( self::SITEMAP_RETRY );
 		$items = ADM_Parser::sitemap( $res );
 		$map   = ADM_DB::url_map();
 
@@ -130,9 +234,16 @@ class ADM_Sync {
 				$update['sitemap_lastmod'] = $it['lastmod'];
 				$update['next_check']      = $now;
 			}
+			if ( null !== $it['priority'] && ( null === $r['sitemap_priority'] || (float) $it['priority'] !== (float) $r['sitemap_priority'] ) ) {
+				$update['sitemap_priority'] = $it['priority'];
+				// Nur ein Aufstieg (alter Deal wird wieder aktiv) macht den Eintrag sofort fällig.
+				if ( null !== $r['sitemap_priority'] && (float) $it['priority'] > (float) $r['sitemap_priority'] ) {
+					$update['next_check'] = $now;
+				}
+			}
 			if ( $update ) {
 				ADM_DB::update( $r['id'], $update );
-				$changed++;
+				$changed += isset( $update['next_check'] ) ? 1 : 0;
 			}
 		}
 		if ( $new ) {

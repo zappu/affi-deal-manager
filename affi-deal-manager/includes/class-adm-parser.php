@@ -30,7 +30,12 @@ class ADM_Parser {
 			if ( preg_match( '#<lastmod>\s*(\d{4}-\d{2}-\d{2})#i', $block, $lm ) ) {
 				$lastmod = $lm[1];
 			}
-			$out[ $url ] = array( 'url' => $url, 'lastmod' => $lastmod );
+			// AppSumo vergibt 0.5 an aktive und 0.25 an alte Deals; damit werden aktive zuerst geprüft.
+			$priority = null;
+			if ( preg_match( '#<priority>\s*([01](?:\.\d+)?)\s*</priority>#i', $block, $pr ) ) {
+				$priority = number_format( max( 0, min( 1, (float) $pr[1] ) ), 2, '.', '' );
+			}
+			$out[ $url ] = array( 'url' => $url, 'lastmod' => $lastmod, 'priority' => $priority );
 		}
 		return array_values( $out );
 	}

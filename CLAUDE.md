@@ -12,7 +12,8 @@
   - `includes/class-adm-settings.php`: Einstellungen (Option `adm_settings`)
   - `includes/class-adm-db.php`: Tabelle `{prefix}adm_deals`, Status `neu`, `kaufbar`, `ausgelaufen`, `ignoriert`
   - `includes/class-adm-parser.php`: Sitemap und schema.org-Daten (JSON-LD) der AppSumo-Produktseiten
-  - `includes/class-adm-sync.php`: Abgleich per WP-Cron (`adm_sync_tick`, alle 5 Minuten), Fehler-Mail
+  - `includes/class-adm-sync.php`: Abgleich per WP-Cron (`adm_sync_tick`, Zeitplan `adm_every_<Minuten>`) oder Server-Cron (REST `affi-deal-manager/v1/tick`, Schlüssel `X-ADM-Key`), Zeitfenster, Sitemap-Uhrzeit, Fehler-Mail
+  - Reihenfolge der Prüfung: kaufbar, dann Sitemap-Priorität (AppSumo: 0.5 aktiv, 0.25 alt), dann ungeprüft, dann neuestes lastmod
   - `includes/class-adm-links.php`: Impact-Deep-Links, Shortcode `[adm_link]`
   - `includes/class-adm-admin.php`, `class-adm-list-table.php`: Backend
   - `includes/class-adm-updater.php`: Updates über update.json
@@ -36,7 +37,8 @@ Vor jedem Release prüfen, ob auf mediainfo.space eine neuere Version liegt als 
 
 1. Version erhöhen: Plugin-Kopf und `ADM_VERSION` in `affi-deal-manager.php`
 2. `affi-deal-manager/CHANGELOG.md` ergänzen
-3. ZIP `affi-deal-manager-<V>.zip` mit Wurzelordner `affi-deal-manager/` bauen (ohne `tests/`)
-4. `update.json`: `version`, `download_url`, `sha256`, `last_updated`, `sections.changelog`
-5. ZIP und danach `update.json` nach mediainfo.space/Thoka_Plugins/affi-deal-manager/ hochladen
-6. Commit, Tag `v<V>`, Push
+3. Tests: `php tests/run-sync-test.php <wp-pfad>` in einem Test-WordPress mit `tests/adm-test-http.php` als Mu-Plugin und `tests/fixtures/` als `mu-plugins/adm-fixtures/`
+4. ZIP `affi-deal-manager-<V>.zip` mit Wurzelordner `affi-deal-manager/` bauen (ohne `tests/`)
+5. `update.json`: `version`, `download_url`, `sha256`, `last_updated`, `sections.changelog`
+6. ZIP und danach `update.json` nach mediainfo.space/Thoka_Plugins/affi-deal-manager/ hochladen
+7. Commit, Tag `v<V>`, Push

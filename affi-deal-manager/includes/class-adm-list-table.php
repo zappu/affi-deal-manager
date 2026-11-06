@@ -144,7 +144,8 @@ class ADM_List_Table extends WP_List_Table {
 		$c      = isset( $colors[ $item['status'] ] ) ? $colors[ $item['status'] ] : '#646970';
 		$l      = isset( $labels[ $item['status'] ] ) ? $labels[ $item['status'] ] : $item['status'];
 		$out    = '<span style="color:' . esc_attr( $c ) . ';font-weight:600">' . esc_html( $l ) . '</span>';
-		if ( '' !== $item['last_error'] ) {
+		$out   .= '<br><span style="color:#646970">' . esc_html( ADM_DB::reason( $item ) ) . '</span>';
+		if ( '' !== $item['last_error'] && 'Gone' !== $item['availability'] ) {
 			$out .= '<br><span style="color:#b32d2e" title="' . esc_attr( $item['last_error'] ) . '">' . esc_html( wp_trim_words( $item['last_error'], 6 ) ) . '</span>';
 		}
 		return $out;

@@ -17,16 +17,18 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		if ( 3 === $scenario ) {
 			return $ok( '<urlset><url><loc>https://appsumo.com/</loc></url></urlset>' );
 		}
-		$urls = array( 'leadocean', 'neuronwriter', 'gone-deal' );
-		if ( 2 === $scenario ) {
-			$urls = array( 'neuronwriter', 'gone-deal' );
-		}
+		// Alte Deals stehen vorn (Priorität 0.25), aktive hinten (0.5): der Abgleich muss die aktiven zuerst prüfen.
+		$urls = array( 'gone-deal' => '0.25' );
 		for ( $i = 1; $i <= 58; $i++ ) {
-			$urls[] = 'old-deal-' . $i;
+			$urls[ 'old-deal-' . $i ] = '0.25';
+		}
+		$urls['neuronwriter'] = '0.5';
+		if ( 2 !== $scenario ) {
+			$urls['leadocean'] = '0.5';
 		}
 		$xml = '<?xml version="1.0"?><urlset><url><loc>https://appsumo.com/</loc></url><url><loc>https://appsumo.com/marketing/</loc></url>';
-		foreach ( $urls as $u ) {
-			$xml .= '<url><loc>https://appsumo.com/products/' . $u . '/</loc><lastmod>2026-11-01</lastmod><priority>0.25</priority></url>';
+		foreach ( $urls as $u => $prio ) {
+			$xml .= '<url><loc>https://appsumo.com/products/' . $u . '/</loc><lastmod>2026-11-01</lastmod><priority>' . $prio . '</priority></url>';
 		}
 		return $ok( $xml . '</urlset>' );
 	}

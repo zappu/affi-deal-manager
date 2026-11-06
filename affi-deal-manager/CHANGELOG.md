@@ -1,5 +1,16 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.2.0 (06.11.2026)
+
+- Zeitplan frei einstellbar: Modus (WP-Cron, Server-Cron, aus), Takt von 5 Minuten bis einmal am Tag, Zeitfenster (auch über Mitternacht), Uhrzeit für das Lesen der Sitemap
+- Server-Cron für Plesk über `/wp-json/affi-deal-manager/v1/tick` mit geheimem Schlüssel (Header `X-ADM-Key` oder Parameter `key`), fertiger Befehl in den Einstellungen
+- Aktive Deals zuerst: die Sitemap-Priorität (0.5 aktiv, 0.25 alt) wird gespeichert und bestimmt die Reihenfolge der Prüfung
+- Bis zu 100 Deals pro Schritt, jeder Schritt endet nach spätestens etwa 3 Minuten
+- Grund zum Status in der Deal-Liste (z. B. „Ausverkauft“, „Nicht mehr in der AppSumo-Sitemap“, „Seite bei AppSumo entfernt“, „Angebot läuft bis …“), auch als Feld `reason` in `adm_get_deal()`
+- Durchsatz-Schätzung in den Einstellungen, Zeitplan und letzter Schritt auf der Deal-Seite
+- Sitemap-Fehler: neuer Versuch nach einer Stunde, ohne den Tagesrhythmus zu verschieben
+- Update von 0.1.0: Einstellungen und Daten werden übernommen, Datenbank erhält die Spalte `sitemap_priority`
+
 ## 0.1.0 (05.11.2026)
 
 - Erste Version

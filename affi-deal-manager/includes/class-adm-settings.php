@@ -10,9 +10,33 @@ class ADM_Settings {
 
 	const OPTION = 'adm_settings';
 
+	/** Modus des Abgleichs. */
+	const MODES = array(
+		'wpcron'     => 'Automatisch über WP-Cron',
+		'servercron' => 'Über Server-Cron (Plesk)',
+		'off'        => 'Aus, nur manuell',
+	);
+
+	/** Takt in Minuten => Beschriftung. */
+	const INTERVALS = array(
+		5    => 'alle 5 Minuten',
+		10   => 'alle 10 Minuten',
+		15   => 'alle 15 Minuten',
+		30   => 'alle 30 Minuten',
+		60   => 'stündlich',
+		120  => 'alle 2 Stunden',
+		360  => 'alle 6 Stunden',
+		720  => 'alle 12 Stunden',
+		1440 => 'einmal am Tag',
+	);
+
 	public static function defaults() {
 		return array(
-			'enabled'               => 1,
+			'mode'                  => 'wpcron',
+			'interval'              => 5,
+			'window_start'          => 0,
+			'window_end'            => 24,
+			'sitemap_hour'          => 3,
 			'partner_id'            => '5548040',
 			'ad_id'                 => '2928062',
 			'program_id'            => '7443',
@@ -24,17 +48,34 @@ class ADM_Settings {
 			'recheck_other_days'    => 30,
 			'notify_email'          => get_option( 'admin_email' ),
 			'update_token'          => '',
+			'cron_secret'           => '',
 		);
 	}
 
 	public static function all() {
 		$saved = get_option( self::OPTION, array() );
-		return array_merge( self::defaults(), is_array( $saved ) ? $saved : array() );
+		$saved = is_array( $saved ) ? $saved : array();
+		// Version 0.1.0 kannte nur den Schalter „enabled“.
+		if ( ! isset( $saved['mode'] ) && isset( $saved['enabled'] ) ) {
+			$saved['mode'] = $saved['enabled'] ? 'wpcron' : 'off';
+		}
+		unset( $saved['enabled'] );
+		return array_merge( self::defaults(), $saved );
 	}
 
 	public static function get( $key ) {
 		$all = self::all();
 		return isset( $all[ $key ] ) ? $all[ $key ] : null;
+	}
+
+	/** Geheimer Schlüssel für den Server-Cron, wird beim ersten Bedarf erzeugt. */
+	public static function cron_secret( $regenerate = false ) {
+		$all = self::all();
+		if ( $regenerate || ! preg_match( '/^[A-Za-z0-9]{32}$/', (string) $all['cron_secret'] ) ) {
+			$all['cron_secret'] = wp_generate_password( 32, false, false );
+			update_option( self::OPTION, $all, false );
+		}
+		return $all['cron_secret'];
 	}
 
 	/**
@@ -44,23 +85,54 @@ class ADM_Settings {
 	 * @return array Gespeicherte Werte.
 	 */
 	public static function save( array $in ) {
-		$d   = self::defaults();
-		$out = array(
-			'enabled'               => empty( $in['enabled'] ) ? 0 : 1,
+		$d    = self::defaults();
+		$cur  = self::all();
+		$mode = isset( $in['mode'] ) ? sanitize_key( $in['mode'] ) : $cur['mode'];
+		$int  = isset( $in['interval'] ) ? (int) $in['interval'] : (int) $cur['interval'];
+		$out  = array(
+			'mode'                  => isset( self::MODES[ $mode ] ) ? $mode : ( isset( self::MODES[ $cur['mode'] ] ) ? $cur['mode'] : $d['mode'] ),
+			'interval'              => isset( self::INTERVALS[ $int ] ) ? $int : ( isset( self::INTERVALS[ (int) $cur['interval'] ] ) ? (int) $cur['interval'] : $d['interval'] ),
+			'window_start'          => self::range( $in, 'window_start', 0, 23, $cur['window_start'] ),
+			'window_end'            => self::range( $in, 'window_end', 1, 24, $cur['window_end'] ),
+			'sitemap_hour'          => self::range( $in, 'sitemap_hour', 0, 23, $cur['sitemap_hour'] ),
 			'partner_id'            => self::digits( $in, 'partner_id', $d['partner_id'] ),
 			'ad_id'                 => self::digits( $in, 'ad_id', $d['ad_id'] ),
 			'program_id'            => self::digits( $in, 'program_id', $d['program_id'] ),
 			'tracking_host'         => self::host( isset( $in['tracking_host'] ) ? $in['tracking_host'] : '', $d['tracking_host'] ),
 			'sitemap_url'           => self::appsumo_url( isset( $in['sitemap_url'] ) ? $in['sitemap_url'] : '', $d['sitemap_url'] ),
-			'batch_size'            => self::range( $in, 'batch_size', 1, 50, $d['batch_size'] ),
+			'batch_size'            => self::range( $in, 'batch_size', 1, 100, $d['batch_size'] ),
 			'delay'                 => self::range( $in, 'delay', 0, 10, $d['delay'] ),
 			'recheck_available_hrs' => self::range( $in, 'recheck_available_hrs', 6, 168, $d['recheck_available_hrs'] ),
 			'recheck_other_days'    => self::range( $in, 'recheck_other_days', 1, 180, $d['recheck_other_days'] ),
 			'notify_email'          => is_email( isset( $in['notify_email'] ) ? trim( (string) $in['notify_email'] ) : '' ) ? sanitize_email( $in['notify_email'] ) : $d['notify_email'],
 			'update_token'          => isset( $in['update_token'] ) ? sanitize_text_field( (string) $in['update_token'] ) : '',
+			'cron_secret'           => $cur['cron_secret'],
 		);
 		update_option( self::OPTION, $out, false );
 		return $out;
+	}
+
+	/**
+	 * Liegt die Stunde im Zeitfenster? Start gleich Ende oder 0 bis 24 heißt rund um die Uhr,
+	 * Start größer Ende geht über Mitternacht (z. B. 22 bis 6).
+	 */
+	public static function in_window( $hour, $start = null, $end = null ) {
+		$start = null === $start ? (int) self::get( 'window_start' ) : (int) $start;
+		$end   = null === $end ? (int) self::get( 'window_end' ) : (int) $end;
+		$hour  = (int) $hour;
+		if ( $start === $end % 24 ) {
+			return true;
+		}
+		return $start < $end ? ( $hour >= $start && $hour < $end ) : ( $hour >= $start || $hour < $end );
+	}
+
+	/** Stunden pro Tag im Zeitfenster. */
+	public static function window_hours() {
+		$n = 0;
+		for ( $h = 0; $h < 24; $h++ ) {
+			$n += self::in_window( $h ) ? 1 : 0;
+		}
+		return $n;
 	}
 
 	private static function digits( array $in, $key, $fallback ) {
@@ -70,7 +142,7 @@ class ADM_Settings {
 
 	private static function range( array $in, $key, $min, $max, $fallback ) {
 		if ( ! isset( $in[ $key ] ) || '' === trim( (string) $in[ $key ] ) ) {
-			return $fallback;
+			return (int) $fallback;
 		}
 		return max( $min, min( $max, (int) $in[ $key ] ) );
 	}

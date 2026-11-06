@@ -48,6 +48,7 @@ class ADM_DB {
 			was_available tinyint(1) NOT NULL DEFAULT 0,
 			in_sitemap tinyint(1) NOT NULL DEFAULT 1,
 			sitemap_lastmod date NULL,
+			sitemap_priority decimal(3,2) NULL,
 			post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			first_seen datetime NOT NULL,
 			last_checked datetime NULL,
@@ -66,8 +67,14 @@ class ADM_DB {
 	}
 
 	public static function maybe_upgrade() {
-		if ( get_option( 'adm_db_version' ) !== ADM_DB_VERSION ) {
-			self::install();
+		$old = get_option( 'adm_db_version' );
+		if ( $old === ADM_DB_VERSION ) {
+			return;
+		}
+		self::install();
+		if ( $old && version_compare( (string) $old, '2', '<' ) ) {
+			// Neue Spalte sitemap_priority: Sitemap beim nächsten Schritt neu lesen.
+			delete_option( 'adm_sitemap_read' );
 		}
 	}
 
@@ -101,13 +108,69 @@ class ADM_DB {
 			$v         = isset( $row[ $k ] ) ? json_decode( (string) $row[ $k ], true ) : null;
 			$row[ $k ] = is_array( $v ) ? $v : array();
 		}
+		$row['reason'] = self::reason( $row );
 		return $row;
 	}
 
-	/** @return array url => array(id, lastmod, status, in_sitemap) */
+	/**
+	 * Grund für den Status in Klartext, abgeleitet aus Verfügbarkeit, Sitemap, Angebotsende und Verlauf.
+	 *
+	 * @param array $row Zeile der Deal-Tabelle.
+	 * @return string
+	 */
+	public static function reason( array $row ) {
+		$status = isset( $row['status'] ) ? $row['status'] : '';
+		$avail  = isset( $row['availability'] ) ? (string) $row['availability'] : '';
+		$until  = ! empty( $row['available_until'] ) ? strtotime( $row['available_until'] . ' UTC' ) : 0;
+		$date   = function ( $ts ) {
+			return wp_date( 'd.m.Y', (int) $ts );
+		};
+
+		if ( 'neu' === $status ) {
+			return 'Noch nicht abgerufen';
+		}
+		if ( 'kaufbar' === $status ) {
+			$labels = array(
+				'PreOrder'            => 'Vorbestellung bei AppSumo',
+				'PreSale'             => 'Vorverkauf bei AppSumo',
+				'LimitedAvailability' => 'Bei AppSumo erhältlich, nur noch begrenzt',
+				'BackOrder'           => 'Bei AppSumo bestellbar, Lieferung später',
+			);
+			$text = isset( $labels[ $avail ] ) ? $labels[ $avail ] : 'Bei AppSumo erhältlich';
+			if ( $until && $until > time() ) {
+				$text .= ', Angebot läuft bis ' . $date( $until );
+			}
+			return $text;
+		}
+
+		// ausgelaufen oder ignoriert
+		if ( 'Gone' === $avail ) {
+			$why = 'Seite bei AppSumo entfernt';
+		} elseif ( isset( $row['in_sitemap'] ) && ! (int) $row['in_sitemap'] ) {
+			$why = 'Nicht mehr in der AppSumo-Sitemap';
+		} elseif ( $until && $until <= time() ) {
+			$why = 'Angebot endete am ' . $date( $until );
+		} else {
+			$labels = array(
+				'SoldOut'      => 'Ausverkauft',
+				'OutOfStock'   => 'Nicht verfügbar',
+				'Discontinued' => 'Vom Anbieter eingestellt',
+			);
+			$why = isset( $labels[ $avail ] ) ? $labels[ $avail ] : ( '' !== $avail ? 'Nicht kaufbar (' . $avail . ')' : 'Nicht kaufbar' );
+		}
+		if ( 'ignoriert' === $status ) {
+			return $why . ', nie kaufbar gesehen';
+		}
+		if ( ! empty( $row['last_changed'] ) ) {
+			$why .= ', ausgelaufen seit ' . $date( strtotime( $row['last_changed'] . ' UTC' ) );
+		}
+		return $why;
+	}
+
+	/** @return array url => array(id, lastmod, priority, status, in_sitemap) */
 	public static function url_map() {
 		global $wpdb;
-		$rows = $wpdb->get_results( 'SELECT id, url, sitemap_lastmod, status, in_sitemap FROM ' . self::table(), ARRAY_A );
+		$rows = $wpdb->get_results( 'SELECT id, url, sitemap_lastmod, sitemap_priority, status, in_sitemap FROM ' . self::table(), ARRAY_A );
 		$map  = array();
 		foreach ( (array) $rows as $r ) {
 			$map[ $r['url'] ] = $r;
@@ -118,7 +181,7 @@ class ADM_DB {
 	/**
 	 * Legt neue Sitemap-Einträge an.
 	 *
-	 * @param array $items Liste aus array( url, lastmod ).
+	 * @param array $items Liste aus array( url, lastmod, priority ).
 	 */
 	public static function insert_new( array $items ) {
 		global $wpdb;
@@ -127,10 +190,10 @@ class ADM_DB {
 			$values = array();
 			$args   = array();
 			foreach ( $chunk as $it ) {
-				$values[] = '(%s, %s, %s, %s, %s, %s)';
-				array_push( $args, $it['url'], self::slug_from_url( $it['url'] ), 'neu', $it['lastmod'] ? $it['lastmod'] : null, $now, $now );
+				$values[] = '(%s, %s, %s, %s, %s, %s, %s)';
+				array_push( $args, $it['url'], self::slug_from_url( $it['url'] ), 'neu', $it['lastmod'] ? $it['lastmod'] : null, isset( $it['priority'] ) ? $it['priority'] : null, $now, $now );
 			}
-			$sql = 'INSERT INTO ' . self::table() . ' (url, slug, status, sitemap_lastmod, first_seen, next_check) VALUES ' . implode( ', ', $values );
+			$sql = 'INSERT INTO ' . self::table() . ' (url, slug, status, sitemap_lastmod, sitemap_priority, first_seen, next_check) VALUES ' . implode( ', ', $values );
 			$wpdb->query( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
 	}
@@ -145,12 +208,15 @@ class ADM_DB {
 		return $wpdb->update( self::table(), $data, array( 'id' => (int) $id ) );
 	}
 
-	/** Fällige Einträge: kaufbare zuerst, dann nach Fälligkeit. */
+	/**
+	 * Fällige Einträge: kaufbare zuerst, dann hohe Sitemap-Priorität (aktive Deals),
+	 * dann ungeprüfte, dann frisch geänderte, dann nach Fälligkeit.
+	 */
 	public static function due( $limit ) {
 		global $wpdb;
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM ' . self::table() . " WHERE next_check IS NOT NULL AND next_check <= %s ORDER BY (status = 'kaufbar') DESC, (status = 'neu') DESC, next_check ASC LIMIT %d",
+				'SELECT * FROM ' . self::table() . " WHERE next_check IS NOT NULL AND next_check <= %s ORDER BY (status = 'kaufbar') DESC, sitemap_priority DESC, (status = 'neu') DESC, sitemap_lastmod DESC, next_check ASC LIMIT %d",
 				self::now(),
 				(int) $limit
 			),

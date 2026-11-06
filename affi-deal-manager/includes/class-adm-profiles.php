@@ -546,7 +546,6 @@ class ADM_Profiles {
 					$v['date'] ? 'veröffentlicht ' . wp_date( 'd.m.Y', strtotime( $v['date'] ) ) : '',
 					ADM_Sources::lang_label( isset( $v['lang'] ) ? $v['lang'] : '' ) ? 'Sprache: ' . ADM_Sources::lang_label( $v['lang'] ) : '',
 					! empty( $v['duration'] ) ? 'Länge: ' . self::minutes( (int) $v['duration'] ) : '',
-					'' !== $text ? 'Zusammenfassung automatisch aus dem Video erstellt' : '',
 					! empty( $v['promo'] ) ? 'Das Video wirbt für ein Angebot' : '',
 				) );
 				if ( $meta ) {

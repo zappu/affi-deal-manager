@@ -388,6 +388,14 @@ class ADM_Admin {
 					self::field( 'reviews_critical', 'Kritischste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
 					?>
 					<tr>
+						<th scope="row"><label for="adm-box_placement">Deal-Kasten</label></th>
+						<td><select id="adm-box_placement" name="adm[box_placement]">
+							<option value="content" <?php selected( $s['box_placement'], 'content' ); ?>>Im Text der Profile</option>
+							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>In der Seitenleiste des Profil-Layouts (im Text nur auf dem Handy)</option>
+						</select>
+						<p class="description">„Seitenleiste“ erst wählen, wenn das Elementor-Layout für Tool-Profile <code>[adm_deal_box placement="sidebar"]</code> und <code>[adm_deal_header]</code> enthält.</p></td>
+					</tr>
+					<tr>
 						<th scope="row">Videos zusammenfassen</th>
 						<td><label><input type="checkbox" name="adm[video_summaries]" value="1" <?php checked( $s['video_summaries'] ); ?>> Gemini sieht sich die ausgewählten YouTube-Videos an und fasst sie zusammen</label>
 						<p class="description">Braucht <code><?php echo esc_html( ADM_Settings::GEMINI_CONSTANT ); ?></code> in der wp-config.php (<?php echo '' !== ADM_Settings::gemini_key() ? 'gesetzt' : 'fehlt'; ?>). Schlüssel bei aistudio.google.com. Ohne Schlüssel zeigt das Profil die Videos ohne Inhaltsangabe.</p></td>

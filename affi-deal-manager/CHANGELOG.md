@@ -1,5 +1,15 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.0 (06.11.2026)
+
+- Neue Gestaltung „Verzeichnis“: Abschnitte als Karten, Farben und Schriften über CSS-Variablen (`--adm-*`), eigenes Stylesheet `assets/adm-frontend.css`
+- Neuer Baustein `[adm_deal_header]`: Brotkrumen, Titel, Kurzbeschreibung, Eckdaten als Chips (Preis, Bewertung, Rückgabe, Rubrik), Bild und Quellenzeile, für das Elementor-Layout
+- `[adm_deal_box placement="sidebar"]` für die Seitenleiste; Einstellung „Deal-Kasten in der Seitenleiste“: der Kasten im Text erscheint dann nur auf dem Handy, die Seite bekommt die Klasse `adm-layout`
+- Neuer Baustein `[adm_toc]`: Sprungmenü aus den Abschnitten
+- Profiltexte: „Auf einen Blick“ mit Stärken und Schwächen ganz oben, Abschnitte mit Sprungzielen, Fragen zum Aufklappen, Funktionen als Kacheln
+- Videos mit Zwei-Klick-Lösung: YouTube wird erst nach Klick geladen, mit Hinweis auf die Datenschutzerklärung
+- Rubriken bekommen ein Bild (Mediathek); es wird Beitragsbild der Profile ohne eigenes Bild
+
 ## 0.4.5 (06.11.2026)
 
 - Drei weitere Rubriken aus den AppSumo-Bereichen unter „Build & Code“: Entwickler-Tools, Formulare und App-Baukästen, Sicherheit und Datenschutz (dorthin auch Cookie-Banner); damit hat jeder kaufbare Deal eine Rubrik

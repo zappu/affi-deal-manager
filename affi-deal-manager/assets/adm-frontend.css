@@ -1,0 +1,84 @@
+/* Thoka Affi Deal Manager: Bausteine der Tool-Profile (Gestaltung „Verzeichnis“).
+   Farben und Schriften über CSS-Variablen, im Theme oder in Elementor überschreibbar. */
+:root{--adm-ink:#17212b;--adm-muted:#55616c;--adm-bg:#eef1f3;--adm-card:#fff;--adm-soft:#f5f7f8;--adm-line:#e4e9ec;--adm-accent:#0b5f67;--adm-accent-dark:#074349;--adm-lime:#e2f56b;--adm-pro-bg:#edf7f1;--adm-pro:#136b3c;--adm-con-bg:#fbf0ea;--adm-con:#9a3a12;--adm-radius:18px;--adm-head-font:"Space Grotesk",Inter,system-ui,sans-serif}
+.adm,.adm *,.adm-sec,.adm-sec *,.adm-glance,.adm-glance *{box-sizing:border-box}
+.adm a,.adm-sec a,.adm-glance a{color:var(--adm-accent)}.adm a:hover,.adm-sec a:hover{color:var(--adm-accent-dark)}
+.adm-sec,.adm-glance,.adm-box,.adm-head__card{background:var(--adm-card);border-radius:var(--adm-radius);padding:26px;margin:0 0 20px;color:var(--adm-ink)}
+.adm-sec>h2,.adm-glance>h2{font-family:var(--adm-head-font);font-size:1.45em;line-height:1.25;font-weight:700;margin:0 0 12px}
+.adm-sec>h3{font-size:1.05em;margin:16px 0 6px}
+.adm-sec p,.adm-glance p{margin:0 0 12px}.adm-sec ul{margin:0 0 12px;padding-left:22px}.adm-sec>*:last-child{margin-bottom:0}
+.adm-source{font-size:.85em;color:var(--adm-muted)}
+.adm-only-mobile{display:none}
+@media (max-width:860px){.adm-only-mobile{display:block}}
+/* Wenn das Theme keinen grauen Grund hat: Karten mit Rand */
+body:not(.adm-layout) .adm-sec,body:not(.adm-layout) .adm-glance{border:1px solid var(--adm-line)}
+
+/* Kopf */
+.adm-crumbs{font-size:.88em;color:var(--adm-muted);margin:0 0 14px}.adm-crumbs a{color:var(--adm-muted)}
+.adm-head__card{display:flex;flex-wrap:wrap;gap:28px;align-items:center;margin:0}
+.adm-head__img{flex:0 0 120px;width:120px;height:120px;border-radius:16px;overflow:hidden;background:#dfe7ea}
+.adm-head__img img{width:100%;height:100%;object-fit:cover;display:block}
+.adm-head__body{flex:999 1 420px;min-width:0}
+.adm-head h1{font-family:var(--adm-head-font);font-size:2.3em;line-height:1.12;font-weight:700;letter-spacing:-.02em;margin:0 0 8px;color:var(--adm-ink)}
+.adm-head__lead{font-size:1.1em;line-height:1.5;color:#3b4651;margin:0 0 16px}
+.adm-head__meta{font-size:.82em;color:var(--adm-muted);margin:12px 4px 20px}
+.adm-chips{display:flex;flex-wrap:wrap;gap:8px;font-size:.88em;font-weight:600}
+.adm-chip{padding:6px 12px;border-radius:999px;background:var(--adm-bg);color:var(--adm-ink);text-decoration:none}
+.adm-chip--price{background:var(--adm-lime)}.adm-chip--rubric{background:#e3f0f1;color:var(--adm-accent)!important}.adm-chip--off{background:#f4dcd3;color:var(--adm-con)}
+@media (max-width:600px){.adm-head h1{font-size:1.7em}.adm-head__img{flex-basis:80px;width:80px;height:80px}}
+
+/* Deal-Kasten */
+.adm-box{box-shadow:0 1px 2px rgba(23,33,43,.06)}
+.adm-box__head{display:flex;justify-content:space-between;align-items:center;font-size:.82em;font-weight:600;color:var(--adm-muted)}
+.adm-pill{padding:3px 10px;border-radius:999px;background:#e3f3ea;color:var(--adm-pro)}.adm-box--ausgelaufen .adm-pill,.adm-box--ignoriert .adm-pill{background:#f4dcd3;color:var(--adm-con)}
+.adm-box__name{font-family:var(--adm-head-font);font-size:1.5em;font-weight:700;margin:12px 0 2px}
+.adm-box__price{font-family:var(--adm-head-font);font-size:2.2em;font-weight:700;margin:0 0 12px;line-height:1.1}.adm-box__price small{font-family:inherit;font-size:.42em;font-weight:500;color:var(--adm-muted)}
+.adm-box__facts{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.9em}
+.adm-box__reason{font-size:.9em;color:#3b4651;margin:0 0 12px}
+.adm-btn{display:block;text-align:center;padding:14px 16px;border-radius:12px;background:var(--adm-accent);color:#fff!important;font-weight:700;text-decoration:none!important;border:0}
+.adm-btn:hover{background:var(--adm-accent-dark)}
+.adm-btn--quiet{background:var(--adm-soft);color:var(--adm-ink)!important;margin-top:8px}.adm-btn--quiet:hover{background:var(--adm-line)}
+.adm-box__small{font-size:.76em;line-height:1.5;color:var(--adm-muted);margin:12px 0 0}
+
+/* Auf einen Blick */
+.adm-glance__cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;line-height:1.5}
+.adm-glance__col{border-radius:14px;padding:18px}.adm-glance__col ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.adm-glance__col--pro{background:var(--adm-pro-bg)}.adm-glance__col--con{background:var(--adm-con-bg)}
+.adm-glance__label{font-weight:700;margin:0 0 10px!important}.adm-glance__col--pro .adm-glance__label{color:var(--adm-pro)}.adm-glance__col--con .adm-glance__label{color:var(--adm-con)}
+.adm-glance .adm-source{margin:14px 0 0}
+@media (max-width:600px){.adm-glance__cols{grid-template-columns:minmax(0,1fr)}}
+
+/* Inhaltsverzeichnis */
+.adm-toc{display:flex;flex-wrap:wrap;gap:8px;font-size:.88em;font-weight:600;margin:0 0 20px}
+.adm-toc a{padding:8px 14px;border-radius:999px;background:var(--adm-card);text-decoration:none}
+body:not(.adm-layout) .adm-toc a{background:var(--adm-soft)}
+
+/* Funktionen als Kacheln, wenn die Liste kurz ist */
+.adm-sec--features ul{list-style:none;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.adm-sec--features li{background:var(--adm-soft);border-radius:12px;padding:14px;line-height:1.5}
+@media (max-width:600px){.adm-sec--features ul{grid-template-columns:minmax(0,1fr)}}
+
+/* Videos mit Zwei-Klick-Lösung */
+.adm-video{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--adm-ink);margin:10px 0 12px}
+.adm-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.adm-video__consent{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;color:#fff}
+.adm-video__title{font-family:var(--adm-head-font);font-size:1.15em;font-weight:600;margin:0!important;color:#fff}
+.adm-video__btn{font:inherit;font-size:.95em;font-weight:700;padding:11px 20px;border-radius:10px;border:0;background:var(--adm-lime);color:var(--adm-ink);cursor:pointer}
+.adm-video__note{margin:0!important;max-width:460px;font-size:.8em;line-height:1.5;color:#b8c3cc}.adm-video__note a{color:var(--adm-lime)!important}
+
+/* Deal-Details */
+.adm-details{width:100%;border-collapse:collapse;margin:0}
+.adm-details th,.adm-details td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--adm-line);vertical-align:top;background:none}
+.adm-details th{width:38%;font-weight:600}.adm-details tr:last-child th,.adm-details tr:last-child td{border-bottom:0}
+
+/* Häufige Fragen */
+.adm-faq{display:flex;flex-direction:column;gap:8px}
+.adm-faq details{background:var(--adm-soft);border-radius:12px;padding:14px 16px}
+.adm-faq summary{font-weight:650;cursor:pointer}.adm-faq details p{margin:10px 0 0}
+
+/* Alternativen */
+.adm-alts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.adm-alt{display:block;background:var(--adm-soft);border-radius:14px;padding:16px;text-decoration:none!important;color:var(--adm-ink)!important}
+.adm-alt:hover{background:var(--adm-line)}
+.adm-alt__name{font-weight:700;margin:0 0 4px!important}.adm-alt__desc{font-size:.88em;color:var(--adm-muted);margin:0 0 10px!important}
+.adm-alt .adm-chip{display:inline-block;font-size:.8em;font-weight:600}

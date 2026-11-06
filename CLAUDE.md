@@ -20,7 +20,8 @@
   - `includes/class-adm-rubrics.php`: Taxonomie `adm_rubrik` (`/rubrik/`), Zuordnung AppSumo-Kategorie zu Rubrik (Regeln `RULES`, Filter `adm_rubric_rules`)
   - `includes/class-adm-style.php`: Stilprüfung nach „vermenschlichen“ (Hinweise in `_adm_style_hints`), Korrektur von großem „Du“
   - `includes/class-adm-profiles.php`: Beitragstyp `adm_tool` (`/tools/`), Warteschlange `adm_profile_queue`, Prompt und Zusammenbau der Profile
-  - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_box]`, `[adm_deal_details]`, `[adm_video]`, `[adm_alternatives]`
+  - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_header]`, `[adm_deal_box]` (placement content/sidebar), `[adm_toc]`, `[adm_deal_details]`, `[adm_video]` (Zwei-Klick), `[adm_alternatives]`; Gestaltung in `assets/adm-frontend.css` (Variablen `--adm-*`, Stil „Verzeichnis“)
+  - Elementor-Layout für `adm_tool` (Theme Builder, Single): oben `[adm_deal_header]`, darunter links der Beitragsinhalt, rechts `[adm_deal_box placement="sidebar"]`; Einstellung „Deal-Kasten“ dann auf „Seitenleiste“
   - `includes/class-adm-admin.php`, `class-adm-list-table.php`: Backend
   - `includes/class-adm-updater.php`: Updates über update.json
 - `tests/`: Testdaten und Testskript (nicht im ZIP)

@@ -64,6 +64,73 @@ class ADM_Rubrics {
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register' ), 5 );
 		add_action( 'init', array( __CLASS__, 'maybe_create_terms' ), 20 );
+		add_action( self::TAX . '_edit_form_fields', array( __CLASS__, 'image_field' ) );
+		add_action( 'edited_' . self::TAX, array( __CLASS__, 'save_image' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_assets' ) );
+	}
+
+	const IMAGE_META = 'adm_image';
+
+	/** Bild der Rubrik (Mediathek-ID); dient als Beitragsbild für Profile ohne eigenes Bild. */
+	public static function image_id( $term_id ) {
+		$id = (int) get_term_meta( (int) $term_id, self::IMAGE_META, true );
+		return $id && wp_attachment_is_image( $id ) ? $id : 0;
+	}
+
+	public static function image_html( $term_id, $size = 'medium' ) {
+		$id = self::image_id( $term_id );
+		return $id ? wp_get_attachment_image( $id, $size, false, array( 'alt' => '', 'loading' => 'eager' ) ) : '';
+	}
+
+	public static function admin_assets( $hook ) {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( 'term.php' === $hook && $screen && self::TAX === $screen->taxonomy ) {
+			wp_enqueue_media();
+		}
+	}
+
+	public static function image_field( $term ) {
+		$id = self::image_id( $term->term_id );
+		wp_nonce_field( 'adm_rubric_image', 'adm_rubric_image_nonce' );
+		?>
+		<tr class="form-field">
+			<th scope="row"><label for="adm-rubric-image">Bild der Rubrik</label></th>
+			<td>
+				<div id="adm-rubric-image-preview" style="margin-bottom:8px"><?php echo $id ? wp_get_attachment_image( $id, 'thumbnail' ) : ''; // phpcs:ignore ?></div>
+				<input type="hidden" id="adm-rubric-image" name="adm_rubric_image" value="<?php echo (int) $id; ?>">
+				<button type="button" class="button" id="adm-rubric-image-pick">Bild wählen</button>
+				<button type="button" class="button-link" id="adm-rubric-image-clear" style="margin-left:8px">entfernen</button>
+				<p class="description">Wird Beitragsbild der Tool-Profile dieser Rubrik, die kein eigenes Bild haben. KI-Bilder von Personen als Symbolbild kennzeichnen (Bildunterschrift oder Beschreibung).</p>
+				<script>
+				( function () {
+					var pick = document.getElementById( 'adm-rubric-image-pick' ), input = document.getElementById( 'adm-rubric-image' ), prev = document.getElementById( 'adm-rubric-image-preview' ), frame;
+					pick.addEventListener( 'click', function () {
+						frame = frame || wp.media( { title: 'Bild der Rubrik', library: { type: 'image' }, multiple: false } );
+						frame.off( 'select' ).on( 'select', function () {
+							var a = frame.state().get( 'selection' ).first().toJSON(), img = document.createElement( 'img' );
+							input.value = a.id; img.src = ( a.sizes && a.sizes.thumbnail ? a.sizes.thumbnail.url : a.url ); img.style.maxWidth = '150px';
+							prev.innerHTML = ''; prev.appendChild( img );
+						} );
+						frame.open();
+					} );
+					document.getElementById( 'adm-rubric-image-clear' ).addEventListener( 'click', function () { input.value = ''; prev.innerHTML = ''; } );
+				} )();
+				</script>
+			</td>
+		</tr>
+		<?php
+	}
+
+	public static function save_image( $term_id ) {
+		if ( ! isset( $_POST['adm_rubric_image_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['adm_rubric_image_nonce'] ) ), 'adm_rubric_image' ) || ! current_user_can( 'manage_categories' ) ) {
+			return;
+		}
+		$id = isset( $_POST['adm_rubric_image'] ) ? (int) $_POST['adm_rubric_image'] : 0;
+		if ( $id && wp_attachment_is_image( $id ) ) {
+			update_term_meta( (int) $term_id, self::IMAGE_META, $id );
+		} else {
+			delete_term_meta( (int) $term_id, self::IMAGE_META );
+		}
 	}
 
 	public static function register() {
@@ -155,6 +222,20 @@ class ADM_Rubrics {
 		}
 		if ( $term && ! is_wp_error( $term ) ) {
 			wp_set_object_terms( (int) $post_id, array( (int) $term->term_id ), self::TAX );
+		}
+	}
+
+	/** Beitragsbild aus der Rubrik setzen, wenn das Profil noch keins hat. */
+	public static function assign_image( $post_id ) {
+		if ( has_post_thumbnail( (int) $post_id ) ) {
+			return;
+		}
+		$terms = get_the_terms( (int) $post_id, self::TAX );
+		if ( $terms && ! is_wp_error( $terms ) ) {
+			$img = self::image_id( $terms[0]->term_id );
+			if ( $img ) {
+				set_post_thumbnail( (int) $post_id, $img );
+			}
 		}
 	}
 }

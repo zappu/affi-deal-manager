@@ -381,6 +381,7 @@ class ADM_Profiles {
 		update_post_meta( $post_id, '_adm_videos', $videos );
 		update_post_meta( $post_id, '_adm_style_hints', $hints );
 		ADM_Rubrics::assign( $post_id, $deal );
+		ADM_Rubrics::assign_image( $post_id );
 		// Rank Math
 		update_post_meta( $post_id, 'rank_math_title', $seo );
 		update_post_meta( $post_id, 'rank_math_description', self::plain( isset( $json['meta_beschreibung'] ) ? $json['meta_beschreibung'] : '', 170 ) );
@@ -441,8 +442,8 @@ class ADM_Profiles {
 			'passt_nicht'       => 'Array mit 2 bis 3 kurzen Sätzen: für wen es eher nicht passt',
 			'funktionen'        => $learn ? 'HTML: Inhalt des Kurses oder E-Books in 2 bis 3 <p> oder einer <ul>, nur aus den Daten' : 'HTML: die wichtigsten Funktionen in 2 bis 3 <p> oder einer <ul> mit kurzen <li>, nur aus den Daten (auch aus dem „inhalt“ der Videos)',
 			'kaeufer_text'      => 'HTML, 1 bis 2 <p>: Gesamtbild aus den Bewertungen, getrennt nach neuesten und kritischen Stimmen. Leer lassen, wenn keine Bewertungen geliefert wurden',
-			'kaeufer_lob'       => 'Array mit 2 bis 5 kurzen Punkten, die in den Bewertungen gelobt werden',
-			'kaeufer_kritik'    => 'Array mit 2 bis 5 kurzen Punkten, die in den Bewertungen kritisiert werden',
+			'kaeufer_lob'       => 'Array mit 3 bis 4 kurzen Punkten (je höchstens 12 Wörter), die mehrere Käufer loben, wichtigster zuerst; erscheinen oben als „Stärken“',
+			'kaeufer_kritik'    => 'Array mit 3 bis 4 kurzen Punkten (je höchstens 12 Wörter), die mehrere Käufer kritisieren, wichtigster zuerst; erscheinen oben als „Schwächen“',
 			'videos'            => $has_summary ? 'Array mit je { "id": Video-ID, "text": 1 bis 2 Sätze aus „inhalt“: was im Video gezeigt wird }, nur für Videos mit „inhalt“' : 'leeres Array',
 			'faq'               => 'Array mit { "frage", "antwort" }: die FAQ von AppSumo auf Deutsch, sinngemäß und gekürzt; höchstens 6',
 			'auszug'            => '1 bis 2 Sätze als Kurzbeschreibung für Übersichten',
@@ -454,22 +455,45 @@ class ADM_Profiles {
 			. wp_json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
 	}
 
-	/** Setzt den Beitrag aus den KI-Abschnitten und den Live-Shortcodes zusammen. */
+	/**
+	 * Setzt den Beitrag aus den KI-Abschnitten und den Live-Shortcodes zusammen.
+	 * Jeder Abschnitt ist eine <section class="adm-sec" id="…"> (Karte im Layout, Ziel im Sprungmenü).
+	 * Jeder Abschnitt steht in einer Zeile, damit wpautop keine Umbrüche hineinsetzt.
+	 */
 	public static function build_content( array $deal, array $j, array $videos, array $stats ) {
 		$name  = isset( $deal['title'] ) ? $deal['title'] : ADM_DB::display_name( $deal );
 		$learn = in_array( $deal['deal_type'], array( 'kurs', 'ebook' ), true );
+		$date  = wp_date( 'd.m.Y', isset( $stats['date'] ) ? (int) $stats['date'] : time() );
 		$h     = array();
-		$h[]   = '[adm_deal_box]';
-		$h[]   = '<h2>Kurz erklärt</h2>' . self::html( $j['kurz'] );
+		$h[]   = '[adm_deal_box placement="content"]';
+
+		// Auf einen Blick: die wichtigsten Punkte aus Lob und Kritik der Käufer.
+		$lob = array_slice( self::items( isset( $j['kaeufer_lob'] ) ? $j['kaeufer_lob'] : array() ), 0, 4 );
+		$kri = array_slice( self::items( isset( $j['kaeufer_kritik'] ) ? $j['kaeufer_kritik'] : array() ), 0, 4 );
+		if ( $stats['used'] > 0 && ( $lob || $kri ) ) {
+			$cols = '';
+			if ( $lob ) {
+				$cols .= '<div class="adm-glance__col adm-glance__col--pro"><p class="adm-glance__label">Stärken</p>' . self::ul( $lob ) . '</div>';
+			}
+			if ( $kri ) {
+				$cols .= '<div class="adm-glance__col adm-glance__col--con"><p class="adm-glance__label">Schwächen</p>' . self::ul( $kri ) . '</div>';
+			}
+			$h[] = '<section class="adm-glance" id="auf-einen-blick"><h2>Auf einen Blick</h2><div class="adm-glance__cols">' . $cols . '</div><p class="adm-source">Aus den neuesten und den kritischsten Bewertungen bei AppSumo, Stand ' . esc_html( $date ) . '.</p></section>';
+		}
+		$h[] = '[adm_toc]';
+
+		$h[] = '<section class="adm-sec" id="kurz-erklaert"><h2>Kurz erklärt</h2>' . self::html( $j['kurz'] ) . '</section>';
 
 		$fit = self::items( isset( $j['passt'] ) ? $j['passt'] : array() );
 		$not = self::items( isset( $j['passt_nicht'] ) ? $j['passt_nicht'] : array() );
 		if ( $fit || $not ) {
-			$h[] = '<h2>Für wen ' . esc_html( $name ) . ' passt</h2>' . self::ul( $fit )
-				. ( $not ? '<h3>Für wen eher nicht</h3>' . self::ul( $not ) : '' );
+			$h[] = '<section class="adm-sec" id="fuer-wen"><h2>Für wen ' . esc_html( $name ) . ' passt</h2>' . self::ul( $fit )
+				. ( $not ? '<h3>Für wen eher nicht</h3>' . self::ul( $not ) : '' ) . '</section>';
 		}
 		if ( ! empty( $j['funktionen'] ) ) {
-			$h[] = '<h2>' . ( $learn ? 'Inhalt' : 'Funktionen' ) . '</h2>' . self::html( $j['funktionen'] );
+			$f     = self::html( $j['funktionen'] );
+			$tiles = ! $learn && false === strpos( $f, '<p>' ) && substr_count( $f, '<li>' ) >= 3 && substr_count( $f, '<li>' ) <= 8;
+			$h[]   = '<section class="adm-sec' . ( $tiles ? ' adm-sec--features' : '' ) . '" id="' . ( $learn ? 'inhalt' : 'funktionen' ) . '"><h2>' . ( $learn ? 'Inhalt' : 'Funktionen' ) . '</h2>' . $f . '</section>';
 		}
 
 		if ( $stats['used'] > 0 ) {
@@ -479,18 +503,9 @@ class ADM_Profiles {
 				number_format_i18n( max( $stats['total'], $stats['used'] ) ),
 				$stats['newest'],
 				$stats['critical'],
-				wp_date( 'd.m.Y', $stats['date'] )
+				$date
 			);
-			$sec = '<h2>Was Käufer sagen</h2><p class="adm-source">' . esc_html( $intro ) . '</p>' . self::html( isset( $j['kaeufer_text'] ) ? $j['kaeufer_text'] : '' );
-			$lob = self::items( isset( $j['kaeufer_lob'] ) ? $j['kaeufer_lob'] : array() );
-			$kri = self::items( isset( $j['kaeufer_kritik'] ) ? $j['kaeufer_kritik'] : array() );
-			if ( $lob ) {
-				$sec .= '<h3>Häufig gelobt</h3>' . self::ul( $lob );
-			}
-			if ( $kri ) {
-				$sec .= '<h3>Häufige Kritik</h3>' . self::ul( $kri );
-			}
-			$h[] = $sec;
+			$h[] = '<section class="adm-sec" id="kaeufer"><h2>Was Käufer sagen</h2><p class="adm-source">' . esc_html( $intro ) . '</p>' . self::html( isset( $j['kaeufer_text'] ) ? $j['kaeufer_text'] : '' ) . '</section>';
 		}
 
 		if ( $videos ) {
@@ -500,9 +515,10 @@ class ADM_Profiles {
 					$texts[ (string) $v['id'] ] = self::plain( $v['text'], 600 );
 				}
 			}
-			$sec = '<h2>Videos zu ' . esc_html( $name ) . '</h2>';
+			$sec = '<section class="adm-sec" id="videos"><h2>Videos zu ' . esc_html( $name ) . '</h2>';
 			foreach ( $videos as $v ) {
-				$sec  .= '<h3>' . esc_html( self::video_title( $v['title'] ) ) . '</h3>[adm_video id="' . esc_attr( $v['id'] ) . '"]';
+				$title = self::video_title( $v['title'] );
+				$sec  .= '<h3>' . esc_html( $title ) . '</h3>[adm_video id="' . esc_attr( $v['id'] ) . '" title="' . esc_attr( str_replace( array( '"', '[', ']' ), '', $title ) ) . '"]';
 				$text  = ! empty( $v['summary'] ) ? ( ! empty( $texts[ $v['id'] ] ) ? $texts[ $v['id'] ] : self::plain( $v['summary'], 600 ) ) : '';
 				if ( '' !== $text ) {
 					$sec .= '<p>' . esc_html( $text ) . '</p>';
@@ -516,24 +532,26 @@ class ADM_Profiles {
 					! empty( $v['promo'] ) ? 'Das Video wirbt für ein Angebot' : '',
 				) );
 				if ( $meta ) {
-					$sec .= '<p class="adm-source">' . esc_html( implode( ', ', $meta ) ) . '</p>';
+					$sec .= '<p class="adm-source">' . esc_html( implode( ' · ', $meta ) ) . '</p>';
 				}
 			}
-			$h[] = $sec;
+			$h[] = $sec . '</section>';
 		}
 
-		$h[] = '<h2>Deal-Details</h2>[adm_deal_details]';
+		$h[] = '<section class="adm-sec" id="details"><h2>Deal-Details</h2>[adm_deal_details]</section>';
 
-		$faq = '';
+		$faq   = '';
+		$first = true;
 		foreach ( isset( $j['faq'] ) && is_array( $j['faq'] ) ? array_slice( $j['faq'], 0, 6 ) : array() as $f ) {
 			$q = isset( $f['frage'] ) ? self::plain( $f['frage'], 200 ) : '';
 			$a = isset( $f['antwort'] ) ? self::plain( $f['antwort'], 800 ) : '';
 			if ( '' !== $q && '' !== $a ) {
-				$faq .= '<h3>' . esc_html( $q ) . '</h3><p>' . esc_html( $a ) . '</p>';
+				$faq  .= '<details' . ( $first ? ' open' : '' ) . '><summary>' . esc_html( $q ) . '</summary><p>' . esc_html( $a ) . '</p></details>';
+				$first = false;
 			}
 		}
 		if ( $faq ) {
-			$h[] = '<h2>Häufige Fragen</h2>' . $faq;
+			$h[] = '<section class="adm-sec" id="faq"><h2>Häufige Fragen</h2><div class="adm-faq">' . $faq . '</div></section>';
 		}
 		$h[] = '[adm_alternatives heading="1"]';
 		return implode( "\n\n", $h );

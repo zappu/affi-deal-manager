@@ -104,7 +104,7 @@ class ADM_Sync {
 			return new WP_REST_Response( array( 'skipped' => 'Modus „Server-Cron“ ist nicht eingeschaltet.' ), 409 );
 		}
 		$report = self::tick( false, 'servercron' );
-		if ( class_exists( 'ADM_Profiles' ) && ADM_Profiles::queue() ) {
+		if ( class_exists( 'ADM_Profiles' ) && ADM_Profiles::queue() && ! ADM_Profiles::paused() ) {
 			ADM_Profiles::process_queue();
 			$report['profiles_left'] = count( ADM_Profiles::queue() );
 		}

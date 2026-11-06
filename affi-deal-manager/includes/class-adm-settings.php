@@ -32,9 +32,16 @@ class ADM_Settings {
 
 	/** KI-Anbieter => Beschriftung, Standardmodell und Konstante in der wp-config.php. */
 	const AI_PROVIDERS = array(
-		'openrouter' => array( 'label' => 'OpenRouter', 'model' => 'anthropic/claude-sonnet-4.5', 'constant' => 'THOKA_OPENROUTER_API_KEY' ),
+		'openrouter' => array( 'label' => 'OpenRouter', 'model' => 'anthropic/claude-sonnet-5.5', 'constant' => 'THOKA_OPENROUTER_API_KEY' ),
 		'openai'     => array( 'label' => 'OpenAI', 'model' => 'gpt-4.1', 'constant' => 'THOKA_OPENAI_API_KEY' ),
-		'anthropic'  => array( 'label' => 'Anthropic', 'model' => 'claude-sonnet-4-5', 'constant' => 'THOKA_ANTHROPIC_API_KEY' ),
+		'anthropic'  => array( 'label' => 'Anthropic', 'model' => 'claude-sonnet-5-5', 'constant' => 'THOKA_ANTHROPIC_API_KEY' ),
+	);
+
+	/** Vorschläge für das Modellfeld (Stand 06.11.2026, OpenRouter-Modellliste). Freie Eingabe bleibt möglich. */
+	const MODEL_SUGGESTIONS = array(
+		'openrouter' => array( 'anthropic/claude-sonnet-5.5', '~anthropic/claude-sonnet-latest', 'anthropic/claude-opus-5.5', 'anthropic/claude-haiku-5.5' ),
+		'openai'     => array( 'gpt-4.1' ),
+		'anthropic'  => array( 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5' ),
 	);
 
 	/** YouTube-Schlüssel (optional) in der wp-config.php. */
@@ -162,7 +169,7 @@ class ADM_Settings {
 			'update_token'          => isset( $in['update_token'] ) ? sanitize_text_field( (string) $in['update_token'] ) : '',
 			'cron_secret'           => $cur['cron_secret'],
 			'ai_provider'           => isset( $in['ai_provider'], self::AI_PROVIDERS[ $in['ai_provider'] ] ) ? $in['ai_provider'] : $cur['ai_provider'],
-			'ai_model'              => isset( $in['ai_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._:\/\-]/', '', (string) $in['ai_model'] ), 0, 100 ) : $cur['ai_model'],
+			'ai_model'              => isset( $in['ai_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._:~@\/\-]/', '', (string) $in['ai_model'] ), 0, 100 ) : $cur['ai_model'],
 			'title_template'        => self::template( $in, 'title_template', $cur ),
 			'seo_title_template'    => self::template( $in, 'seo_title_template', $cur ),
 			'batch_profiles'        => self::range( $in, 'batch_profiles', 1, 50, $cur['batch_profiles'] ),

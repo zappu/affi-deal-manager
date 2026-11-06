@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.4.2 (06.11.2026)
+
+- Fehler behoben: Modellnamen mit Tilde (OpenRouter-Aliasse wie `~anthropic/claude-sonnet-latest`) wurden beim Speichern verstümmelt
+- Standardmodelle: OpenRouter `anthropic/claude-sonnet-5.5`, Anthropic `claude-sonnet-5-5`; Vorschlagsliste im Modellfeld
+- Warteschlange hält bei Einstellungsfehlern (falsches Modell, fehlender oder ungültiger Schlüssel, HTTP 400/401/403/404) an, statt Aufträge zu verbrauchen; weiter nach dem Speichern der Einstellungen oder mit „Nächstes jetzt erzeugen“
+- Server-Cron: angezeigter Befehl mit `-k` (fehlende Zertifikatsdatei in Plesk), `-d ""` (ModSecurity) und eigener Kennung, Hinweis auf das `%`-Zeichen
+
 ## 0.4.1 (06.11.2026)
 
 - API-Schlüssel nur noch in der `wp-config.php`: `THOKA_OPENROUTER_API_KEY`, `THOKA_OPENAI_API_KEY`, `THOKA_ANTHROPIC_API_KEY` und optional `THOKA_YOUTUBE_API_KEY`. Die Namen sind für alle Thoka-Plugins gedacht

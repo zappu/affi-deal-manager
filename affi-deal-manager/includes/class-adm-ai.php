@@ -78,7 +78,9 @@ class ADM_AI {
 			if ( is_array( $json ) && isset( $json['error'] ) ) {
 				$msg = is_array( $json['error'] ) && isset( $json['error']['message'] ) ? $json['error']['message'] : ( is_string( $json['error'] ) ? $json['error'] : '' );
 			}
-			return new WP_Error( 'adm_ai_http', 'KI-Anfrage fehlgeschlagen (HTTP ' . $code . ')' . ( $msg ? ': ' . wp_strip_all_tags( substr( (string) $msg, 0, 200 ) ) : '' ) );
+			// 400, 401, 403, 404: Einstellungsfehler (Modell, Schlüssel), die sich nicht von selbst lösen.
+			$err = in_array( $code, array( 400, 401, 403, 404 ), true ) ? 'adm_ai_config' : 'adm_ai_http';
+			return new WP_Error( $err, 'KI-Anfrage fehlgeschlagen (HTTP ' . $code . ')' . ( $msg ? ': ' . wp_strip_all_tags( substr( (string) $msg, 0, 200 ) ) : '' ) );
 		}
 		if ( 'anthropic' === $provider ) {
 			$text = '';

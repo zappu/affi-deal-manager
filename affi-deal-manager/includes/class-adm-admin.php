@@ -66,6 +66,7 @@ class ADM_Admin {
 			ADM_Settings::cron_secret();
 		}
 		ADM_Sync::reschedule();
+		ADM_Profiles::resume();
 		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG_SETTINGS, 'saved' => 1 ), admin_url( 'admin.php' ) ) );
 		exit;
 	}
@@ -115,6 +116,7 @@ class ADM_Admin {
 			$msg = $n . ' Profile vorgemerkt.';
 		} elseif ( 'run' === $do ) {
 			$before = count( ADM_Profiles::queue() );
+			delete_option( ADM_Profiles::PAUSED );
 			ADM_Profiles::process_queue();
 			$log = get_option( ADM_Profiles::LOG, array() );
 			$msg = $before ? 'Ein Profil verarbeitet: ' . ( isset( $log[0]['msg'] ) ? ( 'ok' === $log[0]['msg'] ? 'erfolgreich' : $log[0]['msg'] ) : '' ) : 'Die Warteschlange ist leer.';
@@ -339,7 +341,8 @@ class ADM_Admin {
 					?>
 					<h2>Server-Cron in Plesk</h2>
 					<p>In Plesk unter <em>Geplante Aufgaben</em> eine neue Aufgabe anlegen. Variante 1 als <em>Befehl ausführen</em> (empfohlen, der Schlüssel landet nicht im Server-Log):</p>
-					<p><code style="display:block;padding:8px;word-break:break-all">curl -fsS -X POST -H "X-ADM-Key: <?php echo esc_html( $secret ); ?>" <?php echo esc_html( $url ); ?></code></p>
+					<p><code style="display:block;padding:8px;word-break:break-all">curl -fsSk -A "ThokaCron/1.0" -X POST -d "" -H "X-ADM-Key: <?php echo esc_html( $secret ); ?>" <?php echo esc_html( $url ); ?></code></p>
+					<p class="description"><code>-k</code> umgeht fehlende Zertifikatsdateien in der Plesk-Umgebung (der Server ruft sich selbst auf), <code>-d ""</code> verhindert eine Sperre durch ModSecurity. Im Befehl kein <code>%</code>-Zeichen verwenden, Plesk schneidet dort ab. Für einen Testlauf <code>-fsSk</code> durch <code>-sSk</code> ersetzen, dann zeigt Plesk die Antwort.</p>
 					<p>Variante 2 als <em>URL abrufen</em>:</p>
 					<p><code style="display:block;padding:8px;word-break:break-all"><?php echo esc_html( add_query_arg( 'key', $secret, $url ) ); ?></code></p>
 					<p class="description">Zeitplan in Plesk zum Beispiel alle 5 oder 15 Minuten. Das Zeitfenster oben gilt auch hier. Gib den Schlüssel nicht weiter.</p>
@@ -373,6 +376,7 @@ class ADM_Admin {
 						<td><?php self::key_status(); ?></td>
 					</tr>
 					<?php
+					self::model_suggestions();
 					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
 					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
 					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Möglichst unter 60 Zeichen.' );
@@ -412,6 +416,9 @@ class ADM_Admin {
 		?>
 		<div style="background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:12px 16px;margin:0 0 16px">
 			<h2 style="margin:0 0 8px;font-size:15px">Tool-Profile</h2>
+			<?php if ( ADM_Profiles::paused() && $queue ) : ?>
+				<div class="notice notice-error inline"><p><strong>Warteschlange angehalten:</strong> <?php echo esc_html( ADM_Profiles::paused() ); ?> Nach dem Speichern der Einstellungen oder mit „Nächstes jetzt erzeugen“ geht es weiter.</p></div>
+			<?php endif; ?>
 			<?php if ( ! ADM_AI::configured() ) : ?>
 				<p><?php echo esc_html( ADM_AI::missing_key_message() ); ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#adm-ki">Zu den Einstellungen</a></p>
 			<?php endif; ?>
@@ -443,13 +450,14 @@ class ADM_Admin {
 	private static function field( $key, $label, array $s, $help, $type = 'text' ) {
 		$id = 'adm-' . $key;
 		printf(
-			'<tr><th scope="row"><label for="%1$s">%2$s</label></th><td><input type="%3$s" class="regular-text" id="%1$s" name="adm[%4$s]" value="%5$s">%6$s</td></tr>',
+			'<tr><th scope="row"><label for="%1$s">%2$s</label></th><td><input type="%3$s" class="regular-text" id="%1$s" name="adm[%4$s]" value="%5$s"%7$s>%6$s</td></tr>',
 			esc_attr( $id ),
 			esc_html( $label ),
 			esc_attr( $type ),
 			esc_attr( $key ),
 			esc_attr( (string) $s[ $key ] ),
-			$help ? '<p class="description">' . esc_html( $help ) . '</p>' : ''
+			$help ? '<p class="description">' . esc_html( $help ) . '</p>' : '',
+			'ai_model' === $key ? ' list="adm-models" autocomplete="off"' : ''
 		);
 	}
 
@@ -504,6 +512,17 @@ class ADM_Admin {
 			return (int) round( $secs / HOUR_IN_SECONDS ) . ' Stunden';
 		}
 		return (int) round( $secs / DAY_IN_SECONDS ) . ' Tagen';
+	}
+
+	/** Vorschlagsliste für das Modellfeld (je Anbieter). */
+	private static function model_suggestions() {
+		echo '<datalist id="adm-models">';
+		foreach ( ADM_Settings::MODEL_SUGGESTIONS as $provider => $models ) {
+			foreach ( $models as $m ) {
+				printf( '<option value="%s" label="%s">', esc_attr( $m ), esc_attr( ADM_Settings::AI_PROVIDERS[ $provider ]['label'] ) );
+			}
+		}
+		echo '</datalist>';
 	}
 
 	/** Status der Schlüssel aus der wp-config.php, ohne die Schlüssel zu zeigen. */

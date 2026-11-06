@@ -16,6 +16,7 @@ class ADM_Profiles {
 	const QUEUE_HOOK = 'adm_profile_tick';
 	const LOG        = 'adm_profile_log';
 	const LOCK       = 'adm_profile_lock';
+	const PAUSED     = 'adm_profile_paused';
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register' ) );
@@ -154,6 +155,9 @@ class ADM_Profiles {
 			$added++;
 		}
 		update_option( self::QUEUE, $q, false );
+		if ( $added ) {
+			delete_option( self::PAUSED );
+		}
 		if ( $q && ! wp_next_scheduled( self::QUEUE_HOOK ) ) {
 			wp_schedule_single_event( time() + 5, self::QUEUE_HOOK );
 		}
@@ -166,6 +170,7 @@ class ADM_Profiles {
 
 	public static function clear_queue() {
 		update_option( self::QUEUE, array(), false );
+		delete_option( self::PAUSED );
 	}
 
 	/** Ein Profil darf erzeugt werden, wenn es noch keins gibt oder das vorhandene ein Entwurf ist. */
@@ -193,7 +198,7 @@ class ADM_Profiles {
 			return;
 		}
 		$q = self::queue();
-		if ( ! $q ) {
+		if ( ! $q || self::paused() ) {
 			return;
 		}
 		set_transient( self::LOCK, 1, 5 * MINUTE_IN_SECONDS );
@@ -202,11 +207,30 @@ class ADM_Profiles {
 			update_option( self::QUEUE, $q, false );
 			$res = self::generate( $id );
 			self::log( $id, is_wp_error( $res ) ? $res->get_error_message() : 'ok', is_wp_error( $res ) ? 0 : (int) $res );
+			// Einstellungsfehler: Auftrag zurücklegen und anhalten, statt die ganze Warteschlange zu verbrauchen.
+			if ( is_wp_error( $res ) && in_array( $res->get_error_code(), array( 'adm_ai_key', 'adm_ai_config' ), true ) ) {
+				update_option( self::QUEUE, array_merge( array( (int) $id ), self::queue() ), false );
+				update_option( self::PAUSED, $res->get_error_message(), false );
+				return;
+			}
 		} finally {
 			delete_transient( self::LOCK );
 		}
 		if ( self::queue() ) {
 			wp_schedule_single_event( time() + 10, self::QUEUE_HOOK );
+		}
+	}
+
+	/** Grund, warum die Warteschlange angehalten ist, oder leer. */
+	public static function paused() {
+		return (string) get_option( self::PAUSED, '' );
+	}
+
+	/** Nach geänderten Einstellungen oder per Knopf wieder anlaufen lassen. */
+	public static function resume() {
+		delete_option( self::PAUSED );
+		if ( self::queue() && ! wp_next_scheduled( self::QUEUE_HOOK ) ) {
+			wp_schedule_single_event( time() + 5, self::QUEUE_HOOK );
 		}
 	}
 

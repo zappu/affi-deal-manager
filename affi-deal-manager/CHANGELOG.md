@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.10 (06.11.2026)
+
+- Kopfbereich: unter den Eckdaten steht nur noch „Stand <Datum>“
+
 ## 0.5.9 (06.11.2026)
 
 - „Auf einen Blick“ ohne Quellenzeile (die Quelle steht unter „Was Käufer sagen“)

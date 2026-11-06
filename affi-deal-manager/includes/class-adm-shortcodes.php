@@ -189,12 +189,9 @@ class ADM_Shortcodes {
 		if ( $term ) {
 			$chips[] = $term->count ? '<a class="adm-chip adm-chip--rubric" href="' . esc_url( get_term_link( $term ) ) . '">' . esc_html( $term->name ) . '</a>' : '<span class="adm-chip adm-chip--rubric">' . esc_html( $term->name ) . '</span>';
 		}
-		$stats  = get_post_meta( $post->ID, '_adm_review_stats', true );
-		$videos = get_post_meta( $post->ID, '_adm_videos', true );
 		$gen    = (int) get_post_meta( $post->ID, '_adm_generated', true );
 		$meta   = array_filter( array(
 			$gen ? 'Stand ' . wp_date( 'd.m.Y', $gen ) : '',
-			is_array( $stats ) && ! empty( $stats['used'] ) ? 'Auswertung von ' . number_format_i18n( (int) $stats['used'] ) . ' Bewertungen bei AppSumo' . ( is_array( $videos ) && $videos ? ' und ' . count( $videos ) . ( 1 === count( $videos ) ? ' Video' : ' Videos' ) : '' ) : '',
 		) );
 		$lead = has_excerpt( $post ) ? get_the_excerpt( $post ) : $deal['description'];
 
@@ -203,7 +200,7 @@ class ADM_Shortcodes {
 		$out .= '<div class="adm-head__body">' . ( '0' !== (string) $atts['title'] ? '<h1>' . esc_html( get_the_title( $post ) ) . '</h1>' : '' );
 		$out .= '' !== trim( (string) $lead ) ? '<p class="adm-head__lead">' . esc_html( wp_strip_all_tags( $lead ) ) . '</p>' : '';
 		$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
-		$out .= '</div></div><p class="adm-head__meta">' . esc_html( implode( ' · ', $meta ) ) . '</p></header>';
+		$out .= '</div></div>' . ( $meta ? '<p class="adm-head__meta">' . esc_html( implode( ' · ', $meta ) ) . '</p>' : '' ) . '</header>';
 		return $out;
 	}
 

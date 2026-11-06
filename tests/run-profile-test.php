@@ -84,7 +84,7 @@ adm_check( false !== strpos( $c, '<h2>Videos zu LeadOcean</h2>' ) && false === s
 adm_check( false !== strpos( $c, 'Das Video zeigt die Einrichtung auf Deutsch.' ) && false !== strpos( $c, 'Kanal: Kanal DE' ) && false !== strpos( $c, 'Sprache: Deutsch' ) && false !== strpos( $c, 'Länge: 8 Minuten' ) && false !== strpos( $c, 'Zusammenfassung automatisch aus dem Video erstellt' ), 'Video: Zusammenfassung mit Kanal, Sprache, Länge und Kennzeichnung' );
 adm_check( false !== strpos( $c, 'Sprache: Englisch' ) && 1 === substr_count( $c, 'Das Video wirbt für ein Angebot' ), 'Werbevideo laut Gemini gekennzeichnet' );
 $gem = $GLOBALS['adm_test_gemini_requests'];
-adm_check( 2 === count( $gem ) && 'gem-key' === $gem[0]['headers']['x-goog-api-key'] && 'https://www.youtube.com/watch?v=DEvideo0001' === $gem[0]['body']['contents'][0]['parts'][0]['file_data']['file_uri'] && 'MEDIA_RESOLUTION_LOW' === $gem[0]['body']['generationConfig']['mediaResolution'] && false !== strpos( $gem[0]['url'], 'gemini-flash-latest:generateContent' ) && false === strpos( $gem[0]['url'], 'gem-key' ), 'Gemini: YouTube-Adresse, niedrige Auflösung, Schlüssel im Header' );
+adm_check( 2 === count( $gem ) && 'gem-key' === $gem[0]['headers']['x-goog-api-key'] && 'https://www.youtube.com/watch?v=DEvideo0001' === $gem[0]['body']['contents'][0]['parts'][0]['file_data']['file_uri'] && 'MEDIA_RESOLUTION_LOW' === $gem[0]['body']['generationConfig']['mediaResolution'] && false !== strpos( $gem[0]['url'], 'gemini-3.6-flash:generateContent' ) && false === strpos( $gem[0]['url'], 'gem-key' ), 'Gemini: YouTube-Adresse, niedrige Auflösung, Schlüssel im Header' );
 adm_check( false !== strpos( implode( ' ', $GLOBALS['adm_test_yt_requests'] ), 'youtube/v3/videos' ), 'YouTube: Details (Dauer, Sprache) abgefragt' );
 adm_check( false !== strpos( $c, 'für die du Daten' ) && false === strpos( $c, 'für die Du' ), 'Großes „Du“ mitten im Satz klein geschrieben' );
 $hints = get_post_meta( $post->ID, '_adm_style_hints', true );
@@ -193,11 +193,11 @@ ADM_Profiles::clear_queue();
 
 // Gemini überlastet: zweimal das eingestellte Modell, dann das Ausweichmodell
 update_option( 'adm_test_gemini', 'overloaded' );
-delete_transient( 'adm_vsum_DEvideo0001' );
+delete_transient( 'adm_vsum2_DEvideo0001' );
 $GLOBALS['adm_test_gemini_requests'] = array();
 $sum = ADM_AI::video_summary( 'DEvideo0001', 'LeadOcean' );
 $urls = wp_list_pluck( $GLOBALS['adm_test_gemini_requests'], 'url' );
-adm_check( ! is_wp_error( $sum ) && 3 === count( $urls ) && false !== strpos( $urls[2], 'gemini-flash-lite-latest' ), 'Gemini überlastet: Wiederholung, dann Ausweichmodell' );
+adm_check( ! is_wp_error( $sum ) && 3 === count( $urls ) && false !== strpos( $urls[2], 'gemini-3.5-flash-lite' ), 'Gemini überlastet: Wiederholung, dann Ausweichmodell' );
 delete_option( 'adm_test_gemini' );
 
 // Abgebrochener Lauf (Zeitlimit) wird gemeldet

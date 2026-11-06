@@ -107,7 +107,7 @@ class ADM_Settings {
 			'reviews_critical'      => 40,
 			'video_summaries'       => 1,
 			'box_placement'         => 'content',
-			'gemini_model'          => 'gemini-flash-latest',
+			'gemini_model'          => 'gemini-3.6-flash',
 		);
 	}
 

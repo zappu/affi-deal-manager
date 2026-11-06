@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.5 (06.11.2026)
+
+- Videozusammenfassung: Gemini meldet die im Video gesprochene Sprache (vorher kam die Sprache der Zusammenfassung zurück, englische Videos standen als „Deutsch“ da); alter Zwischenspeicher wird nicht mehr verwendet
+- Standardmodell `gemini-3.6-flash`, Ausweichmodell `gemini-3.5-flash-lite` (die „-latest“-Aliasse waren im Gratis-Kontingent dauerhaft überlastet)
+
 ## 0.5.4 (06.11.2026)
 
 - Videozusammenfassung: Ist Gemini überlastet (HTTP 429, 500, 503), wartet das Plugin kurz und versucht es erneut, danach mit dem kleineren Modell `gemini-flash-lite-latest`

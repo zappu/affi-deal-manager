@@ -19,5 +19,5 @@ wp_clear_scheduled_hook( 'adm_sync_tick' );
 wp_clear_scheduled_hook( 'adm_profile_tick' );
 delete_transient( 'adm_profile_lock' );
 // Zwischengespeicherte Videozusammenfassungen.
-$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_adm\\_vsum\\_%' OR option_name LIKE '\\_transient\\_timeout\\_adm\\_vsum\\_%'" ); // phpcs:ignore WordPress.DB
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_adm\\_vsum%' OR option_name LIKE '\\_transient\\_timeout\\_adm\\_vsum%'" ); // phpcs:ignore WordPress.DB
 // Rubriken (Begriffe) bleiben wie die Tool-Profile erhalten.

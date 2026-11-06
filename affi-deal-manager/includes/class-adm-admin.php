@@ -401,7 +401,7 @@ class ADM_Admin {
 						<td><label><input type="checkbox" name="adm[video_summaries]" value="1" <?php checked( $s['video_summaries'] ); ?>> Gemini sieht sich die ausgewählten YouTube-Videos an und fasst sie zusammen</label>
 						<p class="description">Braucht <code><?php echo esc_html( ADM_Settings::GEMINI_CONSTANT ); ?></code> in der wp-config.php (<?php echo '' !== ADM_Settings::gemini_key() ? 'gesetzt' : 'fehlt'; ?>). Schlüssel bei aistudio.google.com. Ohne Schlüssel zeigt das Profil die Videos ohne Inhaltsangabe.</p></td>
 					</tr>
-					<?php self::field( 'gemini_model', 'Gemini-Modell', $s, 'Standard: gemini-flash-latest.' ); ?>
+					<?php self::field( 'gemini_model', 'Gemini-Modell', $s, 'Standard: gemini-3.6-flash. Ist das Modell überlastet, weicht das Plugin auf gemini-3.5-flash-lite aus.' ); ?>
 					<tr>
 						<th scope="row">Automatik</th>
 						<td><label><input type="checkbox" name="adm[auto_profiles]" value="1" <?php checked( $s['auto_profiles'] ); ?>> Neue kaufbare Software-Deals bekommen automatisch einen Profil-Entwurf</label>

@@ -50,8 +50,8 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		}
 		$uri  = isset( $body['contents'][0]['parts'][0]['file_data']['file_uri'] ) ? $body['contents'][0]['parts'][0]['file_data']['file_uri'] : '';
 		$en   = false !== strpos( $uri, 'ENvideo0002' );
-		$out  = $en ? array( 'text' => 'Der Sprecher zeigt die Suche und lobt die Datenmenge. Am Ende verweist er auf einen Rabatt.', 'werbung' => true, 'sprache' => 'en' )
-			: array( 'text' => 'Im Video wird LeadOcean eingerichtet und die Suche nach Firmen gezeigt. Du siehst auch den Export als CSV.', 'werbung' => false, 'sprache' => 'de' );
+		$out  = $en ? array( 'text' => 'Der Sprecher zeigt die Suche und lobt die Datenmenge. Am Ende verweist er auf einen Rabatt.', 'werbung' => true, 'videosprache' => 'en' )
+			: array( 'text' => 'Im Video wird LeadOcean eingerichtet und die Suche nach Firmen gezeigt. Du siehst auch den Export als CSV.', 'werbung' => false, 'videosprache' => 'de' );
 		return $json( array( 'candidates' => array( array( 'content' => array( 'parts' => array( array( 'text' => wp_json_encode( $out, JSON_UNESCAPED_UNICODE ) ) ) ) ) ) ) );
 	}
 	// YouTube: Details zu Videos

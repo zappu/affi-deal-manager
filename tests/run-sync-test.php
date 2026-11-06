@@ -69,7 +69,7 @@ delete_option( ADM_Sync::SITEMAP_READ );
 $req->set_header( 'X-ADM-Key', $secret );
 $res = rest_do_request( $req );
 $data = $res->get_data();
-adm_check( 200 === $res->get_status() && 2 === $data['checked'] && 'servercron' === $data['source'], 'REST mit Schlüssel: Schritt ausgeführt (' . wp_json_encode( $data ) . ')' );
+adm_check( 200 === $res->get_status() && 2 === $data['checked'] && 'servercron' === $data['source'] && get_option( 'adm_last_servercron' ) >= time() - 60, 'REST mit Schlüssel: Schritt ausgeführt (' . wp_json_encode( $data ) . ')' );
 // Reihenfolge: aktive Deals (Priorität 0.5) stehen in der Sitemap hinten, werden aber zuerst geprüft.
 $lo = adm_get_deal( 'leadocean' );
 $nw = adm_get_deal( 'neuronwriter' );

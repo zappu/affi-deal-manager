@@ -183,8 +183,9 @@ class ADM_Admin {
 			<?php if ( 'off' === ADM_Settings::get( 'mode' ) ) : ?>
 				<div class="notice notice-warning"><p>Der automatische Abgleich ist ausgeschaltet (Einstellungen).</p></div>
 			<?php endif; ?>
-			<?php if ( 'servercron' === ADM_Settings::get( 'mode' ) && ( empty( $tick['time'] ) || 'servercron' !== ( isset( $tick['report']['source'] ) ? $tick['report']['source'] : '' ) ) ) : ?>
-				<div class="notice notice-warning"><p>Modus „Server-Cron“ ist eingestellt, aber es kam noch kein Aufruf vom Server. Den Befehl findest du in den Einstellungen.</p></div>
+			<?php $last_sc = (int) get_option( 'adm_last_servercron', 0 ); ?>
+			<?php if ( 'servercron' === ADM_Settings::get( 'mode' ) && ( ! $last_sc || $last_sc < time() - HOUR_IN_SECONDS ) ) : ?>
+				<div class="notice notice-warning"><p><?php echo esc_html( $last_sc ? 'Modus „Server-Cron“: Der letzte Aufruf vom Server war am ' . self::date( $last_sc ) . '. Prüfe die geplante Aufgabe in Plesk.' : 'Modus „Server-Cron“ ist eingestellt, aber es kam noch kein Aufruf vom Server. Den Befehl findest du in den Einstellungen.' ); ?></p></div>
 			<?php endif; ?>
 			<?php if ( $health['failures'] >= ADM_Sync::FAIL_LIMIT ) : ?>
 				<div class="notice notice-error"><p><strong>Abgleich gestört:</strong> <?php echo esc_html( $health['last_error'] ); ?></p></div>

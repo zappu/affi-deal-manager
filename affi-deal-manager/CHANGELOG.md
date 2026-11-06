@@ -1,5 +1,13 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.2 (06.11.2026)
+
+- Videozusammenfassung: nur Videos bis 25 Minuten, Zeitlimit 100 Sekunden, nach einer Zeitüberschreitung keine zweite Anfrage im selben Lauf
+- Ungültiges oder abgeschnittenes JSON der KI: ein zweiter Versuch mit mehr Platz
+- Sperre der Profil-Erzeugung 15 statt 5 Minuten, damit sich lange Läufe nicht überschneiden; ein Lauf, den der Server abbricht, erscheint als „Abgebrochen“ im Protokoll
+- Protokoll trennt Stilhinweise und Video-Hinweise
+- Hinweis „kein Aufruf vom Server“ nur noch, wenn der Server-Cron seit über einer Stunde nicht kam (ein manueller Schritt löste ihn fälschlich aus)
+
 ## 0.5.1 (06.11.2026)
 
 - Profil-Layout aus dem Plugin: Bei der Einstellung „Profil-Layout“ legt das Plugin Kopfbereich und Seitenleiste mit Deal-Kasten selbst um den Beitragsinhalt. Theme oder Elementor-Vorlage geben nur noch den Inhalt aus (Elementor kann Shortcode-Widgets über seine Schnittstelle nicht setzen)

@@ -191,6 +191,21 @@ ADM_Profiles::clear_queue();
 adm_check( array( (int) $lo['id'] ) === ADM_Profiles::draft_deals() && 1 === ADM_Profiles::enqueue( ADM_Profiles::draft_deals() ), 'Entwürfe neu vormerken (Other Leads ist veröffentlicht und fehlt)' );
 ADM_Profiles::clear_queue();
 
+// Abgebrochener Lauf (Zeitlimit) wird gemeldet
+ADM_Profiles::clear_queue();
+update_option( ADM_Profiles::CURRENT, array( 'id' => (int) $lo['id'], 'started' => time() - 1200 ) );
+delete_transient( ADM_Profiles::LOCK );
+ADM_Profiles::process_queue();
+$log = get_option( ADM_Profiles::LOG );
+adm_check( false === get_option( ADM_Profiles::CURRENT ) && false !== strpos( $log[0]['msg'], 'Zeitlimit' ), 'Abgebrochener Lauf erscheint im Protokoll' );
+
+// Abgeschnittene KI-Antwort: zweiter Versuch mit mehr Platz
+update_option( 'adm_test_ai', 'truncated_once' );
+$GLOBALS['adm_test_ai_requests'] = array();
+$r = ADM_Profiles::generate( (int) $lo['id'] );
+adm_check( ! is_wp_error( $r ) && 2 === count( $GLOBALS['adm_test_ai_requests'] ) && 12000 === $GLOBALS['adm_test_ai_requests'][1]['body']['max_tokens'], 'Abgeschnittenes JSON: zweiter Versuch mit mehr Platz' );
+update_option( 'adm_test_ai', 'ok' );
+
 // Fehlerfälle
 update_option( 'adm_test_ai', 'error' );
 $r = ADM_Profiles::generate( (int) $lo['id'] );

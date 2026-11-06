@@ -32,6 +32,10 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 			'auszug'            => 'Firmen- und Kontaktdaten als API ohne Abo.',
 			'meta_beschreibung' => 'LeadOcean ohne Abo: Firmen- und Kontaktdaten per API und MCP, was Käufer loben und kritisieren und welche Alternativen es gibt.',
 		), JSON_UNESCAPED_UNICODE );
+		if ( 'truncated_once' === get_option( 'adm_test_ai' ) ) {
+			update_option( 'adm_test_ai', 'ok' );
+			$answer = substr( $answer, 0, 200 );
+		}
 		if ( false !== strpos( $url, 'anthropic' ) ) {
 			return $json( array( 'content' => array( array( 'type' => 'text', 'text' => $answer ) ) ) );
 		}

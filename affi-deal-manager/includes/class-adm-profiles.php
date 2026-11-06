@@ -17,6 +17,7 @@ class ADM_Profiles {
 	const LOG        = 'adm_profile_log';
 	const LOCK       = 'adm_profile_lock';
 	const PAUSED     = 'adm_profile_paused';
+	const CURRENT    = 'adm_profile_current';
 
 	/** Stilhinweise der letzten Erzeugung (für das Protokoll). */
 	private static $last_hints = array();
@@ -238,17 +239,25 @@ class ADM_Profiles {
 		if ( get_transient( self::LOCK ) ) {
 			return;
 		}
+		// Ein Lauf, der ohne Ergebnis endete (Zeitlimit des Servers), wird im Protokoll vermerkt.
+		$current = get_option( self::CURRENT );
+		if ( is_array( $current ) && ! empty( $current['id'] ) ) {
+			delete_option( self::CURRENT );
+			self::log( (int) $current['id'], 'Abgebrochen, vermutlich Zeitlimit des Servers. Mit „Text neu erzeugen“ erneut versuchen.', 0 );
+		}
 		$q = self::queue();
 		if ( ! $q || self::paused() ) {
 			return;
 		}
-		set_transient( self::LOCK, 1, 5 * MINUTE_IN_SECONDS );
+		set_transient( self::LOCK, 1, 15 * MINUTE_IN_SECONDS );
 		try {
 			$id = array_shift( $q );
 			update_option( self::QUEUE, $q, false );
+			update_option( self::CURRENT, array( 'id' => (int) $id, 'started' => time() ), false );
 			self::$last_hints = array();
 			$res              = self::generate( $id );
-			self::log( $id, is_wp_error( $res ) ? $res->get_error_message() : ( self::$last_hints ? 'ok; Stilhinweise: ' . implode( '; ', self::$last_hints ) : 'ok' ), is_wp_error( $res ) ? 0 : (int) $res );
+			delete_option( self::CURRENT );
+			self::log( $id, is_wp_error( $res ) ? $res->get_error_message() : ( self::$last_hints ? 'ok; ' . implode( '; ', self::$last_hints ) : 'ok' ), is_wp_error( $res ) ? 0 : (int) $res );
 			// Einstellungsfehler: Auftrag zurücklegen und anhalten, statt die ganze Warteschlange zu verbrauchen.
 			if ( is_wp_error( $res ) && in_array( $res->get_error_code(), array( 'adm_ai_key', 'adm_ai_config' ), true ) ) {
 				update_option( self::QUEUE, array_merge( array( (int) $id ), self::queue() ), false );
@@ -328,19 +337,28 @@ class ADM_Profiles {
 		}
 		$videos = ADM_Sources::videos( $deal, 2 );
 
-		$text = ADM_AI::chat( self::system_prompt(), self::user_prompt( $deal, $reviews, $videos ), 7000 );
-		if ( is_wp_error( $text ) ) {
-			return $text;
+		$user = self::user_prompt( $deal, $reviews, $videos );
+		$json = null;
+		// Ein zweiter Versuch mit mehr Platz, falls die Antwort abgeschnitten oder kein JSON war.
+		foreach ( array( 8000, 12000 ) as $try => $tokens ) {
+			$text = ADM_AI::chat( self::system_prompt(), $try ? $user . "\n\nWichtig: Antworte ausschließlich mit vollständigem, gültigem JSON." : $user, $tokens );
+			if ( is_wp_error( $text ) ) {
+				return $text;
+			}
+			$json = ADM_AI::parse_json( $text );
+			if ( $json && ! empty( $json['kurz'] ) ) {
+				break;
+			}
 		}
-		$json = ADM_AI::parse_json( $text );
 		if ( ! $json || empty( $json['kurz'] ) ) {
-			return new WP_Error( 'adm_profile_json', 'Die KI-Antwort war kein gültiges JSON.' );
+			return new WP_Error( 'adm_profile_json', 'Die KI-Antwort war auch beim zweiten Versuch kein gültiges JSON.' );
 		}
 		$json  = ADM_Style::fix_all( $json );
 		$hints = ADM_Style::check( self::flatten( $json ) );
+		$notes = array();
 		foreach ( $videos as $v ) {
 			if ( ! empty( $v['summary_error'] ) ) {
-				$hints[] = 'Video ' . $v['id'] . ': ' . $v['summary_error'];
+				$notes[] = 'Video ' . $v['id'] . ' ohne Zusammenfassung (' . ( false !== stripos( $v['summary_error'], 'timed out' ) ? 'Zeitüberschreitung bei Gemini' : $v['summary_error'] ) . ')';
 			}
 		}
 
@@ -387,7 +405,7 @@ class ADM_Profiles {
 		update_post_meta( $post_id, 'rank_math_description', self::plain( isset( $json['meta_beschreibung'] ) ? $json['meta_beschreibung'] : '', 170 ) );
 		update_post_meta( $post_id, 'rank_math_focus_keyword', mb_strtolower( $name ) . ' ohne abo,' . mb_strtolower( $name ) . ' lifetime deal' );
 		ADM_DB::update( (int) $deal['id'], array( 'post_id' => (int) $post_id ) );
-		self::$last_hints = $hints;
+		self::$last_hints = array_merge( $hints ? array( 'Stilhinweise: ' . implode( '; ', $hints ) ) : array(), $notes );
 		return (int) $post_id;
 	}
 

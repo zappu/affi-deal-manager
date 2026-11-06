@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ADM_Sources {
 
+	/** Videos bis zu dieser Länge lässt das Plugin von Gemini zusammenfassen. */
+	const MAX_SUMMARY_SECONDS = 1500;
+
 	/**
 	 * Bewertungen eines Deals: die neuesten und die kritischsten als getrennte Gruppen.
 	 *
@@ -130,11 +133,16 @@ class ADM_Sources {
 		usort( $list, function ( $a, $b ) {
 			return $b['score'] <=> $a['score'] ?: strcmp( (string) $b['date'], (string) $a['date'] );
 		} );
-		$picked = array();
+		$picked  = array();
+		$timeout = false;
 		foreach ( array_slice( $list, 0, $max ) as $v ) {
 			$v['summary'] = '';
-			if ( ADM_AI::video_configured() && ( ! $v['duration'] || $v['duration'] <= 45 * MINUTE_IN_SECONDS ) ) {
+			// Lange Videos dauern bei Gemini zu lange; nach einer Zeitüberschreitung keine weitere Anfrage im selben Durchlauf.
+			if ( ! $timeout && ADM_AI::video_configured() && ( ! $v['duration'] || $v['duration'] <= self::MAX_SUMMARY_SECONDS ) ) {
 				$sum = ADM_AI::video_summary( $v['id'], $name );
+				if ( is_wp_error( $sum ) && false !== stripos( $sum->get_error_message(), 'timed out' ) ) {
+					$timeout = true;
+				}
 				if ( ! is_wp_error( $sum ) ) {
 					$v['summary'] = $sum['text'];
 					$v['promo']   = $v['promo'] || $sum['promo'];

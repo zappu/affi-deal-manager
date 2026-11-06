@@ -150,7 +150,7 @@ class ADM_AI {
 		$res = wp_remote_post(
 			'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model ) . ':generateContent',
 			array(
-				'timeout' => 150,
+				'timeout' => 100,
 				'headers' => array( 'x-goog-api-key' => $key, 'Content-Type' => 'application/json' ),
 				'body'    => wp_json_encode( $body ),
 			)

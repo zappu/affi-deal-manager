@@ -223,6 +223,16 @@ class ADM_Profiles {
 		return array_map( 'intval', (array) $rows );
 	}
 
+	/** Deals, deren Profil ein Entwurf ist (für „Alle Entwürfe neu erzeugen“). */
+	public static function draft_deals() {
+		global $wpdb;
+		$rows = $wpdb->get_col( $wpdb->prepare(
+			'SELECT d.id FROM ' . ADM_DB::table() . " d INNER JOIN {$wpdb->posts} p ON p.ID = d.post_id AND p.post_type = %s AND p.post_status IN ('draft','pending') WHERE d.name <> '' ORDER BY d.review_count DESC",
+			self::CPT
+		) );
+		return array_map( 'intval', (array) $rows );
+	}
+
 	/** Ein Auftrag pro Durchlauf; danach den nächsten einplanen. */
 	public static function process_queue() {
 		if ( get_transient( self::LOCK ) ) {

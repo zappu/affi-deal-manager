@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.4.5 (06.11.2026)
+
+- Drei weitere Rubriken aus den AppSumo-Bereichen unter „Build & Code“: Entwickler-Tools, Formulare und App-Baukästen, Sicherheit und Datenschutz (dorthin auch Cookie-Banner); damit hat jeder kaufbare Deal eine Rubrik
+- Knopf „Alle Entwürfe neu erzeugen“: merkt alle Profil-Entwürfe zum Neuschreiben vor, veröffentlichte Profile bleiben unangetastet
+- Protokoll zeigt „Entwurf erstellt“ auch bei Stilhinweisen
+
 ## 0.4.4 (06.11.2026)
 
 - Anzeigename: Zusätze aus AppSumo-Namen fallen weg („WP Reset Pro Plan“ → „WP Reset Pro“, „Screpy - Plus Exclusive“ → „Screpy“, bei Software auch der Werbezusatz nach Bindestrich oder Doppelpunkt); eigener Anzeigename im Kasten „Deal bei AppSumo“ am Profil; Datenbank Version 5 (Spalte `display_name`)

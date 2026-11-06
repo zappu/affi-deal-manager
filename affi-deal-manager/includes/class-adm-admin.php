@@ -105,7 +105,7 @@ class ADM_Admin {
 		check_admin_referer( 'adm_profile' );
 		$do  = isset( $_REQUEST['do'] ) ? sanitize_key( $_REQUEST['do'] ) : '';
 		$msg = '';
-		if ( ! ADM_AI::configured() && in_array( $do, array( 'one', 'best', 'run' ), true ) ) {
+		if ( ! ADM_AI::configured() && in_array( $do, array( 'one', 'best', 'run', 'drafts' ), true ) ) {
 			$msg = ADM_AI::missing_key_message();
 		} elseif ( 'one' === $do ) {
 			$id  = isset( $_REQUEST['id'] ) ? (int) $_REQUEST['id'] : 0;
@@ -114,12 +114,15 @@ class ADM_Admin {
 		} elseif ( 'best' === $do ) {
 			$n   = ADM_Profiles::enqueue( ADM_Profiles::best_candidates( (int) ADM_Settings::get( 'batch_profiles' ) ) );
 			$msg = $n . ' Profile vorgemerkt.';
+		} elseif ( 'drafts' === $do ) {
+			$n   = ADM_Profiles::enqueue( ADM_Profiles::draft_deals() );
+			$msg = $n . ' Entwürfe zum Neuschreiben vorgemerkt. Veröffentlichte Profile bleiben unangetastet.';
 		} elseif ( 'run' === $do ) {
 			$before = count( ADM_Profiles::queue() );
 			delete_option( ADM_Profiles::PAUSED );
 			ADM_Profiles::process_queue();
 			$log = get_option( ADM_Profiles::LOG, array() );
-			$msg = $before ? 'Ein Profil verarbeitet: ' . ( isset( $log[0]['msg'] ) ? ( 'ok' === $log[0]['msg'] ? 'erfolgreich' : $log[0]['msg'] ) : '' ) : 'Die Warteschlange ist leer.';
+			$msg = $before ? 'Ein Profil verarbeitet: ' . ( isset( $log[0]['msg'] ) ? self::log_text( $log[0]['msg'], 'erfolgreich' ) : '' ) : 'Die Warteschlange ist leer.';
 		} elseif ( 'clear' === $do ) {
 			ADM_Profiles::clear_queue();
 			$msg = 'Warteschlange geleert.';
@@ -432,6 +435,8 @@ class ADM_Admin {
 				<?php wp_nonce_field( 'adm_profile' ); ?>
 				<input type="hidden" name="action" value="adm_profile">
 				<button class="button button-primary" name="do" value="best" <?php disabled( ! $cands ); ?>>Profile für die <?php echo (int) $n; ?> besten Software-Deals vormerken (<?php echo (int) $cands; ?> ohne Profil)</button>
+				<?php $drafts = count( ADM_Profiles::draft_deals() ); ?>
+				<button class="button" name="do" value="drafts" <?php disabled( ! $drafts ); ?>>Alle Entwürfe neu erzeugen (<?php echo (int) $drafts; ?>)</button>
 				<button class="button" name="do" value="run" <?php disabled( ! $queue ); ?>>Nächstes jetzt erzeugen</button>
 				<button class="button" name="do" value="clear" <?php disabled( ! $queue ); ?>>Warteschlange leeren</button>
 			</form>
@@ -444,7 +449,7 @@ class ADM_Admin {
 					$deal = ADM_DB::get( (int) $l['deal'] );
 					$name = $deal ? $deal['name'] : '#' . (int) $l['deal'];
 					$link = $l['post'] ? ' <a href="' . esc_url( get_edit_post_link( (int) $l['post'], 'url' ) ) . '">bearbeiten</a>' : '';
-					echo '<li>' . esc_html( self::date( $l['time'] ) . ', ' . $name . ': ' . ( 'ok' === $l['msg'] ? 'Entwurf erstellt' : $l['msg'] ) ) . $link . '</li>'; // phpcs:ignore
+					echo '<li>' . esc_html( self::date( $l['time'] ) . ', ' . $name . ': ' . self::log_text( $l['msg'], 'Entwurf erstellt' ) ) . $link . '</li>'; // phpcs:ignore
 				}
 				?>
 				</ul></details>
@@ -556,6 +561,15 @@ class ADM_Admin {
 			echo esc_html( "define( '" . $r[1] . "', 'DEIN-SCHLÜSSEL' );" ) . "\n";
 		}
 		echo '</pre><p class="description">Nötig ist nur der Schlüssel des oben gewählten Anbieters. Ohne YouTube-Schlüssel kommen die Videos aus der AppSumo-Liste, ohne Gemini-Schlüssel gibt es keine Videozusammenfassung.</p>';
+	}
+
+	/** Protokolleintrag lesbar: „ok“ wird zum Erfolgstext, Stilhinweise bleiben dahinter. */
+	private static function log_text( $msg, $ok ) {
+		$msg = (string) $msg;
+		if ( 'ok' === $msg ) {
+			return $ok;
+		}
+		return 0 === strpos( $msg, 'ok; ' ) ? $ok . '; ' . substr( $msg, 4 ) : $msg;
 	}
 
 	/** Zeitstempel in Ortszeit. */

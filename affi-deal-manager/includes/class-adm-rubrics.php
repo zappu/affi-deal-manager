@@ -14,7 +14,7 @@ class ADM_Rubrics {
 
 	const TAX = 'adm_rubrik';
 
-	/** Slug => Name, Reihenfolge wie im Projektplan. */
+	/** Slug => Name, Reihenfolge wie im Projektplan (die letzten drei aus den AppSumo-Bereichen unter „Build & Code“). */
 	const RUBRICS = array(
 		'seo'                        => 'SEO',
 		'content-und-ki-text'        => 'Content und KI-Text',
@@ -26,6 +26,9 @@ class ADM_Rubrics {
 		'wordpress-plugins'          => 'WordPress-Plugins',
 		'produktivitaet-und-organisation' => 'Produktivität und Organisation',
 		'design-und-bilder'          => 'Design und Bilder',
+		'entwickler-tools'           => 'Entwickler-Tools',
+		'formulare-und-app-baukaesten' => 'Formulare und App-Baukästen',
+		'sicherheit-und-datenschutz' => 'Sicherheit und Datenschutz',
 	);
 
 	/** Teil des AppSumo-Kategoriepfads => Rubrik. Groß- und Kleinschreibung egal. */
@@ -34,7 +37,6 @@ class ADM_Rubrics {
 		'Website Builders & WordPress > SEO'  => 'seo',
 		'SEO & Analytics'                     => 'seo',
 		'Website Builders & WordPress'        => 'wordpress-plugins',
-		'Cookie Consent'                      => 'wordpress-plugins',
 		'Social Proof'                        => 'marketing-und-werbung',
 		'Social Media'                        => 'social-media',
 		'Email & Inbox Management'            => 'e-mail-und-kommunikation',
@@ -54,6 +56,9 @@ class ADM_Rubrics {
 		'Design & Branding'                   => 'design-und-bilder',
 		'Photos & Stock'                      => 'design-und-bilder',
 		'Operations'                          => 'produktivitaet-und-organisation',
+		'Developer Tools'                     => 'entwickler-tools',
+		'Forms & App Builders'                => 'formulare-und-app-baukaesten',
+		'Security & Compliance'               => 'sicherheit-und-datenschutz',
 	);
 
 	public static function init() {

@@ -36,8 +36,8 @@ $lo = adm_get_deal( 'leadocean' );
 adm_check( $lo && 'kaufbar' === $lo['status'] && 265008 === (int) $lo['appsumo_id'], 'LeadOcean kaufbar, Deal-Nummer 265008 gespeichert' );
 
 adm_check( post_type_exists( 'adm_tool' ), 'Beitragstyp adm_tool registriert' );
-adm_check( taxonomy_exists( 'adm_rubrik' ) && 10 === count( get_terms( array( 'taxonomy' => 'adm_rubrik', 'hide_empty' => false ) ) ), 'Taxonomie Rubrik mit 10 Rubriken aus dem Projektplan' );
-adm_check( 'seo' === ADM_Rubrics::for_category( 'Marketing > SEO & Analytics > Website Analytics' ) && 'wordpress-plugins' === ADM_Rubrics::for_category( 'Build & Code > Website Builders & WordPress > WordPress' ) && 'seo' === ADM_Rubrics::for_category( 'Build & Code > Website Builders & WordPress > SEO' ) && 'marketing-und-werbung' === ADM_Rubrics::for_category( 'Marketing > Social Media > Social Proof' ) && 'social-media' === ADM_Rubrics::for_category( 'Marketing > Social Media > Scheduling' ) && '' === ADM_Rubrics::for_category( 'Build & Code > Developer Tools > Dev Utilities' ), 'Zuordnung AppSumo-Kategorie zu Rubrik' );
+adm_check( taxonomy_exists( 'adm_rubrik' ) && 13 === count( get_terms( array( 'taxonomy' => 'adm_rubrik', 'hide_empty' => false ) ) ), 'Taxonomie Rubrik mit 13 Rubriken' );
+adm_check( 'seo' === ADM_Rubrics::for_category( 'Marketing > SEO & Analytics > Website Analytics' ) && 'wordpress-plugins' === ADM_Rubrics::for_category( 'Build & Code > Website Builders & WordPress > WordPress' ) && 'seo' === ADM_Rubrics::for_category( 'Build & Code > Website Builders & WordPress > SEO' ) && 'marketing-und-werbung' === ADM_Rubrics::for_category( 'Marketing > Social Media > Social Proof' ) && 'social-media' === ADM_Rubrics::for_category( 'Marketing > Social Media > Scheduling' ) && 'entwickler-tools' === ADM_Rubrics::for_category( 'Build & Code > Developer Tools > Dev Utilities' ) && 'sicherheit-und-datenschutz' === ADM_Rubrics::for_category( 'Build & Code > Security & Compliance > Cookie Consent' ) && 'formulare-und-app-baukaesten' === ADM_Rubrics::for_category( 'Build & Code > Forms & App Builders > Form Builders' ) && '' === ADM_Rubrics::for_category( 'Something > Unknown' ), 'Zuordnung AppSumo-Kategorie zu Rubrik' );
 $names = array( 'WP Reset Pro Plan' => 'WP Reset Pro', 'Screpy - Plus Exclusive' => 'Screpy', 'Writeseed - AI Content Writer' => 'Writeseed', 'Sonny: White-Label Helpdesk' => 'Sonny', 'AutoScaled (fka SlideFill)' => 'AutoScaled', 'testimonials.ltd' => 'testimonials.ltd', 'Reoon Lead Scraper (YellowPages)' => 'Reoon Lead Scraper (YellowPages)', 'NeuronWriter' => 'NeuronWriter' );
 $bad   = array();
 foreach ( $names as $in => $want ) {
@@ -177,6 +177,11 @@ adm_check( ! is_wp_error( $r ) && array() === $GLOBALS['adm_test_gemini_requests
 adm_check( false !== strpos( $c2, '<h2>Videos zu Lead Ocean</h2>' ) && false !== strpos( $u2, 'leeres Array' ), 'Neuer Anzeigename im Text, KI soll keine Videotexte liefern' );
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'video_summaries' => 1, 'mode' => 'wpcron' ) ) );
 ADM_DB::update( (int) $lo['id'], array( 'display_name' => '' ) );
+
+// Alle Entwürfe neu erzeugen: nur Entwürfe, veröffentlichte nicht
+ADM_Profiles::clear_queue();
+adm_check( array( (int) $lo['id'] ) === ADM_Profiles::draft_deals() && 1 === ADM_Profiles::enqueue( ADM_Profiles::draft_deals() ), 'Entwürfe neu vormerken (Other Leads ist veröffentlicht und fehlt)' );
+ADM_Profiles::clear_queue();
 
 // Fehlerfälle
 update_option( 'adm_test_ai', 'error' );

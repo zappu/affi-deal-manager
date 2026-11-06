@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.1 (06.11.2026)
+
+- Profil-Layout aus dem Plugin: Bei der Einstellung „Profil-Layout“ legt das Plugin Kopfbereich und Seitenleiste mit Deal-Kasten selbst um den Beitragsinhalt. Theme oder Elementor-Vorlage geben nur noch den Inhalt aus (Elementor kann Shortcode-Widgets über seine Schnittstelle nicht setzen)
+- Hello Elementor: Theme-Titel entfällt im Profil-Layout, die H1 kommt aus dem Kopfbereich
+- Grauer Seitenhintergrund und mitlaufende Seitenleiste per Stylesheet
+
 ## 0.5.0 (06.11.2026)
 
 - Neue Gestaltung „Verzeichnis“: Abschnitte als Karten, Farben und Schriften über CSS-Variablen (`--adm-*`), eigenes Stylesheet `assets/adm-frontend.css`

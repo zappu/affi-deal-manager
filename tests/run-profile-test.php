@@ -250,6 +250,20 @@ adm_check( 'sidebar' === ADM_Settings::get( 'box_placement' ), 'Ungültiger Wert
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'content', 'mode' => 'wpcron' ) ) );
 adm_check( file_exists( ADM_DIR . 'assets/adm-frontend.css' ) && '' === ADM_Rubrics::image_html( 999999 ), 'Stylesheet vorhanden, Rubrik ohne Bild liefert kein Bild' );
 
+// Profil-Layout über the_content (Aufruf wie auf der Profilseite)
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'sidebar', 'mode' => 'wpcron' ) ) );
+$lo2 = adm_get_deal( 'leadocean' );
+wp_update_post( array( 'ID' => (int) $lo2['post_id'], 'post_status' => 'publish' ) );
+$GLOBALS['wp_query'] = new WP_Query( array( 'p' => (int) $lo2['post_id'], 'post_type' => 'adm_tool' ) );
+$GLOBALS['wp_the_query'] = $GLOBALS['wp_query'];
+$GLOBALS['wp_query']->the_post();
+$html = apply_filters( 'the_content', get_post( (int) $lo2['post_id'] )->post_content );
+adm_check( 1 === substr_count( $html, 'adm-page__cols' ) && false !== strpos( $html, '<header class="adm adm-head">' ) && false !== strpos( $html, 'adm-box--side' ) && false !== strpos( $html, 'adm-box--inline adm-only-mobile' ) && false === apply_filters( 'hello_elementor_page_title', true ), 'Profil-Layout: Kopf, Seitenleiste, Kasten im Text nur mobil, Theme-Titel aus' );
+adm_check( in_array( 'adm-layout', get_body_class(), true ), 'Seite bekommt die Klasse adm-layout' );
+wp_reset_postdata();
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'content', 'mode' => 'wpcron' ) ) );
+wp_update_post( array( 'ID' => (int) $lo2['post_id'], 'post_status' => 'draft' ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

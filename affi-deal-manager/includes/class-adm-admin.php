@@ -390,10 +390,10 @@ class ADM_Admin {
 					<tr>
 						<th scope="row"><label for="adm-box_placement">Deal-Kasten</label></th>
 						<td><select id="adm-box_placement" name="adm[box_placement]">
-							<option value="content" <?php selected( $s['box_placement'], 'content' ); ?>>Im Text der Profile</option>
-							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>In der Seitenleiste des Profil-Layouts (im Text nur auf dem Handy)</option>
+							<option value="content" <?php selected( $s['box_placement'], 'content' ); ?>>Einfach: Kasten oben im Text, Titel vom Theme</option>
+							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>Profil-Layout: Kopfbereich mit Eckdaten, Kasten in der Seitenleiste (auf dem Handy oben im Text)</option>
 						</select>
-						<p class="description">„Seitenleiste“ erst wählen, wenn das Elementor-Layout für Tool-Profile <code>[adm_deal_box placement="sidebar"]</code> und <code>[adm_deal_header]</code> enthält.</p></td>
+						<p class="description">Beim Profil-Layout baut das Plugin Kopfbereich und Seitenleiste um den Beitragsinhalt; das Theme oder Elementor gibt nur den Inhalt aus. Bei Hello Elementor entfällt der Theme-Titel automatisch, andere Themes zeigen ihn eventuell doppelt.</p></td>
 					</tr>
 					<tr>
 						<th scope="row">Videos zusammenfassen</th>

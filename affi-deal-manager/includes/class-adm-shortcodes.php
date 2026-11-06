@@ -45,6 +45,33 @@ class ADM_Shortcodes {
 		add_shortcode( 'adm_alternatives', array( __CLASS__, 'alternatives' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
+		add_filter( 'the_content', array( __CLASS__, 'layout' ), 20 );
+		add_filter( 'hello_elementor_page_title', array( __CLASS__, 'hide_theme_title' ) );
+	}
+
+	/** Profil-Layout aktiv: Einstellung „Seitenleiste“ und ein einzelnes Tool-Profil im Hauptinhalt. */
+	private static function layout_active() {
+		return 'sidebar' === ADM_Settings::get( 'box_placement' ) && is_singular( ADM_Profiles::CPT );
+	}
+
+	/**
+	 * Baut um den Beitragsinhalt Kopfbereich und Seitenleiste mit Deal-Kasten.
+	 * So braucht das Theme (oder Elementor) nur noch den Beitragsinhalt auszugeben.
+	 */
+	public static function layout( $content ) {
+		// Nur für den Inhalt des aufgerufenen Profils, nicht in wp_head (SEO-Plugins) und nicht doppelt.
+		if ( ! self::layout_active() || doing_action( 'wp_head' ) || (int) get_the_ID() !== (int) get_queried_object_id() || false !== strpos( $content, 'adm-page__cols' ) ) {
+			return $content;
+		}
+		$head = false === strpos( $content, 'adm-head' ) ? do_shortcode( '[adm_deal_header]' ) : '';
+		$side = do_shortcode( '[adm_deal_box placement="sidebar"]' );
+		return '<div class="adm adm-page">' . $head . '<div class="adm-page__cols"><div class="adm-page__main">' . $content . '</div>'
+			. ( '' !== $side ? '<div class="adm-page__side">' . $side . '</div>' : '' ) . '</div></div>';
+	}
+
+	/** Hello Elementor: eigenen Seitentitel weglassen, der Kopfbereich bringt die H1 mit. */
+	public static function hide_theme_title( $show ) {
+		return self::layout_active() ? false : $show;
 	}
 
 	public static function register_assets() {
@@ -58,7 +85,7 @@ class ADM_Shortcodes {
 
 	/** Grauer Grund und Kasten in der Seitenleiste, wenn das Profil-Layout aktiv ist. */
 	public static function body_class( $classes ) {
-		if ( is_singular( ADM_Profiles::CPT ) && 'sidebar' === ADM_Settings::get( 'box_placement' ) ) {
+		if ( self::layout_active() ) {
 			$classes[] = 'adm-layout';
 		}
 		return $classes;

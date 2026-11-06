@@ -82,3 +82,12 @@ body:not(.adm-layout) .adm-toc a{background:var(--adm-soft)}
 .adm-alt:hover{background:var(--adm-line)}
 .adm-alt__name{font-weight:700;margin:0 0 4px!important}.adm-alt__desc{font-size:.88em;color:var(--adm-muted);margin:0 0 10px!important}
 .adm-alt .adm-chip{display:inline-block;font-size:.8em;font-weight:600}
+
+/* Profil-Layout des Plugins (Einstellung „Profil-Layout“) */
+body.adm-layout{background:var(--adm-bg)}
+.adm-page{max-width:1200px;margin:0 auto;padding:24px 0 48px;color:var(--adm-ink)}
+.adm-page__cols{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.adm-page__main{flex:999 1 560px;min-width:0}
+.adm-page__side{flex:1 1 300px;min-width:280px;position:sticky;top:24px}
+.adm-page__side .adm-box{margin:0}
+@media (max-width:860px){.adm-page__side{display:none}}

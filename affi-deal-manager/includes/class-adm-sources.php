@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ADM_Sources {
 
+	/** Letzter Fehler der YouTube-Suche (z. B. Kontingent erschöpft), für Hinweise im Protokoll. */
+	public static $youtube_error = '';
+
 	/** Videos bis zu dieser Länge lässt das Plugin von Gemini zusammenfassen. */
 	const MAX_SUMMARY_SECONDS = 1500;
 
@@ -268,7 +271,16 @@ class ADM_Sources {
 			$args['regionCode']        = 'DE';
 		}
 		$res = wp_safe_remote_get( add_query_arg( array_map( 'rawurlencode', $args ), 'https://www.googleapis.com/youtube/v3/search' ), array( 'timeout' => 15 ) );
-		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+		if ( is_wp_error( $res ) ) {
+			self::$youtube_error = $res->get_error_message();
+			return array();
+		}
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			$err = json_decode( (string) wp_remote_retrieve_body( $res ), true );
+			$why = isset( $err['error']['errors'][0]['reason'] ) ? (string) $err['error']['errors'][0]['reason'] : '';
+			self::$youtube_error = 'quotaExceeded' === $why || 'dailyLimitExceeded' === $why
+				? 'Tageskontingent der YouTube-API erschöpft (neu ab 9 Uhr)'
+				: 'YouTube-Suche HTTP ' . (int) wp_remote_retrieve_response_code( $res ) . ( $why ? ' (' . $why . ')' : '' );
 			return array();
 		}
 		$json = json_decode( (string) wp_remote_retrieve_body( $res ), true );

@@ -169,6 +169,9 @@ class ADM_List_Table extends WP_List_Table {
 		if ( '' !== $item['name'] && ! ADM_DB::is_plus( $item ) && ( ! $post || in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) ) {
 			$queued = in_array( (int) $item['id'], ADM_Profiles::queue(), true );
 			$actions['generate'] = $queued ? '<span style="color:#646970">in der Warteschlange</span>' : '<a href="' . esc_url( ADM_Admin::profile_url( (int) $item['id'] ) ) . '">' . ( $post ? 'Text neu erzeugen' : 'Profil erstellen' ) . '</a>';
+			if ( $post ) {
+				$actions['videos_refresh'] = in_array( (int) $item['id'], ADM_Profiles::video_queue(), true ) ? '<span style="color:#646970">Videos vorgemerkt</span>' : '<a href="' . esc_url( ADM_Admin::video_url( (int) $item['id'] ) ) . '">Videos neu suchen</a>';
+			}
 		}
 		$videos = json_decode( (string) $item['videos'], true );
 		if ( is_array( $videos ) ) {

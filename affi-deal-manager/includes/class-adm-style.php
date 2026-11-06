@@ -86,7 +86,7 @@ class ADM_Style {
 		if ( $found ) {
 			$hints[] = 'Floskeln: ' . implode( ', ', array_keys( $found ) );
 		}
-		$vague = preg_match_all( '/\b(es heißt|nutzer berichten|viele nutzer|experten|studien zeigen|man sagt)\b/u', $low );
+		$vague = preg_match_all( '/\b(es heißt|nutzer berichten|viele nutzer|experten (sagen|empfehlen|meinen|raten)|studien zeigen|man sagt)\b/u', $low );
 		if ( $vague ) {
 			$hints[] = $vague . '× unbestimmte Quelle („es heißt“, „Nutzer berichten“)';
 		}

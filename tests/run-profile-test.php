@@ -217,6 +217,28 @@ adm_check( ! in_array( 'screpy-plus', $all_slugs, true ) && ! in_array( 'plus-20
 $wpdb->delete( ADM_DB::table(), array( 'id' => $plus_id ) );
 $wpdb->delete( ADM_DB::table(), array( 'slug' => 'plus-2019' ) );
 
+// Videos nachtragen, ohne den Text neu zu schreiben
+ADM_Profiles::clear_queue();
+update_option( ADM_Profiles::VQUEUE, array() );
+$pid_lo = (int) adm_get_deal( 'leadocean' )['post_id'];
+$c_old  = preg_replace( '#\n*<section class="adm-sec" id="videos">.*?</section>#s', '', get_post( $pid_lo )->post_content );
+wp_update_post( wp_slash( array( 'ID' => $pid_lo, 'post_content' => $c_old ) ) );
+adm_check( in_array( (int) $lo['id'], ADM_Profiles::drafts_without_videos(), true ), 'Entwurf ohne Videos wird erkannt' );
+update_option( 'adm_test_yt', 'quota' );
+adm_check( 1 === ADM_Profiles::enqueue_videos( ADM_Profiles::drafts_without_videos() ), 'Videos nachtragen vorgemerkt' );
+$GLOBALS['adm_test_ai_requests'] = array();
+delete_transient( ADM_Profiles::LOCK );
+ADM_Profiles::process_queue();
+$log = get_option( ADM_Profiles::LOG );
+adm_check( array() === $GLOBALS['adm_test_ai_requests'] && array() === ADM_Profiles::video_queue() && false !== strpos( $log[0]['msg'], 'Tageskontingent der YouTube-API' ), 'Videos nachtragen: keine KI für den Text, Hinweis auf YouTube-Kontingent: ' . $log[0]['msg'] );
+delete_option( 'adm_test_yt' );
+ADM_Profiles::enqueue_videos( array( (int) $lo['id'] ) );
+delete_transient( ADM_Profiles::LOCK );
+ADM_Profiles::process_queue();
+$c_new = get_post( $pid_lo )->post_content;
+adm_check( 1 === substr_count( $c_new, 'id="videos"' ) && strpos( $c_new, 'id="videos"' ) < strpos( $c_new, 'id="details"' ) && false !== strpos( $c_new, 'Im Video wird LeadOcean eingerichtet' ) && array() === $GLOBALS['adm_test_ai_requests'], 'Videos nachgetragen vor den Deal-Details, Zusammenfassung aus Gemini, Text unverändert' );
+adm_check( array() === ADM_Style::check( '<p>Für SEO-Experten und Entwickler.</p>' ) && 1 === count( ADM_Style::check( '<p>Experten empfehlen das Tool.</p>' ) ), 'Stilprüfung: „SEO-Experten“ kein Fehlalarm, „Experten empfehlen“ schon' );
+
 // Abgebrochener Lauf (Zeitlimit) wird gemeldet
 ADM_Profiles::clear_queue();
 update_option( ADM_Profiles::CURRENT, array( 'id' => (int) $lo['id'], 'started' => time() - 1200 ) );

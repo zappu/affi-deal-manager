@@ -54,6 +54,10 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 			: array( 'text' => 'Im Video wird LeadOcean eingerichtet und die Suche nach Firmen gezeigt. Du siehst auch den Export als CSV.', 'werbung' => false, 'videosprache' => 'de' );
 		return $json( array( 'candidates' => array( array( 'content' => array( 'parts' => array( array( 'text' => wp_json_encode( $out, JSON_UNESCAPED_UNICODE ) ) ) ) ) ) ) );
 	}
+	// YouTube: Kontingent erschöpft (Szenario adm_test_yt = quota)
+	if ( false !== strpos( $url, 'googleapis.com/youtube' ) && 'quota' === get_option( 'adm_test_yt' ) ) {
+		return $json( array( 'error' => array( 'code' => 403, 'errors' => array( array( 'reason' => 'quotaExceeded' ) ) ) ), 403 );
+	}
 	// YouTube: Details zu Videos
 	if ( false !== strpos( $url, 'googleapis.com/youtube/v3/videos' ) ) {
 		$GLOBALS['adm_test_yt_requests'][] = $url;

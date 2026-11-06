@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.6.1 (06.11.2026)
+
+- Videos nachtragen: Knopf „Videos nachtragen (N Entwürfe ohne Video)“ und Zeilenaktion „Videos neu suchen“. Sucht nur die Videos neu und lässt Gemini sie zusammenfassen, der Text bleibt (keine Kosten für die Haupt-KI). Läuft über die Warteschlange und den Server-Cron
+- Fehler der YouTube-Suche erscheinen im Protokoll, insbesondere ein erschöpftes Tageskontingent der YouTube-API
+- Stilprüfung: „SEO-Experten“ gilt nicht mehr als unbestimmte Quelle, nur Wendungen wie „Experten empfehlen“
+
 ## 0.6.0 (06.11.2026)
 
 - AppSumo Plus: Deals „Plus exclusive“ und die Plus-Mitgliedschaft selbst (`plus-…`) gelten als Plus-Deals. Sie bekommen keine Tool-Profile, erscheinen nicht beim Sammelknopf und nicht bei „Alle Entwürfe neu erzeugen“

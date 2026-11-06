@@ -93,6 +93,10 @@ class ADM_Admin {
 		exit;
 	}
 
+	public static function video_url( $id ) {
+		return wp_nonce_url( add_query_arg( array( 'action' => 'adm_profile', 'do' => 'video_one', 'id' => (int) $id ), admin_url( 'admin-post.php' ) ), 'adm_profile' );
+	}
+
 	public static function profile_url( $id ) {
 		return wp_nonce_url( add_query_arg( array( 'action' => 'adm_profile', 'do' => 'one', 'id' => (int) $id ), admin_url( 'admin-post.php' ) ), 'adm_profile' );
 	}
@@ -114,17 +118,24 @@ class ADM_Admin {
 		} elseif ( 'best' === $do ) {
 			$n   = ADM_Profiles::enqueue( ADM_Profiles::best_candidates( (int) ADM_Settings::get( 'batch_profiles' ) ) );
 			$msg = $n . ' Profile vorgemerkt.';
+		} elseif ( 'videos' === $do ) {
+			$n   = ADM_Profiles::enqueue_videos( ADM_Profiles::drafts_without_videos() );
+			$msg = $n . ' Entwürfe zum Nachtragen der Videos vorgemerkt. Der Text bleibt, wie er ist.';
+		} elseif ( 'video_one' === $do ) {
+			$n   = ADM_Profiles::enqueue_videos( array( isset( $_REQUEST['id'] ) ? (int) $_REQUEST['id'] : 0 ) );
+			$msg = $n ? 'Videos werden in den nächsten Minuten neu gesucht. Der Text bleibt, wie er ist.' : 'Für diesen Deal gibt es keinen Entwurf.';
 		} elseif ( 'drafts' === $do ) {
 			$n   = ADM_Profiles::enqueue( ADM_Profiles::draft_deals() );
 			$msg = $n . ' Entwürfe zum Neuschreiben vorgemerkt. Veröffentlichte Profile bleiben unangetastet.';
 		} elseif ( 'run' === $do ) {
-			$before = count( ADM_Profiles::queue() );
+			$before = count( ADM_Profiles::queue() ) + count( ADM_Profiles::video_queue() );
 			delete_option( ADM_Profiles::PAUSED );
 			ADM_Profiles::process_queue();
 			$log = get_option( ADM_Profiles::LOG, array() );
-			$msg = $before ? 'Ein Profil verarbeitet: ' . ( isset( $log[0]['msg'] ) ? self::log_text( $log[0]['msg'], 'erfolgreich' ) : '' ) : 'Die Warteschlange ist leer.';
+			$msg = $before ? 'Ein Auftrag verarbeitet: ' . ( isset( $log[0]['msg'] ) ? self::log_text( $log[0]['msg'], 'erfolgreich' ) : '' ) : 'Die Warteschlange ist leer.';
 		} elseif ( 'clear' === $do ) {
 			ADM_Profiles::clear_queue();
+			update_option( ADM_Profiles::VQUEUE, array(), false );
 			$msg = 'Warteschlange geleert.';
 		}
 		set_transient( 'adm_notice_' . get_current_user_id(), $msg, 60 );
@@ -446,10 +457,12 @@ class ADM_Admin {
 				<button class="button button-primary" name="do" value="best" <?php disabled( ! $cands ); ?>>Profile für die <?php echo (int) $n; ?> besten Software-Deals vormerken (<?php echo (int) $cands; ?> ohne Profil)</button>
 				<?php $drafts = count( ADM_Profiles::draft_deals() ); ?>
 				<button class="button" name="do" value="drafts" <?php disabled( ! $drafts ); ?>>Alle Entwürfe neu erzeugen (<?php echo (int) $drafts; ?>)</button>
-				<button class="button" name="do" value="run" <?php disabled( ! $queue ); ?>>Nächstes jetzt erzeugen</button>
-				<button class="button" name="do" value="clear" <?php disabled( ! $queue ); ?>>Warteschlange leeren</button>
+				<?php $novid = count( ADM_Profiles::drafts_without_videos() ); ?>
+				<button class="button" name="do" value="videos" <?php disabled( ! $novid ); ?>>Videos nachtragen (<?php echo (int) $novid; ?> Entwürfe ohne Video)</button>
+				<button class="button" name="do" value="run" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Nächstes jetzt erzeugen</button>
+				<button class="button" name="do" value="clear" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Warteschlange leeren</button>
 			</form>
-			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird als Entwurf angelegt.
+			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?><?php echo ADM_Profiles::video_queue() ? ', Videos nachtragen: ' . count( ADM_Profiles::video_queue() ) : ''; ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird als Entwurf angelegt.
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . ADM_Profiles::CPT ) ); ?>">Alle Tool-Profile</a></p>
 			<?php if ( is_array( $log ) && $log ) : ?>
 				<details style="margin-top:6px"><summary>Letzte Ergebnisse</summary><ul style="margin:6px 0 0 18px;list-style:disc">

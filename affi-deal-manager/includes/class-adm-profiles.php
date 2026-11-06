@@ -18,6 +18,7 @@ class ADM_Profiles {
 	const LOCK       = 'adm_profile_lock';
 	const PAUSED     = 'adm_profile_paused';
 	const CURRENT    = 'adm_profile_current';
+	const VQUEUE     = 'adm_video_queue';
 
 	/** Stilhinweise der letzten Erzeugung (für das Protokoll). */
 	private static $last_hints = array();
@@ -246,6 +247,10 @@ class ADM_Profiles {
 			self::log( (int) $current['id'], 'Abgebrochen, vermutlich Zeitlimit des Servers. Mit „Text neu erzeugen“ erneut versuchen.', 0 );
 		}
 		$q = self::queue();
+		if ( ! $q && self::video_queue() && ! self::paused() ) {
+			self::process_video_queue();
+			return;
+		}
 		if ( ! $q || self::paused() ) {
 			return;
 		}
@@ -267,7 +272,55 @@ class ADM_Profiles {
 		} finally {
 			delete_transient( self::LOCK );
 		}
-		if ( self::queue() ) {
+		if ( self::queue() || self::video_queue() ) {
+			wp_schedule_single_event( time() + 10, self::QUEUE_HOOK );
+		}
+	}
+
+	/* ---------------- Videos nachtragen ---------------- */
+
+	public static function video_queue() {
+		$q = get_option( self::VQUEUE, array() );
+		return is_array( $q ) ? array_values( array_unique( array_map( 'intval', $q ) ) ) : array();
+	}
+
+	/** Deals vormerken, deren Entwurf nur neue Videos bekommen soll. */
+	public static function enqueue_videos( array $ids ) {
+		$q     = self::video_queue();
+		$added = 0;
+		foreach ( array_map( 'intval', $ids ) as $id ) {
+			$deal = $id ? ADM_DB::get( $id ) : null;
+			$post = $deal && (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
+			if ( ! $post || in_array( $id, $q, true ) || ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+				continue;
+			}
+			$q[] = $id;
+			$added++;
+		}
+		update_option( self::VQUEUE, $q, false );
+		if ( $q && ! wp_next_scheduled( self::QUEUE_HOOK ) ) {
+			wp_schedule_single_event( time() + 5, self::QUEUE_HOOK );
+		}
+		return $added;
+	}
+
+	private static function process_video_queue() {
+		$q = self::video_queue();
+		if ( ! $q ) {
+			return;
+		}
+		set_transient( self::LOCK, 1, 15 * MINUTE_IN_SECONDS );
+		try {
+			$id = array_shift( $q );
+			update_option( self::VQUEUE, $q, false );
+			$res = self::refresh_videos( $id );
+			if ( is_wp_error( $res ) ) {
+				self::log( $id, $res->get_error_message(), 0 );
+			}
+		} finally {
+			delete_transient( self::LOCK );
+		}
+		if ( self::queue() || self::video_queue() ) {
 			wp_schedule_single_event( time() + 10, self::QUEUE_HOOK );
 		}
 	}
@@ -338,6 +391,7 @@ class ADM_Profiles {
 		if ( is_wp_error( $reviews ) ) {
 			$reviews = array( 'total' => (int) $deal['review_count'], 'newest' => array(), 'critical' => array(), 'error' => $reviews->get_error_message() );
 		}
+		ADM_Sources::$youtube_error = '';
 		$videos = ADM_Sources::videos( $deal, 2 );
 
 		$user = self::user_prompt( $deal, $reviews, $videos );
@@ -358,12 +412,7 @@ class ADM_Profiles {
 		}
 		$json  = ADM_Style::fix_all( $json );
 		$hints = ADM_Style::check( self::flatten( $json ) );
-		$notes = array();
-		foreach ( $videos as $v ) {
-			if ( ! empty( $v['summary_error'] ) ) {
-				$notes[] = 'Video ' . $v['id'] . ' ohne Zusammenfassung (' . ( false !== stripos( $v['summary_error'], 'timed out' ) ? 'Zeitüberschreitung bei Gemini' : $v['summary_error'] ) . ')';
-			}
-		}
+		$notes = self::video_notes( $videos );
 
 		$name    = $deal['title'];
 		$used    = count( $reviews['newest'] ) + count( $reviews['critical'] );
@@ -529,33 +578,9 @@ class ADM_Profiles {
 			$h[] = '<section class="adm-sec" id="kaeufer"><h2>Was Käufer sagen</h2><p class="adm-source">' . esc_html( $intro ) . '</p>' . self::html( isset( $j['kaeufer_text'] ) ? $j['kaeufer_text'] : '' ) . '</section>';
 		}
 
-		if ( $videos ) {
-			$texts = array();
-			foreach ( isset( $j['videos'] ) && is_array( $j['videos'] ) ? $j['videos'] : array() as $v ) {
-				if ( isset( $v['id'], $v['text'] ) ) {
-					$texts[ (string) $v['id'] ] = self::plain( $v['text'], 600 );
-				}
-			}
-			$sec = '<section class="adm-sec" id="videos"><h2>Videos zu ' . esc_html( $name ) . '</h2>';
-			foreach ( $videos as $v ) {
-				$title = self::video_title( $v['title'] );
-				$sec  .= '<h3>' . esc_html( $title ) . '</h3>[adm_video id="' . esc_attr( $v['id'] ) . '" title="' . esc_attr( str_replace( array( '"', '[', ']' ), '', $title ) ) . '"]';
-				$text  = ! empty( $v['summary'] ) ? ( ! empty( $texts[ $v['id'] ] ) ? $texts[ $v['id'] ] : self::plain( $v['summary'], 600 ) ) : '';
-				if ( '' !== $text ) {
-					$sec .= '<p>' . esc_html( $text ) . '</p>';
-				}
-				$meta = array_filter( array(
-					$v['channel'] ? 'Kanal: ' . $v['channel'] : '',
-					$v['date'] ? 'veröffentlicht ' . wp_date( 'd.m.Y', strtotime( $v['date'] ) ) : '',
-					ADM_Sources::lang_label( isset( $v['lang'] ) ? $v['lang'] : '' ) ? 'Sprache: ' . ADM_Sources::lang_label( $v['lang'] ) : '',
-					! empty( $v['duration'] ) ? 'Länge: ' . self::minutes( (int) $v['duration'] ) : '',
-					! empty( $v['promo'] ) ? 'Das Video wirbt für ein Angebot' : '',
-				) );
-				if ( $meta ) {
-					$sec .= '<p class="adm-source">' . esc_html( implode( ' · ', $meta ) ) . '</p>';
-				}
-			}
-			$h[] = $sec . '</section>';
+		$vsec = self::video_section( $name, $videos, isset( $j['videos'] ) && is_array( $j['videos'] ) ? $j['videos'] : array() );
+		if ( '' !== $vsec ) {
+			$h[] = $vsec;
 		}
 
 		$h[] = '<section class="adm-sec" id="details"><h2>Deal-Details</h2>[adm_deal_details]</section>';
@@ -575,6 +600,103 @@ class ADM_Profiles {
 		}
 		$h[] = '[adm_alternatives heading="1"]';
 		return implode( "\n\n", $h );
+	}
+
+	/**
+	 * Abschnitt „Videos zu …“. Text je Video: von der Haupt-KI aus der Zusammenfassung, sonst die Zusammenfassung selbst;
+	 * ohne Zusammenfassung kein Text zum Inhalt.
+	 */
+	public static function video_section( $name, array $videos, array $ai_texts = array() ) {
+		if ( ! $videos ) {
+			return '';
+		}
+		$texts = array();
+		foreach ( $ai_texts as $v ) {
+			if ( isset( $v['id'], $v['text'] ) ) {
+				$texts[ (string) $v['id'] ] = self::plain( $v['text'], 600 );
+			}
+		}
+		$sec = '<section class="adm-sec" id="videos"><h2>Videos zu ' . esc_html( $name ) . '</h2>';
+		foreach ( $videos as $v ) {
+			$title = self::video_title( $v['title'] );
+			$sec  .= '<h3>' . esc_html( $title ) . '</h3>[adm_video id="' . esc_attr( $v['id'] ) . '" title="' . esc_attr( str_replace( array( '"', '[', ']' ), '', $title ) ) . '"]';
+			$text  = ! empty( $v['summary'] ) ? ( ! empty( $texts[ $v['id'] ] ) ? $texts[ $v['id'] ] : self::plain( $v['summary'], 600 ) ) : '';
+			if ( '' !== $text ) {
+				$sec .= '<p>' . esc_html( $text ) . '</p>';
+			}
+			$meta = array_filter( array(
+				! empty( $v['channel'] ) ? 'Kanal: ' . $v['channel'] : '',
+				! empty( $v['date'] ) ? 'veröffentlicht ' . wp_date( 'd.m.Y', strtotime( $v['date'] ) ) : '',
+				ADM_Sources::lang_label( isset( $v['lang'] ) ? $v['lang'] : '' ) ? 'Sprache: ' . ADM_Sources::lang_label( $v['lang'] ) : '',
+				! empty( $v['duration'] ) ? 'Länge: ' . self::minutes( (int) $v['duration'] ) : '',
+				! empty( $v['promo'] ) ? 'Das Video wirbt für ein Angebot' : '',
+			) );
+			if ( $meta ) {
+				$sec .= '<p class="adm-source">' . esc_html( implode( ' · ', $meta ) ) . '</p>';
+			}
+		}
+		return $sec . '</section>';
+	}
+
+	/**
+	 * Nur die Videos eines Entwurfs neu suchen und zusammenfassen, ohne den Text neu zu schreiben (keine Kosten für die Haupt-KI).
+	 *
+	 * @param int $deal_id Deal-ID.
+	 * @return int|WP_Error Anzahl Videos.
+	 */
+	public static function refresh_videos( $deal_id ) {
+		$deal = ADM_DB::get( (int) $deal_id );
+		$post = $deal && (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
+		if ( ! $deal || ! $post ) {
+			return new WP_Error( 'adm_videos_post', 'Kein Profil zu diesem Deal.' );
+		}
+		if ( ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+			return new WP_Error( 'adm_videos_published', 'Das Profil ist veröffentlicht und wird nicht automatisch geändert.' );
+		}
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 600 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		}
+		ADM_Sources::$youtube_error = '';
+		$videos = ADM_Sources::videos( $deal, 2 );
+		$sec    = self::video_section( $deal['title'], $videos );
+		$c      = (string) $post->post_content;
+		$c      = preg_replace( '#\n*<section class="adm-sec" id="videos">.*?</section>#s', '', $c );
+		if ( '' !== $sec ) {
+			$pos = strpos( $c, '<section class="adm-sec" id="details">' );
+			$c   = false !== $pos ? substr( $c, 0, $pos ) . $sec . "\n\n" . substr( $c, $pos ) : $c . "\n\n" . $sec;
+		}
+		wp_update_post( wp_slash( array( 'ID' => $post->ID, 'post_content' => $c ) ) );
+		update_post_meta( $post->ID, '_adm_videos', $videos );
+		$notes = self::video_notes( $videos );
+		self::log( (int) $deal['id'], ( $videos ? count( $videos ) . ' Videos aktualisiert' : 'Keine Videos gefunden' ) . ( $notes ? '; ' . implode( '; ', $notes ) : '' ), $post->ID );
+		return count( $videos );
+	}
+
+	/** Hinweise zu Videos: fehlende Zusammenfassungen und Fehler der YouTube-Suche. */
+	private static function video_notes( array $videos ) {
+		$notes = array();
+		foreach ( $videos as $v ) {
+			if ( ! empty( $v['summary_error'] ) ) {
+				$notes[] = 'Video ' . $v['id'] . ' ohne Zusammenfassung (' . ( false !== stripos( $v['summary_error'], 'timed out' ) ? 'Zeitüberschreitung bei Gemini' : $v['summary_error'] ) . ')';
+			}
+		}
+		if ( '' !== ADM_Sources::$youtube_error ) {
+			$notes[] = ADM_Sources::$youtube_error;
+		}
+		return $notes;
+	}
+
+	/** Entwürfe ohne Videoabschnitt (für „Videos nachtragen“). */
+	public static function drafts_without_videos() {
+		$out = array();
+		foreach ( self::draft_deals() as $id ) {
+			$deal = ADM_DB::get( $id );
+			$post = $deal ? get_post( (int) $deal['post_id'] ) : null;
+			if ( $post && false === strpos( (string) $post->post_content, 'id="videos"' ) ) {
+				$out[] = $id;
+			}
+		}
+		return $out;
 	}
 
 	/** Alle Texte einer KI-Antwort als ein String (für die Stilprüfung). */

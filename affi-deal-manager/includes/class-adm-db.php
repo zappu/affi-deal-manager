@@ -61,6 +61,7 @@ class ADM_DB {
 			deal_type varchar(20) NOT NULL DEFAULT '',
 			deal_type_source varchar(10) NOT NULL DEFAULT '',
 			appsumo_type varchar(60) NOT NULL DEFAULT '',
+			appsumo_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			first_seen datetime NOT NULL,
 			last_checked datetime NULL,
@@ -97,6 +98,13 @@ class ADM_DB {
 			// Neue Spalte deal_type: kaufbare Deals gleich neu prüfen, damit sie ihren Typ bekommen.
 			$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET next_check = %s WHERE status = 'kaufbar'", self::now() ) ); // phpcs:ignore
 		}
+	}
+
+	/** Deal zu einem Tool-Profil. */
+	public static function get_by_post( $post_id ) {
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE post_id = %d LIMIT 1', (int) $post_id ), ARRAY_A );
+		return $row ? self::decode( $row ) : null;
 	}
 
 	public static function type_label( $type ) {

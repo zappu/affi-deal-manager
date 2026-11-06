@@ -1,5 +1,19 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.4.0 (06.11.2026)
+
+- Tool-Profile: eigener Beitragstyp unter `/tools/<name>/`, verknüpft mit dem Deal, Reiter „Tool-Profile“ in der Thoka-Leiste
+- Erzeugung per KI (OpenRouter, OpenAI oder Anthropic, Schlüssel und Modell in den Einstellungen) als Entwurf; veröffentlichte Profile werden nie überschrieben
+- Käuferstimmen: die neuesten und die kritischsten Bewertungen bei AppSumo werden getrennt ausgewertet, ohne Nutzernamen, ohne wörtliche Zitate, ohne vergütete Bewertungen und Antworten; Quelle und Stand stehen im Text
+- Testvideos: mit YouTube-Schlüssel eigene Suche, deutsche Videos zuerst, sonst die Liste von AppSumo (nie das AppSumo-eigene Video); Einbettung über youtube-nocookie.com
+- Abschnitte: Kurz erklärt, Für wen es passt und für wen nicht, Funktionen (bei Kursen und E-Books Inhalt), Was Käufer sagen, Was Testvideos zeigen, Deal-Details, Häufige Fragen, Alternativen
+- Live-Bausteine `[adm_deal_box]`, `[adm_deal_details]`, `[adm_video]`, `[adm_alternatives]`: Preis, Status mit Grund und Kauf-Button kommen immer aktuell aus der Datenbank; bei ausgelaufenen Deals Alternativen und Warteliste
+- Seitentitel, SEO-Titel, Meta-Beschreibung und Fokus-Keyword für Rank Math nach einstellbaren Vorlagen
+- Warteschlange mit Sammelknopf „Profile für die besten Software-Deals“, „Nächstes jetzt erzeugen“ und Protokoll; optional automatische Entwürfe für neue kaufbare Software-Deals
+- Server-Cron arbeitet die Profil-Warteschlange mit ab
+- Deal-Nummer bei AppSumo (`appsumo_id`) wird gespeichert; Datenbank Version 4
+- Stilregeln im Prompt nach dem Skill „vermenschlichen“; Schutz gegen Anweisungen in fremden Daten; Script- und Style-Blöcke aus KI-Antworten werden samt Inhalt entfernt
+
 ## 0.3.0 (06.11.2026)
 
 - Deal-Typ: Software, Kurs, E-Book oder Vorlage. Grundlage ist der Deal-Typ von AppSumo (Link oder eingebettete Seitendaten); Lern-Deals werden über Stichwörter in Name und Beschreibung in Kurs oder E-Book geteilt, im Zweifel Kurs

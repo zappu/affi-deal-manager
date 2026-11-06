@@ -16,6 +16,7 @@ class ADM_Admin {
 		add_action( 'admin_post_adm_save_settings', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_post_adm_action', array( __CLASS__, 'handle_action' ) );
 		add_action( 'admin_post_adm_set_type', array( __CLASS__, 'handle_set_type' ) );
+		add_action( 'admin_post_adm_profile', array( __CLASS__, 'handle_profile' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( ADM_FILE ), array( __CLASS__, 'action_links' ) );
 	}
 
@@ -88,6 +89,42 @@ class ADM_Admin {
 		}
 		set_transient( 'adm_notice_' . get_current_user_id(), $msg, 60 );
 		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG ), admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	public static function profile_url( $id ) {
+		return wp_nonce_url( add_query_arg( array( 'action' => 'adm_profile', 'do' => 'one', 'id' => (int) $id ), admin_url( 'admin-post.php' ) ), 'adm_profile' );
+	}
+
+	/** Profile vormerken, sofort erzeugen oder Warteschlange leeren. */
+	public static function handle_profile() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Keine Berechtigung.' );
+		}
+		check_admin_referer( 'adm_profile' );
+		$do  = isset( $_REQUEST['do'] ) ? sanitize_key( $_REQUEST['do'] ) : '';
+		$msg = '';
+		if ( ! ADM_AI::configured() && in_array( $do, array( 'one', 'best', 'run' ), true ) ) {
+			$msg = 'Bitte zuerst einen KI-Schlüssel in den Einstellungen eintragen.';
+		} elseif ( 'one' === $do ) {
+			$id  = isset( $_REQUEST['id'] ) ? (int) $_REQUEST['id'] : 0;
+			$n   = ADM_Profiles::enqueue( array( $id ) );
+			$msg = $n ? 'Profil vorgemerkt. Es wird in den nächsten Minuten erzeugt.' : 'Für diesen Deal kann kein Profil erzeugt werden (veröffentlicht oder schon vorgemerkt).';
+		} elseif ( 'best' === $do ) {
+			$n   = ADM_Profiles::enqueue( ADM_Profiles::best_candidates( (int) ADM_Settings::get( 'batch_profiles' ) ) );
+			$msg = $n . ' Profile vorgemerkt.';
+		} elseif ( 'run' === $do ) {
+			$before = count( ADM_Profiles::queue() );
+			ADM_Profiles::process_queue();
+			$log = get_option( ADM_Profiles::LOG, array() );
+			$msg = $before ? 'Ein Profil verarbeitet: ' . ( isset( $log[0]['msg'] ) ? ( 'ok' === $log[0]['msg'] ? 'erfolgreich' : $log[0]['msg'] ) : '' ) : 'Die Warteschlange ist leer.';
+		} elseif ( 'clear' === $do ) {
+			ADM_Profiles::clear_queue();
+			$msg = 'Warteschlange geleert.';
+		}
+		set_transient( 'adm_notice_' . get_current_user_id(), $msg, 60 );
+		$back = wp_get_referer();
+		wp_safe_redirect( $back ? $back : add_query_arg( array( 'page' => self::SLUG ), admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
@@ -199,6 +236,8 @@ class ADM_Admin {
 				<button class="button" name="do" value="unlock">Sperre aufheben</button>
 				<span style="color:#646970;margin-left:8px">Ein Schritt prüft bis zu <?php echo (int) ADM_Settings::get( 'batch_size' ); ?> Deals mit <?php echo (int) ADM_Settings::get( 'delay' ); ?> s Pause.</span>
 			</form>
+
+			<?php self::profiles_panel(); ?>
 
 			<?php $table->views(); ?>
 			<form method="get">
@@ -317,6 +356,33 @@ class ADM_Admin {
 					?>
 				</table>
 
+				<h2 id="adm-ki">Tool-Profile und KI</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="adm-ai_provider">KI-Anbieter</label></th>
+						<td><select id="adm-ai_provider" name="adm[ai_provider]">
+							<?php foreach ( ADM_Settings::AI_PROVIDERS as $key => $p ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['ai_provider'], $key ); ?>><?php echo esc_html( $p['label'] ); ?></option>
+							<?php endforeach; ?>
+						</select></td>
+					</tr>
+					<?php
+					self::secret_field( 'ai_key', 'API-Schlüssel', $s, 'Wird nicht angezeigt. Leer lassen, um den gespeicherten Schlüssel zu behalten.' );
+					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
+					self::secret_field( 'youtube_key', 'YouTube-API-Schlüssel (optional)', $s, 'Für die Suche nach deutschen Testvideos (YouTube Data API v3, Google Cloud Console). Ohne Schlüssel kommen die Videos aus der AppSumo-Liste.' );
+					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
+					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Möglichst unter 60 Zeichen.' );
+					self::field( 'batch_profiles', 'Anzahl beim Sammelknopf', $s, '1 bis 50 kaufbare Software-Deals mit den meisten Bewertungen.', 'number' );
+					self::field( 'reviews_newest', 'Neueste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
+					self::field( 'reviews_critical', 'Kritischste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
+					?>
+					<tr>
+						<th scope="row">Automatik</th>
+						<td><label><input type="checkbox" name="adm[auto_profiles]" value="1" <?php checked( $s['auto_profiles'] ); ?>> Neue kaufbare Software-Deals bekommen automatisch einen Profil-Entwurf</label>
+						<p class="description">Erst einschalten, wenn du die ersten Texte abgenommen hast.</p></td>
+					</tr>
+				</table>
+
 				<h2>Updates</h2>
 				<table class="form-table" role="presentation">
 					<?php self::field( 'update_token', 'Update-Token (optional)', $s, '' ); ?>
@@ -328,6 +394,44 @@ class ADM_Admin {
 				<input type="hidden" name="action" value="adm_check_update">
 				<p>Version <?php echo esc_html( ADM_VERSION ); ?> · <button class="button">Nach Updates suchen</button></p>
 			</form>
+		</div>
+		<?php
+	}
+
+	/** Kasten „Tool-Profile“ auf der Deal-Seite: Warteschlange, Sammelknopf, letzte Ergebnisse. */
+	private static function profiles_panel() {
+		$queue = ADM_Profiles::queue();
+		$log   = get_option( ADM_Profiles::LOG, array() );
+		$n     = (int) ADM_Settings::get( 'batch_profiles' );
+		$cands = count( ADM_Profiles::best_candidates( $n ) );
+		$url   = admin_url( 'admin-post.php' );
+		?>
+		<div style="background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:12px 16px;margin:0 0 16px">
+			<h2 style="margin:0 0 8px;font-size:15px">Tool-Profile</h2>
+			<?php if ( ! ADM_AI::configured() ) : ?>
+				<p>Für die Profile fehlt noch der KI-Schlüssel. <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#adm-ki">Zu den Einstellungen</a></p>
+			<?php endif; ?>
+			<form method="post" action="<?php echo esc_url( $url ); ?>" style="display:inline">
+				<?php wp_nonce_field( 'adm_profile' ); ?>
+				<input type="hidden" name="action" value="adm_profile">
+				<button class="button button-primary" name="do" value="best" <?php disabled( ! $cands ); ?>>Profile für die <?php echo (int) $n; ?> besten Software-Deals vormerken (<?php echo (int) $cands; ?> ohne Profil)</button>
+				<button class="button" name="do" value="run" <?php disabled( ! $queue ); ?>>Nächstes jetzt erzeugen</button>
+				<button class="button" name="do" value="clear" <?php disabled( ! $queue ); ?>>Warteschlange leeren</button>
+			</form>
+			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird als Entwurf angelegt.
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . ADM_Profiles::CPT ) ); ?>">Alle Tool-Profile</a></p>
+			<?php if ( is_array( $log ) && $log ) : ?>
+				<details style="margin-top:6px"><summary>Letzte Ergebnisse</summary><ul style="margin:6px 0 0 18px;list-style:disc">
+				<?php
+				foreach ( array_slice( $log, 0, 10 ) as $l ) {
+					$deal = ADM_DB::get( (int) $l['deal'] );
+					$name = $deal ? $deal['name'] : '#' . (int) $l['deal'];
+					$link = $l['post'] ? ' <a href="' . esc_url( get_edit_post_link( (int) $l['post'], 'url' ) ) . '">bearbeiten</a>' : '';
+					echo '<li>' . esc_html( self::date( $l['time'] ) . ', ' . $name . ': ' . ( 'ok' === $l['msg'] ? 'Entwurf erstellt' : $l['msg'] ) ) . $link . '</li>'; // phpcs:ignore
+				}
+				?>
+				</ul></details>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -396,6 +500,18 @@ class ADM_Admin {
 			return (int) round( $secs / HOUR_IN_SECONDS ) . ' Stunden';
 		}
 		return (int) round( $secs / DAY_IN_SECONDS ) . ' Tagen';
+	}
+
+	private static function secret_field( $key, $label, array $s, $help ) {
+		$set = '' !== (string) $s[ $key ];
+		printf(
+			'<tr><th scope="row"><label for="adm-%1$s">%2$s</label></th><td><input type="password" class="regular-text" id="adm-%1$s" name="adm[%1$s]" value="" autocomplete="off" placeholder="%3$s">%4$s%5$s</td></tr>',
+			esc_attr( $key ),
+			esc_html( $label ),
+			esc_attr( $set ? 'gespeichert' : '' ),
+			$set ? ' <label><input type="checkbox" name="adm[' . esc_attr( $key ) . '_delete]" value="1"> löschen</label>' : '',
+			$help ? '<p class="description">' . esc_html( $help ) . '</p>' : ''
+		);
 	}
 
 	/** Zeitstempel in Ortszeit. */

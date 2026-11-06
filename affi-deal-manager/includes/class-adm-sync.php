@@ -103,7 +103,12 @@ class ADM_Sync {
 		if ( 'servercron' !== ADM_Settings::get( 'mode' ) ) {
 			return new WP_REST_Response( array( 'skipped' => 'Modus „Server-Cron“ ist nicht eingeschaltet.' ), 409 );
 		}
-		return new WP_REST_Response( self::tick( false, 'servercron' ), 200 );
+		$report = self::tick( false, 'servercron' );
+		if ( class_exists( 'ADM_Profiles' ) && ADM_Profiles::queue() ) {
+			ADM_Profiles::process_queue();
+			$report['profiles_left'] = count( ADM_Profiles::queue() );
+		}
+		return new WP_REST_Response( $report, 200 );
 	}
 
 	public static function server_cron_url() {

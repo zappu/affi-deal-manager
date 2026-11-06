@@ -126,6 +126,7 @@ class ADM_Parser {
 		$data['review_count']    = $count;
 		$data['return_days']     = $return_days;
 		$data['videos']          = self::videos( $data['videos'], $name );
+		$data['appsumo_id']      = isset( $p['sku'] ) && ctype_digit( (string) $p['sku'] ) ? (int) $p['sku'] : ( isset( $p['mpn'] ) && ctype_digit( (string) $p['mpn'] ) ? (int) $p['mpn'] : 0 );
 		$data['appsumo_type']    = self::appsumo_type( $html );
 		$data['deal_type']       = self::classify( $data['appsumo_type'], $name, $data['description'] );
 		return $data;

@@ -152,6 +152,16 @@ class ADM_List_Table extends WP_List_Table {
 		$actions = array(
 			'appsumo' => '<a href="' . esc_url( $item['url'] ) . '" target="_blank" rel="noopener">Bei AppSumo ansehen</a>',
 		);
+		$post = (int) $item['post_id'] ? get_post( (int) $item['post_id'] ) : null;
+		if ( $post ) {
+			$label = 'publish' === $post->post_status ? 'veröffentlicht' : ( 'draft' === $post->post_status ? 'Entwurf' : $post->post_status );
+			$out  .= '<br><span style="color:#2271b1">Profil: ' . esc_html( $label ) . '</span>';
+			$actions['profile'] = '<a href="' . esc_url( get_edit_post_link( $post->ID, 'url' ) ) . '">Profil bearbeiten</a>';
+		}
+		if ( '' !== $item['name'] && ( ! $post || in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) ) {
+			$queued = in_array( (int) $item['id'], ADM_Profiles::queue(), true );
+			$actions['generate'] = $queued ? '<span style="color:#646970">in der Warteschlange</span>' : '<a href="' . esc_url( ADM_Admin::profile_url( (int) $item['id'] ) ) . '">' . ( $post ? 'Text neu erzeugen' : 'Profil erstellen' ) . '</a>';
+		}
 		$videos = json_decode( (string) $item['videos'], true );
 		if ( is_array( $videos ) ) {
 			$n = count( array_filter( $videos, function ( $v ) {

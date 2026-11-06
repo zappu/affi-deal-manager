@@ -30,6 +30,16 @@ class ADM_Settings {
 		1440 => 'einmal am Tag',
 	);
 
+	/** KI-Anbieter => Beschriftung und Standardmodell. */
+	const AI_PROVIDERS = array(
+		'openrouter' => array( 'label' => 'OpenRouter', 'model' => 'anthropic/claude-sonnet-4.5' ),
+		'openai'     => array( 'label' => 'OpenAI', 'model' => 'gpt-4.1' ),
+		'anthropic'  => array( 'label' => 'Anthropic', 'model' => 'claude-sonnet-4-5' ),
+	);
+
+	/** Geheime Felder: werden nie im Formular ausgegeben, leere Eingabe behält den Wert. */
+	const SECRET_KEYS = array( 'ai_key', 'youtube_key' );
+
 	public static function defaults() {
 		return array(
 			'mode'                  => 'wpcron',
@@ -49,7 +59,27 @@ class ADM_Settings {
 			'notify_email'          => get_option( 'admin_email' ),
 			'update_token'          => '',
 			'cron_secret'           => '',
+			'ai_provider'           => 'openrouter',
+			'ai_key'                => '',
+			'ai_model'              => '',
+			'youtube_key'           => '',
+			'title_template'        => '{tool} ohne Abo: Funktionen, Käuferstimmen und Alternativen',
+			'seo_title_template'    => '{tool} ohne Abo (Lifetime Deal): Funktionen und Alternativen',
+			'batch_profiles'        => 20,
+			'auto_profiles'         => 0,
+			'reviews_newest'        => 60,
+			'reviews_critical'      => 40,
 		);
+	}
+
+	/** Eingestelltes Modell oder Standardmodell des Anbieters. */
+	public static function ai_model() {
+		$all = self::all();
+		if ( '' !== trim( (string) $all['ai_model'] ) ) {
+			return (string) $all['ai_model'];
+		}
+		$p = isset( self::AI_PROVIDERS[ $all['ai_provider'] ] ) ? $all['ai_provider'] : 'openrouter';
+		return self::AI_PROVIDERS[ $p ]['model'];
 	}
 
 	public static function all() {
@@ -107,6 +137,16 @@ class ADM_Settings {
 			'notify_email'          => is_email( isset( $in['notify_email'] ) ? trim( (string) $in['notify_email'] ) : '' ) ? sanitize_email( $in['notify_email'] ) : $d['notify_email'],
 			'update_token'          => isset( $in['update_token'] ) ? sanitize_text_field( (string) $in['update_token'] ) : '',
 			'cron_secret'           => $cur['cron_secret'],
+			'ai_provider'           => isset( $in['ai_provider'], self::AI_PROVIDERS[ $in['ai_provider'] ] ) ? $in['ai_provider'] : $cur['ai_provider'],
+			'ai_key'                => self::secret( $in, 'ai_key', $cur ),
+			'ai_model'              => isset( $in['ai_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._:\/\-]/', '', (string) $in['ai_model'] ), 0, 100 ) : $cur['ai_model'],
+			'youtube_key'           => self::secret( $in, 'youtube_key', $cur ),
+			'title_template'        => self::template( $in, 'title_template', $cur ),
+			'seo_title_template'    => self::template( $in, 'seo_title_template', $cur ),
+			'batch_profiles'        => self::range( $in, 'batch_profiles', 1, 50, $cur['batch_profiles'] ),
+			'auto_profiles'         => array_key_exists( 'mode', $in ) ? ( empty( $in['auto_profiles'] ) ? 0 : 1 ) : (int) $cur['auto_profiles'],
+			'reviews_newest'        => self::range( $in, 'reviews_newest', 0, 100, $cur['reviews_newest'] ),
+			'reviews_critical'      => self::range( $in, 'reviews_critical', 0, 100, $cur['reviews_critical'] ),
 		);
 		update_option( self::OPTION, $out, false );
 		return $out;
@@ -133,6 +173,21 @@ class ADM_Settings {
 			$n += self::in_window( $h ) ? 1 : 0;
 		}
 		return $n;
+	}
+
+	/** Geheimnis: leere Eingabe behält den alten Wert, Häkchen „löschen“ entfernt ihn. */
+	private static function secret( array $in, $key, array $cur ) {
+		if ( ! empty( $in[ $key . '_delete' ] ) ) {
+			return '';
+		}
+		$v = isset( $in[ $key ] ) ? trim( (string) $in[ $key ] ) : '';
+		return '' !== $v ? substr( preg_replace( '/[^\x21-\x7E]/', '', $v ), 0, 300 ) : (string) $cur[ $key ];
+	}
+
+	/** Titelvorlage muss {tool} enthalten. */
+	private static function template( array $in, $key, array $cur ) {
+		$v = isset( $in[ $key ] ) ? trim( sanitize_text_field( (string) $in[ $key ] ) ) : '';
+		return false !== strpos( $v, '{tool}' ) ? substr( $v, 0, 200 ) : (string) $cur[ $key ];
 	}
 
 	private static function digits( array $in, $key, $fallback ) {

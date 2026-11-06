@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.11 (06.11.2026)
+
+- Deal-Kasten: Werbehinweis entfällt (steht im Footer der Seite), das Sternchen am Kauf-Button bleibt und ist für Screenreader als „Werbelink“ benannt; Hinweis bei Bedarf über den Filter `adm_box_note`
+
 ## 0.5.10 (06.11.2026)
 
 - Kopfbereich: unter den Eckdaten steht nur noch „Stand <Datum>“

@@ -218,7 +218,7 @@ class ADM_Shortcodes {
 			$cls .= ' adm-only-mobile';
 		}
 		$link   = ADM_Links::url( $deal['url'], self::subid( $deal ) );
-		$mark   = '<span class="adm-mark" aria-hidden="true">*</span>';
+		$mark   = '<span class="adm-mark" aria-label="Werbelink">*</span>';
 		$status = 'kaufbar' === $deal['status'] ? 'Erhältlich' : ( 'ausgelaufen' === $deal['status'] ? 'Ausgelaufen' : 'Nicht verfügbar' );
 		list( $amount, $unit ) = self::price_parts( $deal );
 
@@ -247,7 +247,9 @@ class ADM_Shortcodes {
 		} else {
 			$out .= '<a class="adm-btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a>';
 		}
-		$out .= '<p class="adm-box__small">' . esc_html( trim( self::checked( $deal ) . '. ' . self::NOTE ) ) . '</p>';
+		// Der Werbehinweis steht zentral im Footer; der Kasten zeigt nur den Stand. Per Filter wieder einschaltbar.
+		$note = (string) apply_filters( 'adm_box_note', '' );
+		$out .= '<p class="adm-box__small">' . esc_html( trim( self::checked( $deal ) . '.' . ( '' !== $note ? ' ' . $note : '' ) ) ) . '</p>';
 		return $out . '</aside>';
 	}
 

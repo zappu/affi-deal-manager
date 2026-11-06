@@ -116,7 +116,7 @@ $GLOBALS['post'] = $post;
 setup_postdata( $post );
 $box = do_shortcode( '[adm_deal_box]' );
 adm_check( false !== strpos( $box, 'subId1=leadocean' ) && false !== strpos( $box, 'rel="sponsored nofollow noopener"' ) && false !== strpos( $box, 'Zum Angebot bei AppSumo' ), 'Deal-Kasten: Affiliate-Link mit subId1 und Kennzeichnung' );
-adm_check( false !== strpos( $box, 'adm-box__price">49 $ <small>einmalig</small>' ) && false !== strpos( $box, 'Werbelink' ) && false !== strpos( $box, 'Erhältlich' ) && false !== strpos( $box, '60 Tage Rückgabe' ), 'Deal-Kasten: Preis live, Hinweis, Status, Rückgabe' );
+adm_check( false !== strpos( $box, 'adm-box__price">49 $ <small>einmalig</small>' ) && false !== strpos( $box, 'aria-label="Werbelink">*</span>' ) && false === strpos( $box, 'Provision' ) && false !== strpos( $box, 'Erhältlich' ) && false !== strpos( $box, '60 Tage Rückgabe' ), 'Deal-Kasten: Preis live, Hinweis, Status, Rückgabe' );
 $head = do_shortcode( '[adm_deal_header]' );
 adm_check( false !== strpos( $head, '<h1>LeadOcean ohne Abo' ) && false !== strpos( $head, 'adm-chip--price">49 $ einmalig' ) && false !== strpos( $head, 'Verkauf und Kurse' ) && false !== strpos( $head, 'aria-label="Brotkrumen"' ) && false !== strpos( $head, 'adm-head__meta">Stand ' ) && false === strpos( $head, 'Auswertung von' ) && false === strpos( $head, 'nicht selbst getestet' ), 'Kopf: Titel, Eckdaten, Rubrik, Brotkrumen, Quellenzeile' );
 $toc = do_shortcode( '[adm_toc]' );

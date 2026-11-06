@@ -73,6 +73,7 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 	}
 	// YouTube-Suche
 	if ( false !== strpos( $url, 'googleapis.com/youtube' ) ) {
+		$GLOBALS['adm_test_yt_referer'] = isset( $args['headers']['Referer'] ) ? $args['headers']['Referer'] : '';
 		$GLOBALS['adm_test_yt_requests'][] = $url;
 		$de = false !== strpos( $url, 'relevanceLanguage=de' );
 		return $json( array( 'items' => $de ? array(

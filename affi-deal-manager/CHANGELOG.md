@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.6.2 (06.11.2026)
+
+- YouTube-API: Anfragen senden die Adresse der eigenen Website als Referer. Schlüssel mit Website-Einschränkung („HTTP-Verweis-URLs“) funktionieren damit auch bei Abrufen vom Server (vorher HTTP 403). Anpassbar über den Filter `adm_youtube_referer`
+- Fehlermeldung der YouTube-Suche enthält Googles Begründung
+
 ## 0.6.1 (06.11.2026)
 
 - Videos nachtragen: Knopf „Videos nachtragen (N Entwürfe ohne Video)“ und Zeilenaktion „Videos neu suchen“. Sucht nur die Videos neu und lässt Gemini sie zusammenfassen, der Text bleibt (keine Kosten für die Haupt-KI). Läuft über die Warteschlange und den Server-Cron

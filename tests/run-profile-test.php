@@ -86,6 +86,7 @@ adm_check( false !== strpos( $c, 'Sprache: Englisch' ) && 1 === substr_count( $c
 $gem = $GLOBALS['adm_test_gemini_requests'];
 adm_check( 2 === count( $gem ) && 'gem-key' === $gem[0]['headers']['x-goog-api-key'] && 'https://www.youtube.com/watch?v=DEvideo0001' === $gem[0]['body']['contents'][0]['parts'][0]['file_data']['file_uri'] && 'MEDIA_RESOLUTION_LOW' === $gem[0]['body']['generationConfig']['mediaResolution'] && false !== strpos( $gem[0]['url'], 'gemini-3.6-flash:generateContent' ) && false === strpos( $gem[0]['url'], 'gem-key' ), 'Gemini: YouTube-Adresse, niedrige Auflösung, Schlüssel im Header' );
 adm_check( false !== strpos( implode( ' ', $GLOBALS['adm_test_yt_requests'] ), 'youtube/v3/videos' ), 'YouTube: Details (Dauer, Sprache) abgefragt' );
+adm_check( home_url( '/' ) === $GLOBALS['adm_test_yt_referer'], 'YouTube: Referer der eigenen Website (Schlüssel mit Website-Einschränkung)' );
 adm_check( false !== strpos( $c, 'für die du Daten' ) && false === strpos( $c, 'für die Du' ), 'Großes „Du“ mitten im Satz klein geschrieben' );
 $hints = get_post_meta( $post->ID, '_adm_style_hints', true );
 adm_check( is_array( $hints ) && false !== strpos( implode( ' ', $hints ), 'Gedankenstrich' ), 'Stilhinweis gespeichert: ' . ( is_array( $hints ) ? implode( '; ', $hints ) : '' ) );

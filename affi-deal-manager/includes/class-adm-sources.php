@@ -216,7 +216,7 @@ class ADM_Sources {
 			'id'   => implode( ',', $ids ),
 			'key'  => rawurlencode( $key ),
 		), 'https://www.googleapis.com/youtube/v3/videos' );
-		$res = wp_safe_remote_get( $url, array( 'timeout' => 15 ) );
+		$res = wp_safe_remote_get( $url, self::youtube_args() );
 		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
 			return array();
 		}
@@ -239,6 +239,17 @@ class ADM_Sources {
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * Anfrage-Optionen für die YouTube-API. Der Referer ist die Adresse der eigenen Website, damit Schlüssel mit
+	 * Website-Einschränkung („HTTP-Verweis-URLs“, z. B. software-ohne-abo.de/*) auch bei Abrufen vom Server gelten.
+	 */
+	private static function youtube_args() {
+		return array(
+			'timeout' => 15,
+			'headers' => array( 'Referer' => (string) apply_filters( 'adm_youtube_referer', home_url( '/' ) ) ),
+		);
 	}
 
 	/** ISO-8601-Dauer (PT1H2M3S) in Sekunden. */
@@ -270,7 +281,7 @@ class ADM_Sources {
 			$args['relevanceLanguage'] = 'de';
 			$args['regionCode']        = 'DE';
 		}
-		$res = wp_safe_remote_get( add_query_arg( array_map( 'rawurlencode', $args ), 'https://www.googleapis.com/youtube/v3/search' ), array( 'timeout' => 15 ) );
+		$res = wp_safe_remote_get( add_query_arg( array_map( 'rawurlencode', $args ), 'https://www.googleapis.com/youtube/v3/search' ), self::youtube_args() );
 		if ( is_wp_error( $res ) ) {
 			self::$youtube_error = $res->get_error_message();
 			return array();
@@ -280,7 +291,7 @@ class ADM_Sources {
 			$why = isset( $err['error']['errors'][0]['reason'] ) ? (string) $err['error']['errors'][0]['reason'] : '';
 			self::$youtube_error = 'quotaExceeded' === $why || 'dailyLimitExceeded' === $why
 				? 'Tageskontingent der YouTube-API erschöpft (neu ab 9 Uhr)'
-				: 'YouTube-Suche HTTP ' . (int) wp_remote_retrieve_response_code( $res ) . ( $why ? ' (' . $why . ')' : '' );
+				: 'YouTube-Suche HTTP ' . (int) wp_remote_retrieve_response_code( $res ) . ( $why ? ' (' . $why . ')' : '' ) . ( isset( $err['error']['message'] ) ? ': ' . wp_strip_all_tags( substr( (string) $err['error']['message'], 0, 140 ) ) : '' );
 			return array();
 		}
 		$json = json_decode( (string) wp_remote_retrieve_body( $res ), true );

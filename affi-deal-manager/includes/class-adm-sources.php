@@ -72,7 +72,7 @@ class ADM_Sources {
 	 */
 	public static function videos( array $deal, $max = 2 ) {
 		$picked = array();
-		$key    = (string) ADM_Settings::get( 'youtube_key' );
+		$key    = ADM_Settings::youtube_key();
 		$name   = '' !== $deal['name'] ? $deal['name'] : $deal['slug'];
 		if ( '' !== $key ) {
 			foreach ( array( array( $name . ' deutsch', 'de' ), array( $name . ' review', '' ) ) as $q ) {

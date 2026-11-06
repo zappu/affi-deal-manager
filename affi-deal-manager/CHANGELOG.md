@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.4.1 (06.11.2026)
+
+- API-Schlüssel nur noch in der `wp-config.php`: `THOKA_OPENROUTER_API_KEY`, `THOKA_OPENAI_API_KEY`, `THOKA_ANTHROPIC_API_KEY` und optional `THOKA_YOUTUBE_API_KEY`. Die Namen sind für alle Thoka-Plugins gedacht
+- Kein Schlüsselfeld mehr in den Einstellungen, stattdessen Status je Schlüssel (gesetzt oder fehlt) und die fertigen Zeilen für die `wp-config.php`
+- Beim Update werden in 0.4.0 gespeicherte Schlüssel aus der Datenbank gelöscht
+- Fehlermeldungen nennen die fehlende Konstante
+
 ## 0.4.0 (06.11.2026)
 
 - Tool-Profile: eigener Beitragstyp unter `/tools/<name>/`, verknüpft mit dem Deal, Reiter „Tool-Profile“ in der Thoka-Leiste

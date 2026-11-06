@@ -3,6 +3,11 @@
  * Test-Mu-Plugin: beantwortet Anfragen an appsumo.com mit Testdaten (kein Netz nötig).
  * Szenario über die Option adm_test_scenario: 1 = Grundstand, 2 = LeadOcean aus der Sitemap entfernt, 3 = Sitemap kaputt.
  */
+// Schlüssel wie in der wp-config.php (OpenAI bewusst ohne Schlüssel)
+define( 'THOKA_OPENROUTER_API_KEY', 'test-key' );
+define( 'THOKA_ANTHROPIC_API_KEY', 'neu-key' );
+define( 'THOKA_YOUTUBE_API_KEY', 'yt-key' );
+
 add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 	$json = function ( $data, $code = 200 ) {
 		return array( 'headers' => array(), 'body' => wp_json_encode( $data ), 'response' => array( 'code' => $code, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );

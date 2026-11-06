@@ -245,7 +245,7 @@ class ADM_Profiles {
 			return new WP_Error( 'adm_profile_published', 'Das Profil ist veröffentlicht und wird nicht automatisch überschrieben.' );
 		}
 		if ( ! ADM_AI::configured() ) {
-			return new WP_Error( 'adm_ai_key', 'Kein API-Schlüssel für die KI eingetragen.' );
+			return new WP_Error( 'adm_ai_key', ADM_AI::missing_key_message() );
 		}
 		// Frische Produktdaten (auch die Deal-Nummer für die Bewertungen).
 		if ( ! (int) $deal['appsumo_id'] || ! $deal['last_checked'] || strtotime( $deal['last_checked'] . ' UTC' ) < time() - DAY_IN_SECONDS ) {

@@ -105,7 +105,7 @@ class ADM_Admin {
 		$do  = isset( $_REQUEST['do'] ) ? sanitize_key( $_REQUEST['do'] ) : '';
 		$msg = '';
 		if ( ! ADM_AI::configured() && in_array( $do, array( 'one', 'best', 'run' ), true ) ) {
-			$msg = 'Bitte zuerst einen KI-Schlüssel in den Einstellungen eintragen.';
+			$msg = ADM_AI::missing_key_message();
 		} elseif ( 'one' === $do ) {
 			$id  = isset( $_REQUEST['id'] ) ? (int) $_REQUEST['id'] : 0;
 			$n   = ADM_Profiles::enqueue( array( $id ) );
@@ -367,9 +367,13 @@ class ADM_Admin {
 						</select></td>
 					</tr>
 					<?php
-					self::secret_field( 'ai_key', 'API-Schlüssel', $s, 'Wird nicht angezeigt. Leer lassen, um den gespeicherten Schlüssel zu behalten.' );
+					?>
+					<tr>
+						<th scope="row">API-Schlüssel</th>
+						<td><?php self::key_status(); ?></td>
+					</tr>
+					<?php
 					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
-					self::secret_field( 'youtube_key', 'YouTube-API-Schlüssel (optional)', $s, 'Für die Suche nach deutschen Testvideos (YouTube Data API v3, Google Cloud Console). Ohne Schlüssel kommen die Videos aus der AppSumo-Liste.' );
 					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
 					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Möglichst unter 60 Zeichen.' );
 					self::field( 'batch_profiles', 'Anzahl beim Sammelknopf', $s, '1 bis 50 kaufbare Software-Deals mit den meisten Bewertungen.', 'number' );
@@ -409,7 +413,7 @@ class ADM_Admin {
 		<div style="background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:12px 16px;margin:0 0 16px">
 			<h2 style="margin:0 0 8px;font-size:15px">Tool-Profile</h2>
 			<?php if ( ! ADM_AI::configured() ) : ?>
-				<p>Für die Profile fehlt noch der KI-Schlüssel. <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#adm-ki">Zu den Einstellungen</a></p>
+				<p><?php echo esc_html( ADM_AI::missing_key_message() ); ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#adm-ki">Zu den Einstellungen</a></p>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( $url ); ?>" style="display:inline">
 				<?php wp_nonce_field( 'adm_profile' ); ?>
@@ -502,16 +506,30 @@ class ADM_Admin {
 		return (int) round( $secs / DAY_IN_SECONDS ) . ' Tagen';
 	}
 
-	private static function secret_field( $key, $label, array $s, $help ) {
-		$set = '' !== (string) $s[ $key ];
-		printf(
-			'<tr><th scope="row"><label for="adm-%1$s">%2$s</label></th><td><input type="password" class="regular-text" id="adm-%1$s" name="adm[%1$s]" value="" autocomplete="off" placeholder="%3$s">%4$s%5$s</td></tr>',
-			esc_attr( $key ),
-			esc_html( $label ),
-			esc_attr( $set ? 'gespeichert' : '' ),
-			$set ? ' <label><input type="checkbox" name="adm[' . esc_attr( $key ) . '_delete]" value="1"> löschen</label>' : '',
-			$help ? '<p class="description">' . esc_html( $help ) . '</p>' : ''
-		);
+	/** Status der Schlüssel aus der wp-config.php, ohne die Schlüssel zu zeigen. */
+	private static function key_status() {
+		$rows = array();
+		foreach ( ADM_Settings::AI_PROVIDERS as $key => $p ) {
+			$rows[] = array( $p['label'], $p['constant'], '' !== ADM_Settings::ai_key( $key ) );
+		}
+		$rows[] = array( 'YouTube (optional)', ADM_Settings::YOUTUBE_CONSTANT, '' !== ADM_Settings::youtube_key() );
+		echo '<table class="widefat striped" style="max-width:640px"><tbody>';
+		foreach ( $rows as $r ) {
+			printf(
+				'<tr><td>%s</td><td><code>%s</code></td><td style="color:%s;font-weight:600">%s</td></tr>',
+				esc_html( $r[0] ),
+				esc_html( $r[1] ),
+				$r[2] ? '#00a32a' : '#b32d2e',
+				$r[2] ? 'gesetzt' : 'fehlt'
+			);
+		}
+		echo '</tbody></table>';
+		echo '<p class="description">Die Schlüssel stehen aus Sicherheitsgründen nur in der <code>wp-config.php</code>, oberhalb der Zeile „That’s all, stop editing!“:</p>';
+		echo '<pre style="background:#f6f7f7;padding:8px 10px;max-width:640px;overflow:auto">';
+		foreach ( $rows as $r ) {
+			echo esc_html( "define( '" . $r[1] . "', 'DEIN-SCHLÜSSEL' );" ) . "\n";
+		}
+		echo '</pre><p class="description">Nötig ist nur der Schlüssel des oben gewählten Anbieters. Ohne YouTube-Schlüssel kommen die Videos aus der AppSumo-Liste.</p>';
 	}
 
 	/** Zeitstempel in Ortszeit. */

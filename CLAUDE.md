@@ -15,7 +15,7 @@
   - `includes/class-adm-sync.php`: Abgleich per WP-Cron (`adm_sync_tick`, Zeitplan `adm_every_<Minuten>`) oder Server-Cron (REST `affi-deal-manager/v1/tick`, Schlüssel `X-ADM-Key`), Zeitfenster, Sitemap-Uhrzeit, Fehler-Mail
   - Reihenfolge der Prüfung: kaufbar, dann Sitemap-Priorität (AppSumo: 0.5 aktiv, 0.25 alt), dann ungeprüft, dann neuestes lastmod
   - `includes/class-adm-links.php`: Impact-Deep-Links, Shortcode `[adm_link]`
-  - `includes/class-adm-ai.php`: KI-Anbindung OpenRouter, OpenAI, Anthropic
+  - `includes/class-adm-ai.php`: KI-Anbindung OpenRouter, OpenAI, Anthropic; Schlüssel nur aus der wp-config.php (`THOKA_OPENROUTER_API_KEY`, `THOKA_OPENAI_API_KEY`, `THOKA_ANTHROPIC_API_KEY`, `THOKA_YOUTUBE_API_KEY`), nie in der Datenbank
   - `includes/class-adm-sources.php`: AppSumo-Bewertungen (`/api/v2/deals/<appsumo_id>/reviews/`, neueste per `sort=created`, kritischste per `sort=rating&order=asc`) und YouTube-Suche
   - `includes/class-adm-profiles.php`: Beitragstyp `adm_tool` (`/tools/`), Warteschlange `adm_profile_queue`, Prompt und Zusammenbau der Profile
   - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_box]`, `[adm_deal_details]`, `[adm_video]`, `[adm_alternatives]`

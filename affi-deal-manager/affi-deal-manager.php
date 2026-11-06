@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Thoka Affi Deal Manager
  * Description: Gleicht täglich die Deals von AppSumo ab, führt Status, Preise und Bewertungen in einer eigenen Tabelle, baut Impact-Affiliate-Links und erstellt redaktionelle Tool-Profile mit KI.
- * Version: 0.4.0
+ * Version: 0.4.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Thoka Network
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Gemeinsames Admin-Menü „Thoka“ (Bibliothek thoka-menu, lädt die höchste vorhandene Version).
 require_once __DIR__ . '/thoka-menu/loader.php';
 
-define( 'ADM_VERSION', '0.4.0' );
+define( 'ADM_VERSION', '0.4.1' );
 define( 'ADM_DB_VERSION', '4' );
 define( 'ADM_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ADM_FILE', __FILE__ );
@@ -43,6 +43,7 @@ register_deactivation_hook( __FILE__, array( 'ADM_Profiles', 'deactivate' ) );
 
 add_action( 'plugins_loaded', function () {
 	ADM_DB::maybe_upgrade();
+	ADM_Settings::purge_stored_keys();
 	ADM_Sync::init();
 	ADM_Links::init();
 	ADM_Profiles::init();

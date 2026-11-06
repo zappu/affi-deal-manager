@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ADM_AI {
 
 	public static function configured() {
-		return '' !== (string) ADM_Settings::get( 'ai_key' );
+		return '' !== ADM_Settings::ai_key();
 	}
 
 	/**
@@ -21,11 +21,11 @@ class ADM_AI {
 	 * @return string|WP_Error Antworttext.
 	 */
 	public static function chat( $system, $user, $max_tokens = 6000 ) {
-		$key = (string) ADM_Settings::get( 'ai_key' );
-		if ( '' === $key ) {
-			return new WP_Error( 'adm_ai_key', 'Kein API-Schlüssel für die KI eingetragen (Einstellungen).' );
-		}
 		$provider = (string) ADM_Settings::get( 'ai_provider' );
+		$key      = ADM_Settings::ai_key( $provider );
+		if ( '' === $key ) {
+			return new WP_Error( 'adm_ai_key', self::missing_key_message() );
+		}
 		$model    = ADM_Settings::ai_model();
 
 		if ( 'anthropic' === $provider ) {
@@ -94,6 +94,12 @@ class ADM_AI {
 			return new WP_Error( 'adm_ai_empty', 'Die KI hat keinen Text geliefert.' );
 		}
 		return $text;
+	}
+
+	public static function missing_key_message() {
+		$p = (string) ADM_Settings::get( 'ai_provider' );
+		$c = isset( ADM_Settings::AI_PROVIDERS[ $p ] ) ? ADM_Settings::AI_PROVIDERS[ $p ]['constant'] : 'THOKA_OPENROUTER_API_KEY';
+		return 'Kein API-Schlüssel: ' . $c . ' fehlt in der wp-config.php.';
 	}
 
 	/** JSON-Objekt aus einer Antwort lösen (auch mit Codeblock drumherum). */

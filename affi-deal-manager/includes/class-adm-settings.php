@@ -30,15 +30,39 @@ class ADM_Settings {
 		1440 => 'einmal am Tag',
 	);
 
-	/** KI-Anbieter => Beschriftung und Standardmodell. */
+	/** KI-Anbieter => Beschriftung, Standardmodell und Konstante in der wp-config.php. */
 	const AI_PROVIDERS = array(
-		'openrouter' => array( 'label' => 'OpenRouter', 'model' => 'anthropic/claude-sonnet-4.5' ),
-		'openai'     => array( 'label' => 'OpenAI', 'model' => 'gpt-4.1' ),
-		'anthropic'  => array( 'label' => 'Anthropic', 'model' => 'claude-sonnet-4-5' ),
+		'openrouter' => array( 'label' => 'OpenRouter', 'model' => 'anthropic/claude-sonnet-4.5', 'constant' => 'THOKA_OPENROUTER_API_KEY' ),
+		'openai'     => array( 'label' => 'OpenAI', 'model' => 'gpt-4.1', 'constant' => 'THOKA_OPENAI_API_KEY' ),
+		'anthropic'  => array( 'label' => 'Anthropic', 'model' => 'claude-sonnet-4-5', 'constant' => 'THOKA_ANTHROPIC_API_KEY' ),
 	);
 
-	/** Geheime Felder: werden nie im Formular ausgegeben, leere Eingabe behält den Wert. */
-	const SECRET_KEYS = array( 'ai_key', 'youtube_key' );
+	/** YouTube-Schlüssel (optional) in der wp-config.php. */
+	const YOUTUBE_CONSTANT = 'THOKA_YOUTUBE_API_KEY';
+
+	/** Schlüssel aus der wp-config.php; Schlüssel werden nie in der Datenbank gespeichert. */
+	public static function constant_key( $constant ) {
+		return defined( $constant ) && is_string( constant( $constant ) ) ? trim( (string) constant( $constant ) ) : '';
+	}
+
+	/** API-Schlüssel des Anbieters (Standard: eingestellter Anbieter). */
+	public static function ai_key( $provider = null ) {
+		$provider = null === $provider ? (string) self::get( 'ai_provider' ) : (string) $provider;
+		return isset( self::AI_PROVIDERS[ $provider ] ) ? self::constant_key( self::AI_PROVIDERS[ $provider ]['constant'] ) : '';
+	}
+
+	public static function youtube_key() {
+		return self::constant_key( self::YOUTUBE_CONSTANT );
+	}
+
+	/** Version 0.4.0 speicherte Schlüssel in der Datenbank: einmalig entfernen. */
+	public static function purge_stored_keys() {
+		$saved = get_option( self::OPTION, array() );
+		if ( is_array( $saved ) && ( isset( $saved['ai_key'] ) || isset( $saved['youtube_key'] ) ) ) {
+			unset( $saved['ai_key'], $saved['youtube_key'], $saved['ai_key_delete'], $saved['youtube_key_delete'] );
+			update_option( self::OPTION, $saved, false );
+		}
+	}
 
 	public static function defaults() {
 		return array(
@@ -60,9 +84,7 @@ class ADM_Settings {
 			'update_token'          => '',
 			'cron_secret'           => '',
 			'ai_provider'           => 'openrouter',
-			'ai_key'                => '',
 			'ai_model'              => '',
-			'youtube_key'           => '',
 			'title_template'        => '{tool} ohne Abo: Funktionen, Käuferstimmen und Alternativen',
 			'seo_title_template'    => '{tool} ohne Abo (Lifetime Deal): Funktionen und Alternativen',
 			'batch_profiles'        => 20,
@@ -90,6 +112,8 @@ class ADM_Settings {
 			$saved['mode'] = $saved['enabled'] ? 'wpcron' : 'off';
 		}
 		unset( $saved['enabled'] );
+		// Schlüssel gehören in die wp-config.php (0.4.0 speicherte sie noch hier).
+		unset( $saved['ai_key'], $saved['youtube_key'] );
 		return array_merge( self::defaults(), $saved );
 	}
 
@@ -138,9 +162,7 @@ class ADM_Settings {
 			'update_token'          => isset( $in['update_token'] ) ? sanitize_text_field( (string) $in['update_token'] ) : '',
 			'cron_secret'           => $cur['cron_secret'],
 			'ai_provider'           => isset( $in['ai_provider'], self::AI_PROVIDERS[ $in['ai_provider'] ] ) ? $in['ai_provider'] : $cur['ai_provider'],
-			'ai_key'                => self::secret( $in, 'ai_key', $cur ),
 			'ai_model'              => isset( $in['ai_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._:\/\-]/', '', (string) $in['ai_model'] ), 0, 100 ) : $cur['ai_model'],
-			'youtube_key'           => self::secret( $in, 'youtube_key', $cur ),
 			'title_template'        => self::template( $in, 'title_template', $cur ),
 			'seo_title_template'    => self::template( $in, 'seo_title_template', $cur ),
 			'batch_profiles'        => self::range( $in, 'batch_profiles', 1, 50, $cur['batch_profiles'] ),
@@ -173,15 +195,6 @@ class ADM_Settings {
 			$n += self::in_window( $h ) ? 1 : 0;
 		}
 		return $n;
-	}
-
-	/** Geheimnis: leere Eingabe behält den alten Wert, Häkchen „löschen“ entfernt ihn. */
-	private static function secret( array $in, $key, array $cur ) {
-		if ( ! empty( $in[ $key . '_delete' ] ) ) {
-			return '';
-		}
-		$v = isset( $in[ $key ] ) ? trim( (string) $in[ $key ] ) : '';
-		return '' !== $v ? substr( preg_replace( '/[^\x21-\x7E]/', '', $v ), 0, 300 ) : (string) $cur[ $key ];
 	}
 
 	/** Titelvorlage muss {tool} enthalten. */

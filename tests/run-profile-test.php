@@ -17,7 +17,14 @@ function adm_check( $cond, $label ) {
 // Ausgangslage: LeadOcean wieder kaufbar (Szenario 1), Profile und Warteschlange leer
 update_option( 'adm_test_scenario', 1 );
 update_option( 'adm_test_ai', 'ok' );
-ADM_Settings::save( array_merge( ADM_Settings::defaults(), array( 'delay' => 0, 'batch_size' => 100, 'ai_key' => 'test-key', 'youtube_key' => 'yt-key' ) ) );
+// Altlast aus 0.4.0: gespeicherter Schlüssel wird entfernt, neue Eingaben werden nicht gespeichert
+update_option( 'adm_settings', array_merge( ADM_Settings::defaults(), array( 'ai_key' => 'alt-key-aus-db', 'youtube_key' => 'alt-yt' ) ) );
+ADM_Settings::purge_stored_keys();
+$raw = get_option( 'adm_settings' );
+adm_check( ! isset( $raw['ai_key'] ) && ! isset( $raw['youtube_key'] ), 'Alte Schlüssel aus der Datenbank entfernt' );
+ADM_Settings::save( array_merge( ADM_Settings::defaults(), array( 'delay' => 0, 'batch_size' => 100, 'ai_key' => 'darf-nicht-gespeichert-werden' ) ) );
+adm_check( false === strpos( wp_json_encode( get_option( 'adm_settings' ) ), 'darf-nicht' ), 'Schlüssel aus dem Formular wird nie gespeichert' );
+adm_check( 'test-key' === ADM_Settings::ai_key() && 'neu-key' === ADM_Settings::ai_key( 'anthropic' ) && '' === ADM_Settings::ai_key( 'openai' ) && 'yt-key' === ADM_Settings::youtube_key(), 'Schlüssel kommen aus den Konstanten THOKA_*' );
 foreach ( get_posts( array( 'post_type' => 'adm_tool', 'post_status' => 'any', 'numberposts' => -1 ) ) as $p ) {
 	wp_delete_post( $p->ID, true );
 }
@@ -118,13 +125,10 @@ update_option( 'adm_test_ai', 'error' );
 $r = ADM_Profiles::generate( (int) $lo['id'] );
 adm_check( is_wp_error( $r ) && false !== strpos( $r->get_error_message(), 'HTTP 401' ) && false !== strpos( $r->get_error_message(), 'Invalid API key' ), 'KI-Fehler wird verständlich gemeldet: ' . ( is_wp_error( $r ) ? $r->get_error_message() : '' ) );
 update_option( 'adm_test_ai', 'ok' );
-ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_key_delete' => 1 ) ) );
-adm_check( ! ADM_AI::configured(), 'Schlüssel löschen' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_provider' => 'openai' ) ) );
+adm_check( ! ADM_AI::configured(), 'Anbieter ohne Konstante gilt als nicht eingerichtet' );
 $r = ADM_Profiles::generate( (int) $lo['id'] );
-adm_check( is_wp_error( $r ) && 'adm_ai_key' === $r->get_error_code(), 'Ohne Schlüssel keine Erzeugung' );
-ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_key' => 'neu-key' ) ) );
-ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_key' => '' ) ) );
-adm_check( 'neu-key' === ADM_Settings::get( 'ai_key' ), 'Leere Eingabe behält den Schlüssel' );
+adm_check( is_wp_error( $r ) && 'adm_ai_key' === $r->get_error_code() && false !== strpos( $r->get_error_message(), 'THOKA_OPENAI_API_KEY' ), 'Ohne Schlüssel keine Erzeugung, Meldung nennt die Konstante' );
 
 // Anthropic direkt
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_provider' => 'anthropic', 'ai_model' => '' ) ) );

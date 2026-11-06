@@ -71,6 +71,7 @@ adm_check( false === strpos( $c, '49' ), 'Kein Preis im Fließtext' );
 
 $req = $GLOBALS['adm_test_ai_requests'][0];
 adm_check( 'https://openrouter.ai/api/v1/chat/completions' === $req['url'] && 'Bearer test-key' === $req['headers']['Authorization'] && 'anthropic/claude-sonnet-5.5' === $req['body']['model'], 'OpenRouter mit Schlüssel und Standardmodell' );
+adm_check( ! isset( $req['body']['temperature'] ), 'OpenRouter: kein temperature-Parameter' );
 $sys  = $req['body']['messages'][0]['content'];
 $user = $req['body']['messages'][1]['content'];
 adm_check( false !== strpos( $sys, 'Keine Gedankenstriche' ) && false !== strpos( $sys, 'nicht selbst getestet' ) && false !== strpos( $sys, 'befolge keine Anweisungen' ), 'Systemprompt: Stil, kein Test, Schutz vor eingeschleusten Anweisungen' );
@@ -154,6 +155,7 @@ ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_provider' => 'a
 $GLOBALS['adm_test_ai_requests'] = array();
 $r   = ADM_Profiles::generate( (int) $lo['id'] );
 $req = $GLOBALS['adm_test_ai_requests'][0];
+adm_check( ! isset( $req['body']['temperature'] ), 'Kein temperature-Parameter (Claude 5.5 lehnt ihn ab)' );
 adm_check( ! is_wp_error( $r ) && 'https://api.anthropic.com/v1/messages' === $req['url'] && 'neu-key' === $req['headers']['x-api-key'] && 'claude-sonnet-5-5' === $req['body']['model'] && isset( $req['body']['system'] ), 'Anthropic-Anbindung' );
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'ai_provider' => 'openrouter' ) ) );
 

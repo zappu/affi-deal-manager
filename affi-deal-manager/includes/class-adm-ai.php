@@ -21,6 +21,7 @@ class ADM_AI {
 	 * @return string|WP_Error Antworttext.
 	 */
 	public static function chat( $system, $user, $max_tokens = 6000 ) {
+		// Ohne temperature: neuere Modelle (z. B. Claude Sonnet 5.5) lehnen den Parameter ab.
 		$provider = (string) ADM_Settings::get( 'ai_provider' );
 		$key      = ADM_Settings::ai_key( $provider );
 		if ( '' === $key ) {
@@ -38,7 +39,6 @@ class ADM_AI {
 			$body    = array(
 				'model'       => $model,
 				'max_tokens'  => (int) $max_tokens,
-				'temperature' => 0.4,
 				'system'      => $system,
 				'messages'    => array( array( 'role' => 'user', 'content' => $user ) ),
 			);
@@ -55,7 +55,6 @@ class ADM_AI {
 			$body = array(
 				'model'       => $model,
 				'max_tokens'  => (int) $max_tokens,
-				'temperature' => 0.4,
 				'messages'    => array(
 					array( 'role' => 'system', 'content' => $system ),
 					array( 'role' => 'user', 'content' => $user ),

@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.4.3 (06.11.2026)
+
+- Fehler behoben: Claude Sonnet 5.5 lehnt den Parameter `temperature` ab (HTTP 400). Die Anfragen kommen jetzt bei allen Anbietern ohne ihn aus
+
 ## 0.4.2 (06.11.2026)
 
 - Fehler behoben: Modellnamen mit Tilde (OpenRouter-Aliasse wie `~anthropic/claude-sonnet-latest`) wurden beim Speichern verstümmelt

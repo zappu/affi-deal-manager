@@ -23,6 +23,8 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 			$urls[ 'old-deal-' . $i ] = '0.25';
 		}
 		$urls['neuronwriter'] = '0.5';
+		$urls['free-playbook'] = '0.5';
+		$urls['founder-course'] = '0.5';
 		if ( 2 !== $scenario ) {
 			$urls['leadocean'] = '0.5';
 		}
@@ -36,6 +38,12 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		$slug = $m[1];
 		if ( file_exists( $fx . $slug . '.html' ) ) {
 			return $ok( file_get_contents( $fx . $slug . '.html' ) );
+		}
+		if ( 'free-playbook' === $slug ) {
+			return $ok( '<script type="application/ld+json">{"@type":"Product","name":"The Newsletter Growth Playbook","description":"Grow your list with proven tactics","offers":{"price":"0","priceCurrency":"USD","availability":"http://schema.org/InStock","availabilityEnds":"' . gmdate( 'c', time() + 364 * DAY_IN_SECONDS ) . '"}}</script><a href="/collections/deal-type/courses-learning/">Courses &amp; learning</a>' );
+		}
+		if ( 'founder-course' === $slug ) {
+			return $ok( '<script type="application/ld+json">{"@type":"Product","name":"Founder Sales Masterclass","description":"Video lessons for your first customers","offers":{"price":"29","priceCurrency":"USD","availability":"http://schema.org/InStock","availabilityEnds":"' . gmdate( 'c', time() + 20 * DAY_IN_SECONDS ) . '"}}</script><a href="/collections/deal-type/courses-learning/">Courses &amp; learning</a>' );
 		}
 		if ( 'gone-deal' === $slug ) {
 			return array( 'headers' => array(), 'body' => 'not found', 'response' => array( 'code' => 404, 'message' => 'Not Found' ), 'cookies' => array(), 'filename' => null );

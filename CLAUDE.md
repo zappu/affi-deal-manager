@@ -10,8 +10,8 @@
 
 - `affi-deal-manager/`: Plugin-Quelle, Hauptdatei `affi-deal-manager.php` (ZIP-Wurzelordner `affi-deal-manager/`)
   - `includes/class-adm-settings.php`: Einstellungen (Option `adm_settings`)
-  - `includes/class-adm-db.php`: Tabelle `{prefix}adm_deals`, Status `neu`, `kaufbar`, `ausgelaufen`, `ignoriert`
-  - `includes/class-adm-parser.php`: Sitemap und schema.org-Daten (JSON-LD) der AppSumo-Produktseiten
+  - `includes/class-adm-db.php`: Tabelle `{prefix}adm_deals`, Status `neu`, `kaufbar`, `ausgelaufen`, `ignoriert`; Typ `software`, `kurs`, `ebook`, `vorlage` (`deal_type_source` „manuell“ schützt Korrekturen); `query()` hinter `adm_get_deals()`
+  - `includes/class-adm-parser.php`: Sitemap und schema.org-Daten (JSON-LD) der AppSumo-Produktseiten, Deal-Typ (Link `/collections/deal-type/` oder eingebettete Seitendaten), Stichwort-Teilung Kurs/E-Book, Platzhalter-Enddaten (mehr als 300 Tage) werden verworfen
   - `includes/class-adm-sync.php`: Abgleich per WP-Cron (`adm_sync_tick`, Zeitplan `adm_every_<Minuten>`) oder Server-Cron (REST `affi-deal-manager/v1/tick`, Schlüssel `X-ADM-Key`), Zeitfenster, Sitemap-Uhrzeit, Fehler-Mail
   - Reihenfolge der Prüfung: kaufbar, dann Sitemap-Priorität (AppSumo: 0.5 aktiv, 0.25 alt), dann ungeprüft, dann neuestes lastmod
   - `includes/class-adm-links.php`: Impact-Deep-Links, Shortcode `[adm_link]`

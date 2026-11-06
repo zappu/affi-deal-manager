@@ -11,10 +11,19 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - kaufbar     Deal kann bei AppSumo gekauft werden
  * - ausgelaufen war kaufbar oder hat ein Tool-Profil, ist es aber nicht mehr
  * - ignoriert   nie als kaufbar gesehen (alte Deals aus der Sitemap)
+ *
+ * Deal-Typ (deal_type): software, kurs, ebook, vorlage oder leer (noch unbekannt).
+ * deal_type_source „manuell“ schützt eine Korrektur im Backend vor dem Abgleich.
  */
 class ADM_DB {
 
 	const STATUSES = array( 'neu', 'kaufbar', 'ausgelaufen', 'ignoriert' );
+	const TYPES    = array(
+		'software' => 'Software',
+		'kurs'     => 'Kurs',
+		'ebook'    => 'E-Book',
+		'vorlage'  => 'Vorlage',
+	);
 
 	public static function table() {
 		global $wpdb;
@@ -49,6 +58,9 @@ class ADM_DB {
 			in_sitemap tinyint(1) NOT NULL DEFAULT 1,
 			sitemap_lastmod date NULL,
 			sitemap_priority decimal(3,2) NULL,
+			deal_type varchar(20) NOT NULL DEFAULT '',
+			deal_type_source varchar(10) NOT NULL DEFAULT '',
+			appsumo_type varchar(60) NOT NULL DEFAULT '',
 			post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			first_seen datetime NOT NULL,
 			last_checked datetime NULL,
@@ -60,6 +72,7 @@ class ADM_DB {
 			UNIQUE KEY url (url),
 			KEY slug (slug),
 			KEY status (status),
+			KEY deal_type (deal_type),
 			KEY next_check (next_check)
 		) {$charset};";
 		dbDelta( $sql );
@@ -76,6 +89,74 @@ class ADM_DB {
 			// Neue Spalte sitemap_priority: Sitemap beim nächsten Schritt neu lesen.
 			delete_option( 'adm_sitemap_read' );
 		}
+		if ( $old && version_compare( (string) $old, '3', '<' ) ) {
+			global $wpdb;
+			$t = self::table();
+			// Platzhalter-Enddaten (etwa ein Jahr ab Abruf) entfernen.
+			$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET available_until = NULL WHERE available_until > %s", gmdate( 'Y-m-d H:i:s', time() + ADM_Parser::PLACEHOLDER_DAYS * DAY_IN_SECONDS ) ) ); // phpcs:ignore
+			// Neue Spalte deal_type: kaufbare Deals gleich neu prüfen, damit sie ihren Typ bekommen.
+			$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET next_check = %s WHERE status = 'kaufbar'", self::now() ) ); // phpcs:ignore
+		}
+	}
+
+	public static function type_label( $type ) {
+		return isset( self::TYPES[ $type ] ) ? self::TYPES[ $type ] : 'Unbekannt';
+	}
+
+	/** Manuelle Korrektur des Deal-Typs; leerer Typ gibt die automatische Erkennung wieder frei. */
+	public static function set_type( $id, $type ) {
+		$type = sanitize_key( $type );
+		if ( '' !== $type && ! isset( self::TYPES[ $type ] ) ) {
+			return false;
+		}
+		if ( '' === $type ) {
+			return self::update( $id, array( 'deal_type_source' => '', 'next_check' => self::now() ) );
+		}
+		return self::update( $id, array( 'deal_type' => $type, 'deal_type_source' => 'manuell' ) );
+	}
+
+	/**
+	 * Deals für Vorlagen und Bereiche der Website.
+	 *
+	 * @param array $args status (Standard kaufbar), type (software, kurs, ebook, vorlage),
+	 *                    free (true = nur kostenlose), limit (1 bis 100), orderby (reviews, rating, price, newest).
+	 * @return array Liste von Deals.
+	 */
+	public static function query( array $args = array() ) {
+		global $wpdb;
+		$args  = wp_parse_args( $args, array( 'status' => 'kaufbar', 'type' => '', 'free' => false, 'limit' => 12, 'orderby' => 'reviews' ) );
+		$where = array( 'status = %s' );
+		$vals  = array( in_array( $args['status'], self::STATUSES, true ) ? $args['status'] : 'kaufbar' );
+		if ( isset( self::TYPES[ $args['type'] ] ) ) {
+			$where[] = 'deal_type = %s';
+			$vals[]  = $args['type'];
+		}
+		if ( $args['free'] ) {
+			$where[] = 'price IS NOT NULL AND price = 0';
+		}
+		$orders = array(
+			'reviews' => 'review_count DESC, rating DESC',
+			'rating'  => 'rating DESC, review_count DESC',
+			'price'   => 'price ASC, review_count DESC',
+			'newest'  => 'first_seen DESC',
+		);
+		$order  = isset( $orders[ $args['orderby'] ] ) ? $orders[ $args['orderby'] ] : $orders['reviews'];
+		$vals[] = max( 1, min( 100, (int) $args['limit'] ) );
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE ' . implode( ' AND ', $where ) . " ORDER BY {$order}, id ASC LIMIT %d", $vals ), ARRAY_A ); // phpcs:ignore
+		return array_map( array( __CLASS__, 'decode' ), (array) $rows );
+	}
+
+	/** Anzahl kaufbarer Deals je Typ. */
+	public static function type_counts( $status = 'kaufbar' ) {
+		global $wpdb;
+		$out  = array_fill_keys( array_keys( self::TYPES ), 0 );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT deal_type, COUNT(*) AS n FROM ' . self::table() . ' WHERE status = %s GROUP BY deal_type', $status ), ARRAY_A );
+		foreach ( (array) $rows as $r ) {
+			if ( isset( $out[ $r['deal_type'] ] ) ) {
+				$out[ $r['deal_type'] ] = (int) $r['n'];
+			}
+		}
+		return $out;
 	}
 
 	public static function now() {
@@ -103,7 +184,7 @@ class ADM_DB {
 		return $row ? self::decode( $row ) : null;
 	}
 
-	private static function decode( array $row ) {
+	public static function decode( array $row ) {
 		foreach ( array( 'videos', 'faq' ) as $k ) {
 			$v         = isset( $row[ $k ] ) ? json_decode( (string) $row[ $k ], true ) : null;
 			$row[ $k ] = is_array( $v ) ? $v : array();

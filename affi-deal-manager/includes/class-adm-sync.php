@@ -296,6 +296,12 @@ class ADM_Sync {
 			return self::row_failed( $row, 'Keine Produktdaten (schema.org) gefunden' );
 		}
 
+		// Eine manuelle Korrektur des Typs im Backend bleibt erhalten.
+		if ( 'manuell' === (string) $row['deal_type_source'] ) {
+			unset( $data['deal_type'] );
+		} elseif ( '' !== $data['deal_type'] ) {
+			$data['deal_type_source'] = 'auto';
+		}
 		$available = ADM_Parser::is_available( $data['availability'] );
 		if ( $available ) {
 			$status = 'kaufbar';

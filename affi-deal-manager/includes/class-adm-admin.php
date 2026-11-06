@@ -15,6 +15,7 @@ class ADM_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_post_adm_save_settings', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_post_adm_action', array( __CLASS__, 'handle_action' ) );
+		add_action( 'admin_post_adm_set_type', array( __CLASS__, 'handle_set_type' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( ADM_FILE ), array( __CLASS__, 'action_links' ) );
 	}
 
@@ -90,6 +91,28 @@ class ADM_Admin {
 		exit;
 	}
 
+	public static function set_type_url( $id, $type ) {
+		return wp_nonce_url( add_query_arg( array( 'action' => 'adm_set_type', 'id' => (int) $id, 'type' => $type ), admin_url( 'admin-post.php' ) ), 'adm_set_type_' . (int) $id );
+	}
+
+	public static function handle_set_type() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Keine Berechtigung.' );
+		}
+		$id = isset( $_GET['id'] ) ? (int) $_GET['id'] : 0;
+		check_admin_referer( 'adm_set_type_' . $id );
+		$type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
+		$deal = ADM_DB::get( $id );
+		if ( $deal && false !== ADM_DB::set_type( $id, $type ) ) {
+			$name = '' !== $deal['name'] ? $deal['name'] : $deal['slug'];
+			$msg  = '' === $type ? $name . ': Typ wird beim nächsten Abgleich automatisch erkannt.' : $name . ': Typ auf „' . ADM_DB::type_label( $type ) . '“ gesetzt.';
+			set_transient( 'adm_notice_' . get_current_user_id(), $msg, 60 );
+		}
+		$back = wp_get_referer();
+		wp_safe_redirect( $back ? $back : add_query_arg( array( 'page' => self::SLUG ), admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
 	/* ---------------- Seiten ---------------- */
 
 	public static function page_deals() {
@@ -143,6 +166,16 @@ class ADM_Admin {
 				<?php endforeach; ?>
 			</div>
 
+			<?php
+			$types = ADM_DB::type_counts();
+			$parts = array();
+			foreach ( ADM_DB::TYPES as $key => $label ) {
+				$parts[] = '<a href="' . esc_url( add_query_arg( array( 'page' => self::SLUG, 'status' => 'kaufbar', 'type' => $key ), admin_url( 'admin.php' ) ) ) . '">' . esc_html( $label ) . ' ' . (int) $types[ $key ] . '</a>';
+			}
+			$free = (int) $GLOBALS['wpdb']->get_var( 'SELECT COUNT(*) FROM ' . ADM_DB::table() . " WHERE status = 'kaufbar' AND price IS NOT NULL AND price = 0" ); // phpcs:ignore
+			$parts[] = '<a href="' . esc_url( add_query_arg( array( 'page' => self::SLUG, 'status' => 'kaufbar', 'type' => 'kostenlos' ), admin_url( 'admin.php' ) ) ) . '">davon kostenlos ' . $free . '</a>';
+			?>
+			<p><strong>Kaufbar nach Typ:</strong> <?php echo implode( ' · ', $parts ); // phpcs:ignore WordPress.Security.EscapeOutput ?></p>
 			<p style="color:#646970">
 				Sitemap zuletzt gelesen: <?php echo esc_html( $smap ? self::date( $smap ) : 'noch nie' ); ?> ·
 				Letzter erfolgreicher Abruf: <?php echo esc_html( $health['last_success'] ? self::date( $health['last_success'] ) : 'noch keiner' ); ?> ·

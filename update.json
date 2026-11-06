@@ -1,9 +1,9 @@
 {
   "name": "Thoka Affi Deal Manager",
   "slug": "affi-deal-manager",
-  "version": "0.2.0",
-  "download_url": "https://mediainfo.space/Thoka_Plugins/affi-deal-manager/affi-deal-manager-0.2.0.zip",
-  "sha256": "d5c37c4bcb4ea1d86d359c4e2847ae6e169e7f8f2f1ba073aa6cf55f879034fb",
+  "version": "0.3.0",
+  "download_url": "https://mediainfo.space/Thoka_Plugins/affi-deal-manager/affi-deal-manager-0.3.0.zip",
+  "sha256": "4d7f4020d3e2c004eb2060a001f524c90e3b2d0b9693d73367c3b16d63fd560b",
   "homepage": "https://mediainfo.space/Thoka_Plugins/",
   "author": "Thoka Network",
   "requires": "6.0",
@@ -12,6 +12,6 @@
   "last_updated": "2026-11-06",
   "sections": {
     "description": "<p>Gleicht täglich die Deals von AppSumo ab (Sitemap und strukturierte Produktdaten), führt Status, Preise und Bewertungen in einer eigenen Tabelle und baut Impact-Affiliate-Links.</p>",
-    "changelog": "<h4>0.2.0</h4><ul><li>Zeitplan frei einstellbar: WP-Cron, Server-Cron oder aus, Takt 5 Minuten bis täglich, Zeitfenster, Uhrzeit für die Sitemap</li><li>Server-Cron für Plesk mit geheimem Schlüssel, fertiger Befehl in den Einstellungen</li><li>Aktive Deals werden zuerst geprüft (Sitemap-Priorität)</li><li>Bis zu 100 Deals pro Schritt mit Zeitlimit</li><li>Grund zum Status in der Deal-Liste (z. B. Ausverkauft, nicht mehr in der Sitemap, Angebot läuft bis …)</li><li>Durchsatz-Schätzung und Zeitplan-Übersicht</li></ul><h4>0.1.0</h4><ul><li>Erste Version</li><li>Täglicher Abgleich mit der AppSumo-Sitemap, Abruf der Produktseiten in kleinen Schritten alle 5 Minuten</li><li>Übernahme von Name, Marke, Kurzbeschreibung, Preis, Verfügbarkeit, Bewertung, Kategorie, FAQ, Rückgabefrist und Testvideos</li><li>Status kaufbar, ausgelaufen, ungeprüft, ignoriert</li><li>Impact-Deep-Links mit subId1 und Shortcode [adm_link]</li><li>Deal-Liste im Menü „Thoka“, Störungs-Mail höchstens einmal am Tag</li></ul>"
+    "changelog": "<h4>0.3.0</h4><ul><li>Deal-Typ Software, Kurs, E-Book oder Vorlage, automatisch erkannt und im Backend korrigierbar</li><li>Filter nach Typ und „Nur kostenlose“, Übersicht kaufbar nach Typ</li><li>Neue Funktion adm_get_deals() für Bereiche der Website</li><li>Platzhalter-Enddaten von AppSumo werden verworfen</li></ul><h4>0.2.0</h4><ul><li>Zeitplan frei einstellbar: WP-Cron, Server-Cron oder aus, Takt 5 Minuten bis täglich, Zeitfenster, Uhrzeit für die Sitemap</li><li>Server-Cron für Plesk mit geheimem Schlüssel, fertiger Befehl in den Einstellungen</li><li>Aktive Deals werden zuerst geprüft (Sitemap-Priorität)</li><li>Bis zu 100 Deals pro Schritt mit Zeitlimit</li><li>Grund zum Status in der Deal-Liste (z. B. Ausverkauft, nicht mehr in der Sitemap, Angebot läuft bis …)</li><li>Durchsatz-Schätzung und Zeitplan-Übersicht</li></ul><h4>0.1.0</h4><ul><li>Erste Version</li><li>Täglicher Abgleich mit der AppSumo-Sitemap, Abruf der Produktseiten in kleinen Schritten alle 5 Minuten</li><li>Übernahme von Name, Marke, Kurzbeschreibung, Preis, Verfügbarkeit, Bewertung, Kategorie, FAQ, Rückgabefrist und Testvideos</li><li>Status kaufbar, ausgelaufen, ungeprüft, ignoriert</li><li>Impact-Deep-Links mit subId1 und Shortcode [adm_link]</li><li>Deal-Liste im Menü „Thoka“, Störungs-Mail höchstens einmal am Tag</li></ul>"
   }
 }

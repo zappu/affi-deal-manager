@@ -10,6 +10,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ADM_Parser {
 
 	/**
+	 * AppSumo setzt availabilityEnds bei laufenden Deals auf etwa ein Jahr ab Abruf.
+	 * Enddaten weiter als diese Tage in der Zukunft gelten als Platzhalter.
+	 */
+	const PLACEHOLDER_DAYS = 300;
+
+	/** Stichwörter für Lern-Deals (Name zählt vor Beschreibung). */
+	const EBOOK_WORDS = array( 'ebook', 'e-book', 'book', 'buch', 'playbook', 'guide', 'chapter', 'checklist', 'handbook', 'workbook', 'pdf', 'swipe file', 'cheat sheet', 'report', 'manual', 'blueprint' );
+	const COURSE_WORDS = array( 'course', 'kurs', 'masterclass', 'master class', 'bootcamp', 'academy', 'workshop', 'training', 'class', 'lessons', 'webinar', 'summit', 'event', 'program', 'challenge', 'coaching' );
+
+	/**
 	 * @param string $xml Inhalt der sitemap.xml.
 	 * @return array Liste aus array( url, lastmod ) für Produktseiten.
 	 */
@@ -111,12 +121,80 @@ class ADM_Parser {
 		$data['price']           = $price;
 		$data['currency']        = isset( $offer['priceCurrency'] ) ? substr( preg_replace( '/[^A-Z]/', '', strtoupper( (string) $offer['priceCurrency'] ) ), 0, 8 ) : '';
 		$data['availability']    = substr( $availability, 0, 40 );
-		$data['available_until'] = self::datetime( isset( $offer['availabilityEnds'] ) ? $offer['availabilityEnds'] : '' );
+		$data['available_until'] = self::real_end( isset( $offer['availabilityEnds'] ) ? $offer['availabilityEnds'] : '' );
 		$data['rating']          = $rating;
 		$data['review_count']    = $count;
 		$data['return_days']     = $return_days;
 		$data['videos']          = self::videos( $data['videos'], $name );
+		$data['appsumo_type']    = self::appsumo_type( $html );
+		$data['deal_type']       = self::classify( $data['appsumo_type'], $name, $data['description'] );
 		return $data;
+	}
+
+	/**
+	 * Deal-Typ laut AppSumo („Software“, „Courses & learning“, „Templates“).
+	 * Quelle: Link /collections/deal-type/<slug>/ oder das Attribut deal_type in den Seitendaten.
+	 */
+	public static function appsumo_type( $html ) {
+		$html = (string) $html;
+		if ( preg_match( '#/collections/deal-type/([a-z0-9\-]+)/#i', $html, $m ) ) {
+			return substr( strtolower( $m[1] ), 0, 60 );
+		}
+		// Eingebettete Seitendaten, Anführungszeichen ggf. als \" maskiert.
+		if ( preg_match( '#deal_type\\\\?"\s*,\s*\\\\?"name\\\\?"\s*:\s*\\\\?"Deal type\\\\?".{0,120}?\\\\?"name\\\\?"\s*:\s*\\\\?"((?:[^"\\\\]|\\\\u[0-9a-fA-F]{4})+)#s', $html, $m ) ) {
+			return substr( sanitize_title( html_entity_decode( str_replace( '\\u0026', '&', $m[1] ) ) ), 0, 60 );
+		}
+		return '';
+	}
+
+	/**
+	 * Eigener Typ: software, kurs, ebook, vorlage oder leer.
+	 * Lern-Deals werden über Stichwörter in Name und Beschreibung in Kurs oder E-Book geteilt, im Zweifel Kurs.
+	 */
+	public static function classify( $appsumo_type, $name, $description ) {
+		$t = (string) $appsumo_type;
+		if ( '' === $t ) {
+			return '';
+		}
+		if ( 0 === strpos( $t, 'software' ) ) {
+			return 'software';
+		}
+		if ( 0 === strpos( $t, 'template' ) ) {
+			return 'vorlage';
+		}
+		if ( false === strpos( $t, 'course' ) && false === strpos( $t, 'learn' ) ) {
+			return 'software';
+		}
+		foreach ( array( (string) $name, (string) $description ) as $text ) {
+			$text   = ' ' . strtolower( $text ) . ' ';
+			$ebook  = self::has_word( $text, self::EBOOK_WORDS );
+			$course = self::has_word( $text, self::COURSE_WORDS );
+			if ( $ebook && ! $course ) {
+				return 'ebook';
+			}
+			if ( $course && ! $ebook ) {
+				return 'kurs';
+			}
+		}
+		return 'kurs';
+	}
+
+	private static function has_word( $text, array $words ) {
+		foreach ( $words as $w ) {
+			if ( preg_match( '/(?<![a-z])' . preg_quote( $w, '/' ) . '(s|es)?(?![a-z])/', $text ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Enddatum nur, wenn es kein Platzhalter (etwa ein Jahr ab Abruf) ist. */
+	private static function real_end( $v ) {
+		$dt = self::datetime( $v );
+		if ( ! $dt ) {
+			return null;
+		}
+		return strtotime( $dt . ' UTC' ) - time() > self::PLACEHOLDER_DAYS * DAY_IN_SECONDS ? null : $dt;
 	}
 
 	/** Kaufbar laut schema.org-Verfügbarkeit. */

@@ -75,7 +75,8 @@ $lo = adm_get_deal( 'leadocean' );
 $nw = adm_get_deal( 'neuronwriter' );
 $o1 = adm_get_deal( 'old-deal-1' );
 $checked = (int) $GLOBALS['wpdb']->get_var( 'SELECT COUNT(*) FROM ' . ADM_DB::table() . ' WHERE last_checked IS NOT NULL' );
-adm_check( $lo['last_checked'] && $nw['last_checked'] && ! $o1['last_checked'] && 2 === $checked, 'Aktive Deals zuerst geprüft, alte noch nicht' );
+$checked_active = (int) $GLOBALS['wpdb']->get_var( 'SELECT COUNT(*) FROM ' . ADM_DB::table() . ' WHERE last_checked IS NOT NULL AND sitemap_priority >= 0.5' );
+adm_check( 2 === $checked && 2 === $checked_active && ! $o1['last_checked'], 'Aktive Deals zuerst geprüft, alte noch nicht' );
 adm_check( '0.50' === number_format( (float) $lo['sitemap_priority'], 2 ) && '0.25' === number_format( (float) $o1['sitemap_priority'], 2 ), 'Sitemap-Priorität gespeichert' );
 
 $get = new WP_REST_Request( 'GET', '/affi-deal-manager/v1/tick' );
@@ -108,7 +109,7 @@ $r1 = ADM_Sync::tick( true );
 $r2 = ADM_Sync::tick( true );
 echo 'Bericht: ' . wp_json_encode( array( $r1, $r2 ) ) . "\n";
 $c = ADM_DB::counts();
-adm_check( 1 === $c['kaufbar'], 'genau 1 Deal kaufbar (' . $c['kaufbar'] . ')' );
+adm_check( 3 === $c['kaufbar'], 'genau 3 Deals kaufbar (' . $c['kaufbar'] . ')' );
 adm_check( 60 === $c['ignoriert'], '60 Deals ignoriert (' . $c['ignoriert'] . ')' );
 adm_check( 0 === $c['neu'], 'keine ungeprüften Deals' );
 
@@ -117,9 +118,38 @@ adm_check( $lo && 'LeadOcean' === $lo['name'] && 49.0 === (float) $lo['price'] &
 adm_check( $lo && 4.88 === (float) $lo['rating'] && 141 === (int) $lo['review_count'], 'LeadOcean: Bewertung' );
 adm_check( $lo && 'Sales & Leads > Lead Generation' === $lo['category'], 'LeadOcean: Kategorie (' . ( $lo ? $lo['category'] : '' ) . ')' );
 adm_check( $lo && 1 === count( $lo['faq'] ) && "What if it's not for me?" === $lo['faq'][0]['q'], 'LeadOcean: FAQ dekodiert' );
-adm_check( $lo && 60 === (int) $lo['return_days'] && 0 === strpos( (string) $lo['available_until'], '2027-11-05' ), 'LeadOcean: Rückgabe und Laufzeit' );
+adm_check( $lo && 60 === (int) $lo['return_days'], 'LeadOcean: Rückgabefrist' );
 adm_check( $lo && (int) $lo['was_available'] === 1, 'LeadOcean: was_available gesetzt' );
-adm_check( $lo && 'Bei AppSumo erhältlich, Angebot läuft bis 05.11.2027' === $lo['reason'], 'Grund kaufbar: ' . ( $lo ? $lo['reason'] : '' ) );
+adm_check( $lo && 'Bei AppSumo erhältlich' === $lo['reason'] && null === $lo['available_until'], 'Platzhalter-Enddatum verworfen: ' . ( $lo ? $lo['reason'] : '' ) );
+adm_check( $lo && 'software' === $lo['deal_type'] && 'software' === $lo['appsumo_type'] && 'auto' === $lo['deal_type_source'], 'LeadOcean: Typ Software aus dem Link' );
+$fp = adm_get_deal( 'free-playbook' );
+$fc = adm_get_deal( 'founder-course' );
+adm_check( $fp && 'ebook' === $fp['deal_type'] && 'courses-learning' === $fp['appsumo_type'] && 0.0 === (float) $fp['price'], 'Playbook: E-Book, kostenlos' );
+adm_check( $fp && null === $fp['available_until'], 'Playbook: Platzhalter-Enddatum (364 Tage) verworfen' );
+adm_check( $fc && 'kurs' === $fc['deal_type'], 'Masterclass: Kurs' );
+adm_check( $fc && 'Bei AppSumo erhältlich, Angebot läuft bis ' . wp_date( 'd.m.Y', strtotime( $fc['available_until'] . ' UTC' ) ) === $fc['reason'] && strtotime( $fc['available_until'] . ' UTC' ) < time() + 21 * DAY_IN_SECONDS, 'Masterclass: echtes Enddatum bleibt (' . $fc['reason'] . ')' );
+adm_check( 'ebook' === ADM_Parser::classify( 'courses-learning', 'Million Dollar Weekend: The Lost Chapter', '' ) && 'kurs' === ADM_Parser::classify( 'courses-learning', 'Starting From Zero', 'Learn how to turn your side hustle into a fully booked freelance business' ) && 'vorlage' === ADM_Parser::classify( 'templates', 'X', '' ) && '' === ADM_Parser::classify( '', 'X', '' ), 'Typ-Erkennung: Chapter, booked, Templates, unbekannt' );
+adm_check( 'kurs' === ADM_Parser::classify( 'courses-learning', 'Facebook Ads Bootcamp', '' ), 'Typ-Erkennung: „Facebook“ ist kein Buch' );
+// Echte Ausschnitte von appsumo.com (06.11.2026): FuseBase ohne Link, Playbook mit &
+adm_check( 'software' === ADM_Parser::appsumo_type( ']},{\"id\":19,\"slug\":\"deal_type\",\"name\":\"Deal type\",\"type\":\"enumeration\",\"values\":[{\"name\":\"Software\",\"slug\":\"software\"}]},{\"id\":8,\"slug\":\"best_for\"' ), 'Echter Ausschnitt FuseBase: software' );
+adm_check( 'courses-learning' === ADM_Parser::appsumo_type( ']},{\"id\":19,\"slug\":\"deal_type\",\"name\":\"Deal type\",\"type\":\"enumeration\",\"values\":[{\"name\":\"Courses & learning\",\"slug\":\"courses-learning\"}]},{\"id\":1,\"slug\":\"product_type\"' ), 'Echter Ausschnitt Playbook: courses-learning' );
+$free = adm_get_deals( array( 'type' => 'ebook', 'free' => true ) );
+adm_check( 1 === count( $free ) && 'free-playbook' === $free[0]['slug'], 'adm_get_deals: kostenlose E-Books' );
+adm_check( 1 === count( adm_get_deals( array( 'type' => 'software' ) ) ), 'adm_get_deals: kaufbare Software' );
+adm_check( 'software' === adm_get_deal( 'neuronwriter' )['deal_type'], 'NEURONwriter: Typ aus eingebetteten Seitendaten (maskiert)' );
+$tc = ADM_DB::type_counts();
+adm_check( 1 === $tc['software'] && 1 === $tc['ebook'] && 1 === $tc['kurs'], 'Zählung kaufbar nach Typ: ' . wp_json_encode( $tc ) );
+// Manuelle Korrektur übersteht den Abgleich
+ADM_DB::set_type( (int) $fc['id'], 'ebook' );
+ADM_DB::update( (int) $fc['id'], array( 'next_check' => ADM_DB::now() ) );
+ADM_Sync::tick( true );
+$fc = adm_get_deal( 'founder-course' );
+adm_check( 'ebook' === $fc['deal_type'] && 'manuell' === $fc['deal_type_source'], 'Manueller Typ bleibt nach dem Abgleich' );
+ADM_DB::set_type( (int) $fc['id'], '' );
+ADM_Sync::tick( true );
+$fc = adm_get_deal( 'founder-course' );
+adm_check( 'kurs' === $fc['deal_type'] && 'auto' === $fc['deal_type_source'], 'Zurück auf automatisch erkennt wieder Kurs' );
+adm_check( false === ADM_DB::set_type( (int) $fc['id'], 'quatsch' ), 'Ungültiger Typ wird abgelehnt' );
 adm_check( $lo && strtotime( $lo['next_check'] . ' UTC' ) > time() + 23 * HOUR_IN_SECONDS, 'LeadOcean: nächste Prüfung in etwa 24 Stunden' );
 
 $nw = adm_get_deal( 'neuronwriter' );

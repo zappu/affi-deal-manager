@@ -20,7 +20,7 @@ class ADM_List_Table extends WP_List_Table {
 		$s = isset( $_GET['status'] ) ? sanitize_key( $_GET['status'] ) : 'kaufbar'; // phpcs:ignore WordPress.Security.NonceVerification
 		$this->status = in_array( $s, array_merge( ADM_DB::STATUSES, array( 'alle' ) ), true ) ? $s : 'kaufbar';
 		$t = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
-		$this->type = ( isset( ADM_DB::TYPES[ $t ] ) || in_array( $t, array( 'unbekannt', 'kostenlos' ), true ) ) ? $t : '';
+		$this->type = ( isset( ADM_DB::TYPES[ $t ] ) || in_array( $t, array( 'unbekannt', 'kostenlos', 'plus' ), true ) ) ? $t : '';
 	}
 
 	public function get_columns() {
@@ -78,6 +78,8 @@ class ADM_List_Table extends WP_List_Table {
 			$where[] = "deal_type = ''";
 		} elseif ( 'kostenlos' === $this->type ) {
 			$where[] = 'price IS NOT NULL AND price = 0';
+		} elseif ( 'plus' === $this->type ) {
+			$where[] = ADM_DB::PLUS_SQL;
 		} elseif ( '' !== $this->type ) {
 			$where[] = 'deal_type = %s';
 			$args[]  = $this->type;
@@ -111,7 +113,7 @@ class ADM_List_Table extends WP_List_Table {
 		if ( 'top' !== $which ) {
 			return;
 		}
-		$opts = array_merge( array( '' => 'Alle Typen' ), ADM_DB::TYPES, array( 'kostenlos' => 'Nur kostenlose', 'unbekannt' => 'Typ unbekannt' ) );
+		$opts = array_merge( array( '' => 'Alle Typen' ), ADM_DB::TYPES, array( 'kostenlos' => 'Nur kostenlose', 'plus' => 'Nur AppSumo Plus', 'unbekannt' => 'Typ unbekannt' ) );
 		echo '<div class="alignleft actions"><label class="screen-reader-text" for="adm-type-filter">Nach Typ filtern</label><select name="type" id="adm-type-filter">';
 		foreach ( $opts as $key => $label ) {
 			printf( '<option value="%s" %s>%s</option>', esc_attr( $key ), selected( $this->type, $key, false ), esc_html( $label ) );
@@ -149,6 +151,9 @@ class ADM_List_Table extends WP_List_Table {
 		if ( '' !== $item['name'] && $name !== $item['name'] ) {
 			$out .= ' <span style="color:#646970">(' . esc_html( $item['name'] ) . ')</span>';
 		}
+		if ( ADM_DB::is_plus( $item ) ) {
+			$out .= ' <span style="display:inline-block;padding:0 6px;border-radius:3px;background:#fcf0e3;color:#8a4b0f;font-size:11px;font-weight:600">AppSumo Plus, kein Profil</span>';
+		}
 		if ( '' !== $item['description'] ) {
 			$out .= '<br><span style="color:#646970">' . esc_html( wp_trim_words( $item['description'], 14 ) ) . '</span>';
 		}
@@ -161,7 +166,7 @@ class ADM_List_Table extends WP_List_Table {
 			$out  .= '<br><span style="color:#2271b1">Profil: ' . esc_html( $label ) . '</span>';
 			$actions['profile'] = '<a href="' . esc_url( get_edit_post_link( $post->ID, 'url' ) ) . '">Profil bearbeiten</a>';
 		}
-		if ( '' !== $item['name'] && ( ! $post || in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) ) {
+		if ( '' !== $item['name'] && ! ADM_DB::is_plus( $item ) && ( ! $post || in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) ) {
 			$queued = in_array( (int) $item['id'], ADM_Profiles::queue(), true );
 			$actions['generate'] = $queued ? '<span style="color:#646970">in der Warteschlange</span>' : '<a href="' . esc_url( ADM_Admin::profile_url( (int) $item['id'] ) ) . '">' . ( $post ? 'Text neu erzeugen' : 'Profil erstellen' ) . '</a>';
 		}

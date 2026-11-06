@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.6.0 (06.11.2026)
+
+- AppSumo Plus: Deals „Plus exclusive“ und die Plus-Mitgliedschaft selbst (`plus-…`) gelten als Plus-Deals. Sie bekommen keine Tool-Profile, erscheinen nicht beim Sammelknopf und nicht bei „Alle Entwürfe neu erzeugen“
+- `adm_get_deals()` lässt Plus-Deals standardmäßig weg; `plus => 'only'` liefert nur Plus-Deals (für die geplante Plus-Seite), `plus => 'all'` alle
+- Deal-Liste: Kennzeichen „AppSumo Plus, kein Profil“ und Filter „Nur AppSumo Plus“
+
 ## 0.5.11 (06.11.2026)
 
 - Deal-Kasten: Werbehinweis entfällt (steht im Footer der Seite), das Sternchen am Kauf-Button bleibt und ist für Screenreader als „Werbelink“ benannt; Hinweis bei Bedarf über den Filter `adm_box_note`

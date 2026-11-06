@@ -207,7 +207,7 @@ class ADM_Profiles {
 
 	/** Ein Profil darf erzeugt werden, wenn es noch keins gibt oder das vorhandene ein Entwurf ist. */
 	public static function can_generate( array $deal ) {
-		if ( '' === (string) $deal['name'] ) {
+		if ( '' === (string) $deal['name'] || ADM_DB::is_plus( $deal ) ) {
 			return false;
 		}
 		$post = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
@@ -218,7 +218,7 @@ class ADM_Profiles {
 	public static function best_candidates( $limit ) {
 		global $wpdb;
 		$rows = $wpdb->get_col( $wpdb->prepare(
-			'SELECT id FROM ' . ADM_DB::table() . " WHERE status = 'kaufbar' AND deal_type = 'software' AND post_id = 0 AND name <> '' ORDER BY review_count DESC, rating DESC LIMIT %d",
+			'SELECT id FROM ' . ADM_DB::table() . " WHERE status = 'kaufbar' AND deal_type = 'software' AND post_id = 0 AND name <> '' AND NOT " . ADM_DB::PLUS_SQL . ' ORDER BY review_count DESC, rating DESC LIMIT %d',
 			(int) $limit
 		) );
 		return array_map( 'intval', (array) $rows );
@@ -228,7 +228,7 @@ class ADM_Profiles {
 	public static function draft_deals() {
 		global $wpdb;
 		$rows = $wpdb->get_col( $wpdb->prepare(
-			'SELECT d.id FROM ' . ADM_DB::table() . " d INNER JOIN {$wpdb->posts} p ON p.ID = d.post_id AND p.post_type = %s AND p.post_status IN ('draft','pending') WHERE d.name <> '' ORDER BY d.review_count DESC",
+			'SELECT d.id FROM ' . ADM_DB::table() . " d INNER JOIN {$wpdb->posts} p ON p.ID = d.post_id AND p.post_type = %s AND p.post_status IN ('draft','pending') WHERE d.name <> '' AND NOT " . ADM_DB::PLUS_SQL . ' ORDER BY d.review_count DESC',
 			self::CPT
 		) );
 		return array_map( 'intval', (array) $rows );
@@ -315,6 +315,9 @@ class ADM_Profiles {
 		$deal = ADM_DB::get( (int) $deal_id );
 		if ( ! $deal ) {
 			return new WP_Error( 'adm_profile_deal', 'Deal nicht gefunden.' );
+		}
+		if ( ADM_DB::is_plus( $deal ) ) {
+			return new WP_Error( 'adm_profile_plus', 'Deal nur für Mitglieder von AppSumo Plus (Abo), kein Tool-Profil.' );
 		}
 		if ( ! self::can_generate( $deal ) ) {
 			return new WP_Error( 'adm_profile_published', 'Das Profil ist veröffentlicht und wird nicht automatisch überschrieben.' );

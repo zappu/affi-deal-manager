@@ -129,12 +129,13 @@ class ADM_DB {
 	 * Deals für Vorlagen und Bereiche der Website.
 	 *
 	 * @param array $args status (Standard kaufbar), type (software, kurs, ebook, vorlage),
-	 *                    free (true = nur kostenlose), limit (1 bis 100), orderby (reviews, rating, price, newest).
+	 *                    free (true = nur kostenlose), limit (1 bis 100), orderby (reviews, rating, price, newest),
+	 *                    plus (exclude = ohne Plus-Deals, Standard; only = nur Plus-Deals; all = alle).
 	 * @return array Liste von Deals.
 	 */
 	public static function query( array $args = array() ) {
 		global $wpdb;
-		$args  = wp_parse_args( $args, array( 'status' => 'kaufbar', 'type' => '', 'free' => false, 'limit' => 12, 'orderby' => 'reviews' ) );
+		$args  = wp_parse_args( $args, array( 'status' => 'kaufbar', 'type' => '', 'free' => false, 'limit' => 12, 'orderby' => 'reviews', 'plus' => 'exclude' ) );
 		$where = array( 'status = %s' );
 		$vals  = array( in_array( $args['status'], self::STATUSES, true ) ? $args['status'] : 'kaufbar' );
 		if ( isset( self::TYPES[ $args['type'] ] ) ) {
@@ -143,6 +144,11 @@ class ADM_DB {
 		}
 		if ( $args['free'] ) {
 			$where[] = 'price IS NOT NULL AND price = 0';
+		}
+		if ( 'only' === $args['plus'] ) {
+			$where[] = self::PLUS_SQL;
+		} elseif ( 'all' !== $args['plus'] ) {
+			$where[] = 'NOT ' . self::PLUS_SQL;
 		}
 		$orders = array(
 			'reviews' => 'review_count DESC, rating DESC',
@@ -201,7 +207,21 @@ class ADM_DB {
 		}
 		$row['reason'] = self::reason( $row );
 		$row['title']  = self::display_name( $row );
+		$row['plus']   = self::is_plus( $row );
 		return $row;
+	}
+
+	/** SQL-Bedingung für Deals nur für Mitglieder von AppSumo Plus (und die Mitgliedschaft selbst). */
+	const PLUS_SQL = "(INSTR(LOWER(name), 'plus exclusive') > 0 OR SUBSTR(slug, 1, 5) = 'plus-' OR SUBSTR(LOWER(name), 1, 12) = 'appsumo plus')"; // ohne %, damit es in $wpdb->prepare() passt
+
+	/**
+	 * Deal nur für Mitglieder von AppSumo Plus („Plus exclusive“) oder die Plus-Mitgliedschaft selbst.
+	 * Plus ist ein Jahresabo: Solche Deals bekommen keine Tool-Profile, sie gehören auf eine eigene Plus-Seite.
+	 */
+	public static function is_plus( array $row ) {
+		$name = isset( $row['name'] ) ? (string) $row['name'] : '';
+		$slug = isset( $row['slug'] ) ? (string) $row['slug'] : '';
+		return (bool) preg_match( '/\bplus\s+exclusive\b/i', $name ) || 0 === strpos( $slug, 'plus-' ) || (bool) preg_match( '/^appsumo\s+plus\b/i', $name );
 	}
 
 	/**

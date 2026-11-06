@@ -200,6 +200,23 @@ $urls = wp_list_pluck( $GLOBALS['adm_test_gemini_requests'], 'url' );
 adm_check( ! is_wp_error( $sum ) && 3 === count( $urls ) && false !== strpos( $urls[2], 'gemini-3.5-flash-lite' ), 'Gemini überlastet: Wiederholung, dann Ausweichmodell' );
 delete_option( 'adm_test_gemini' );
 
+// AppSumo Plus: kein Profil, eigene Abfrage für die Plus-Seite
+$wpdb->delete( ADM_DB::table(), array( 'slug' => 'screpy-plus' ) );
+$wpdb->delete( ADM_DB::table(), array( 'slug' => 'plus-2019' ) );
+$wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/screpy-plus/', 'slug' => 'screpy-plus', 'name' => 'Screpy - Plus Exclusive', 'price' => 49, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'review_count' => 99999, 'category' => 'Marketing > SEO & Analytics > SEO', 'first_seen' => ADM_DB::now() ) );
+$plus_id = (int) $wpdb->insert_id;
+$wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/plus-2019/', 'slug' => 'plus-2019', 'name' => 'AppSumo Plus', 'price' => 99, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'review_count' => 88888, 'first_seen' => ADM_DB::now() ) );
+$plus_deal = ADM_DB::get( $plus_id );
+adm_check( $plus_deal['plus'] && 'Screpy' === $plus_deal['title'] && ADM_DB::is_plus( adm_get_deal( 'plus-2019' ) ) && ! ADM_DB::is_plus( adm_get_deal( 'leadocean' ) ), 'Plus-Deals erkannt (Plus exclusive und die Mitgliedschaft selbst)' );
+adm_check( ! in_array( $plus_id, ADM_Profiles::best_candidates( 50 ), true ) && 0 === ADM_Profiles::enqueue( array( $plus_id ) ), 'Plus-Deals: nicht beim Sammelknopf, nicht vormerkbar' );
+$r = ADM_Profiles::generate( $plus_id );
+adm_check( is_wp_error( $r ) && 'adm_profile_plus' === $r->get_error_code(), 'Plus-Deal: keine Erzeugung' );
+$all_slugs  = wp_list_pluck( adm_get_deals( array( 'limit' => 100 ) ), 'slug' );
+$plus_slugs = wp_list_pluck( adm_get_deals( array( 'limit' => 100, 'plus' => 'only' ) ), 'slug' );
+adm_check( ! in_array( 'screpy-plus', $all_slugs, true ) && ! in_array( 'plus-2019', $all_slugs, true ) && in_array( 'screpy-plus', $plus_slugs, true ) && ! in_array( 'leadocean', $plus_slugs, true ), 'adm_get_deals: ohne Plus als Standard, plus=only für die Plus-Seite' );
+$wpdb->delete( ADM_DB::table(), array( 'id' => $plus_id ) );
+$wpdb->delete( ADM_DB::table(), array( 'slug' => 'plus-2019' ) );
+
 // Abgebrochener Lauf (Zeitlimit) wird gemeldet
 ADM_Profiles::clear_queue();
 update_option( ADM_Profiles::CURRENT, array( 'id' => (int) $lo['id'], 'started' => time() - 1200 ) );

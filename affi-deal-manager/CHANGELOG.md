@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.5.4 (06.11.2026)
+
+- Videozusammenfassung: Ist Gemini überlastet (HTTP 429, 500, 503), wartet das Plugin kurz und versucht es erneut, danach mit dem kleineren Modell `gemini-flash-lite-latest`
+
 ## 0.5.3 (06.11.2026)
 
 - Bausteine nutzen eigene Schriftvariablen (`--adm-body-font` Inter, `--adm-head-font` Space Grotesk) statt der Standardschrift des Kits

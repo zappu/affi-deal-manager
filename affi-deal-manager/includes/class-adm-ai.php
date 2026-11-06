@@ -97,6 +97,9 @@ class ADM_AI {
 		return $text;
 	}
 
+	/** Ausweichmodell, wenn das eingestellte Gemini-Modell überlastet ist. */
+	const GEMINI_FALLBACK = 'gemini-flash-lite-latest';
+
 	/** Videozusammenfassung möglich: Gemini-Schlüssel gesetzt und in den Einstellungen eingeschaltet. */
 	public static function video_configured() {
 		return '' !== ADM_Settings::gemini_key() && (int) ADM_Settings::get( 'video_summaries' );
@@ -147,19 +150,31 @@ class ADM_AI {
 				'maxOutputTokens'  => 4096,
 			),
 		);
-		$res = wp_remote_post(
-			'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model ) . ':generateContent',
-			array(
-				'timeout' => 100,
-				'headers' => array( 'x-goog-api-key' => $key, 'Content-Type' => 'application/json' ),
-				'body'    => wp_json_encode( $body ),
-			)
-		);
-		if ( is_wp_error( $res ) ) {
-			return $res;
+		// Überlastung (429, 500, 503): kurz warten und noch einmal, dann das kleinere Modell als Ausweich.
+		$tries = array( $model, $model, self::GEMINI_FALLBACK );
+		$res   = null;
+		$json  = null;
+		foreach ( $tries as $i => $m ) {
+			if ( $i > 0 ) {
+				sleep( 4 );
+			}
+			$res = wp_remote_post(
+				'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $m ) . ':generateContent',
+				array(
+					'timeout' => 100,
+					'headers' => array( 'x-goog-api-key' => $key, 'Content-Type' => 'application/json' ),
+					'body'    => wp_json_encode( $body ),
+				)
+			);
+			if ( is_wp_error( $res ) ) {
+				return $res;
+			}
+			$code = (int) wp_remote_retrieve_response_code( $res );
+			$json = json_decode( (string) wp_remote_retrieve_body( $res ), true );
+			if ( ! in_array( $code, array( 429, 500, 503 ), true ) ) {
+				break;
+			}
 		}
-		$code = (int) wp_remote_retrieve_response_code( $res );
-		$json = json_decode( (string) wp_remote_retrieve_body( $res ), true );
 		if ( 200 !== $code ) {
 			$msg = is_array( $json ) && isset( $json['error']['message'] ) ? (string) $json['error']['message'] : '';
 			return new WP_Error( 'adm_video_http', 'Gemini (HTTP ' . $code . ')' . ( $msg ? ': ' . wp_strip_all_tags( substr( $msg, 0, 160 ) ) : '' ) );

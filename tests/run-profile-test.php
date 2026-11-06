@@ -191,6 +191,15 @@ ADM_Profiles::clear_queue();
 adm_check( array( (int) $lo['id'] ) === ADM_Profiles::draft_deals() && 1 === ADM_Profiles::enqueue( ADM_Profiles::draft_deals() ), 'Entwürfe neu vormerken (Other Leads ist veröffentlicht und fehlt)' );
 ADM_Profiles::clear_queue();
 
+// Gemini überlastet: zweimal das eingestellte Modell, dann das Ausweichmodell
+update_option( 'adm_test_gemini', 'overloaded' );
+delete_transient( 'adm_vsum_DEvideo0001' );
+$GLOBALS['adm_test_gemini_requests'] = array();
+$sum = ADM_AI::video_summary( 'DEvideo0001', 'LeadOcean' );
+$urls = wp_list_pluck( $GLOBALS['adm_test_gemini_requests'], 'url' );
+adm_check( ! is_wp_error( $sum ) && 3 === count( $urls ) && false !== strpos( $urls[2], 'gemini-flash-lite-latest' ), 'Gemini überlastet: Wiederholung, dann Ausweichmodell' );
+delete_option( 'adm_test_gemini' );
+
 // Abgebrochener Lauf (Zeitlimit) wird gemeldet
 ADM_Profiles::clear_queue();
 update_option( ADM_Profiles::CURRENT, array( 'id' => (int) $lo['id'], 'started' => time() - 1200 ) );

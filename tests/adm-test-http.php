@@ -45,6 +45,9 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 	if ( false !== strpos( $url, 'generativelanguage.googleapis.com' ) ) {
 		$body = json_decode( $args['body'], true );
 		$GLOBALS['adm_test_gemini_requests'][] = array( 'url' => $url, 'headers' => $args['headers'], 'body' => $body );
+		if ( 'overloaded' === get_option( 'adm_test_gemini' ) && false === strpos( $url, 'flash-lite' ) ) {
+			return $json( array( 'error' => array( 'message' => 'This model is currently experiencing high demand.' ) ), 503 );
+		}
 		$uri  = isset( $body['contents'][0]['parts'][0]['file_data']['file_uri'] ) ? $body['contents'][0]['parts'][0]['file_data']['file_uri'] : '';
 		$en   = false !== strpos( $uri, 'ENvideo0002' );
 		$out  = $en ? array( 'text' => 'Der Sprecher zeigt die Suche und lobt die Datenmenge. Am Ende verweist er auf einen Rabatt.', 'werbung' => true, 'sprache' => 'en' )

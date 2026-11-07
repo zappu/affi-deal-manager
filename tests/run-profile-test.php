@@ -357,6 +357,15 @@ wp_delete_post( $other, true );
 wp_update_post( array( 'ID' => (int) $lo3['post_id'], 'post_status' => 'draft' ) );
 wp_reset_query();
 
+// Deal-Liste für die Plus-Seite
+$GLOBALS['wpdb']->insert( ADM_DB::table(), array( 'slug' => 'plus-test-tool', 'name' => 'Test Tool - Plus exclusive', 'url' => 'https://appsumo.com/products/plus-test-tool/', 'status' => 'kaufbar', 'price' => 49, 'currency' => 'USD', 'rating' => 4.5, 'review_count' => 12, 'description' => 'Ein Testwerkzeug nur für Plus.' ) );
+$GLOBALS['wpdb']->insert( ADM_DB::table(), array( 'slug' => 'plus-2019', 'name' => 'AppSumo Plus Yearly Plan', 'url' => 'https://appsumo.com/products/plus-2019/', 'status' => 'kaufbar', 'price' => 99, 'currency' => 'USD' ) );
+$list = do_shortcode( '[adm_deals plus="only"]' );
+adm_check( false !== strpos( $list, '<h3 class="adm-card__name">Test Tool</h3>' ) && false === strpos( $list, 'Yearly Plan' ) && false !== strpos( $list, 'rel="sponsored nofollow noopener"' ) && false !== strpos( $list, 'aria-label="Werbelink"' ), 'Plus-Liste: Plus-Deal mit Werbelink, ohne die Mitgliedschaft' );
+adm_check( false === strpos( do_shortcode( '[adm_deals]' ), 'Test Tool' ), 'Normale Liste ohne Plus-Deals' );
+$GLOBALS['wpdb']->query( "DELETE FROM " . ADM_DB::table() . " WHERE slug IN ('plus-test-tool','plus-2019')" );
+adm_check( false !== strpos( do_shortcode( '[adm_deals type="vorlage"]' ), 'keine kaufbaren Angebote' ) && ADM_Shortcodes::is_membership( array( 'name' => 'AppSumo Plus Monthly', 'slug' => 'x' ) ), 'Leere Liste: Hinweis; Mitgliedschaft erkannt' );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

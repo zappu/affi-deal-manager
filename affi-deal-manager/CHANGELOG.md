@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.7.2 (07.11.2026)
+
+- Neuer Shortcode `[adm_deals]`: kaufbare Deals als Karten mit Preis, Bewertung und Werbelink, z. B. `[adm_deals plus="only"]` für die AppSumo-Plus-Seite. Die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
+- Rubrikseiten: Rubrikbild als Vorschaubild beim Teilen (Rank Math)
+
 ## 0.7.1 (07.11.2026)
 
 - Seitentitel und Meta-Beschreibung der Übersichten: /tools/ heißt „Software ohne Abo: alle Tool-Profile“, Rubriken „<Rubrik>: Software ohne Abo kaufen“, ab Seite 2 mit Seitenzahl. Beschreibung aus der Einleitung bzw. der Rubrik-Beschreibung. Gilt für Rank Math und ohne SEO-Plugin, anpassbar per Filter `adm_archive_meta_title`

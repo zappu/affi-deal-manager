@@ -20,7 +20,7 @@
   - `includes/class-adm-rubrics.php`: Taxonomie `adm_rubrik` (`/rubrik/`), Zuordnung AppSumo-Kategorie zu Rubrik (Regeln `RULES`, Filter `adm_rubric_rules`)
   - `includes/class-adm-style.php`: Stilprüfung nach „vermenschlichen“ (Hinweise in `_adm_style_hints`), Korrektur von großem „Du“
   - `includes/class-adm-profiles.php`: Beitragstyp `adm_tool` (`/tools/`), Warteschlange `adm_profile_queue`, Prompt und Zusammenbau der Profile
-  - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_header]`, `[adm_deal_box]` (placement content/sidebar), `[adm_toc]`, `[adm_deal_details]`, `[adm_video]` (Zwei-Klick), `[adm_alternatives]`; Gestaltung in `assets/adm-frontend.css` (Variablen `--adm-*`, Stil „Verzeichnis“)
+  - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_header]`, `[adm_deal_box]` (placement content/sidebar), `[adm_toc]`, `[adm_deal_details]`, `[adm_video]` (Zwei-Klick), `[adm_alternatives]`, `[adm_deals]` (Deal-Karten, `plus="only"` für die Plus-Seite); Gestaltung in `assets/adm-frontend.css` (Variablen `--adm-*`, Stil „Verzeichnis“)
   - Profil-Layout (Einstellung „Deal-Kasten“ = `sidebar`): Filter `the_content` legt `[adm_deal_header]` und `[adm_deal_box placement="sidebar"]` um den Inhalt; Elementor-Single für `adm_tool` enthält nur `theme-post-content` (Elementor-MCP kann keine Shortcode-Widgets setzen)
   - `includes/class-adm-archive.php` und `templates/archive.php`: Übersichten `/tools/` und `/rubrik/<slug>/` (mit Profil-Layout, Elementor-Archivvorlage hat Vorrang), Sortierung kaufbar zuerst über `posts_clauses` (`adm_sort`)
   - `includes/class-adm-admin.php`, `class-adm-list-table.php`: Backend

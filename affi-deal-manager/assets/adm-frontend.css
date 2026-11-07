@@ -120,3 +120,12 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-overview,.adm-card{font-family:var(--adm-body-font)}
 .adm-overview .screen-reader-text{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
 @media (max-width:600px){.adm-rubnav{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 20px;padding:0 16px 4px;scrollbar-width:none}.adm-rubnav::-webkit-scrollbar{display:none}.adm-rubnav a{flex:0 0 auto;white-space:nowrap}}
+
+/* Deal-Liste [adm_deals] */
+.adm-cards--deals{margin:16px 0 24px}
+.adm-cards--deals .adm-card{background:var(--adm-soft)}
+.adm-cards--deals .adm-card__name{font-size:1.15em}
+.adm-btn--small{padding:10px 14px;font-size:.92em;margin-top:auto}
+.adm-cards .adm-chips{margin-top:auto}.adm-cards--deals .adm-chips{margin-top:0}
+.adm-cards--deals .screen-reader-text{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+.adm-empty-note{color:var(--adm-muted)}

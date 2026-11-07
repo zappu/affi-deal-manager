@@ -25,6 +25,21 @@ class ADM_Archive {
 		add_filter( 'rank_math/frontend/title', array( __CLASS__, 'meta_title' ), 20 );
 		add_filter( 'rank_math/frontend/description', array( __CLASS__, 'meta_description' ), 20 );
 		add_filter( 'pre_get_document_title', array( __CLASS__, 'meta_title' ), 20 );
+		// Vorschaubild beim Teilen einer Rubrik: das Rubrikbild.
+		add_action( 'rank_math/opengraph/facebook/add_additional_images', array( __CLASS__, 'og_image' ) );
+		add_action( 'rank_math/opengraph/twitter/add_additional_images', array( __CLASS__, 'og_image' ) );
+	}
+
+	/** @param object $image Rank-Math-Bildsammlung (RankMath\OpenGraph\Image). */
+	public static function og_image( $image ) {
+		$term = self::current_term();
+		if ( ! $term || ! is_object( $image ) || ! method_exists( $image, 'add_image_by_id' ) ) {
+			return;
+		}
+		$id = ADM_Rubrics::image_id( $term->term_id );
+		if ( $id ) {
+			$image->add_image_by_id( $id );
+		}
 	}
 
 	/** Überschrift (H1) und Einleitung einer Übersicht. */

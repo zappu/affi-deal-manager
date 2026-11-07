@@ -419,6 +419,25 @@ ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 
 wp_reset_postdata();
 wp_update_post( array( 'ID' => $pid5, 'post_status' => 'draft' ) );
 
+// Verteilung der Bewertungen
+$lo6 = adm_get_deal( 'leadocean' );
+adm_check( '3,1,2,10,125' === $lo6['rating_dist'] && 125 === $lo6['dist'][5], 'Verteilung der Tacos aus den Seitendaten' );
+adm_check( 1234 === (int) $lo6['purchases'] && 'launchpad' === $lo6['listing_type'] && 'Platz 3 in Lead & Data' === ADM_Shortcodes::rank_text( $lo6['ranks'][0] ), 'Käufe, Stufe und Platzierung aus den Seitendaten' );
+$st6 = ADM_Shortcodes::dist_stats( $lo6 );
+adm_check( 141 === $st6['all'] && 96 === $st6['pgood'] && 4 === $st6['plow'] && 6 === $st6['low'], 'Anteile 4 bis 5 und 1 bis 3 Tacos' );
+$up6 = ADM_Profiles::user_prompt( $lo6, array( 'newest' => array(), 'critical' => array() ), array() );
+adm_check( false !== strpos( $up6, '"anteil_4_oder_5_tacos": "96 %"' ) && false !== strpos( ADM_Profiles::system_prompt(), 'bewertungsverteilung' ), 'Prompt mit Verteilung und Regel zur Gewichtung' );
+wp_update_post( array( 'ID' => (int) $lo6['post_id'], 'post_status' => 'publish' ) );
+$GLOBALS['wp_query'] = new WP_Query( array( 'p' => (int) $lo6['post_id'], 'post_type' => 'adm_tool' ) );
+$GLOBALS['wp_the_query'] = $GLOBALS['wp_query'];
+$GLOBALS['wp_query']->the_post();
+$gl = apply_filters( 'the_content', get_post( (int) $lo6['post_id'] )->post_content );
+adm_check( 1 === substr_count( $gl, 'class="adm-dist"' ) && false !== strpos( $gl, '<strong>96 %</strong> der 141 Bewertungen' ) && false !== strpos( $gl, 'Was Käufer loben' ) && false !== strpos( $gl, 'Kritik aus den 6 schwächeren Bewertungen (4 %)' ) && false === strpos( $gl, '>Schwächen<' ), 'Auf einen Blick mit Verteilung und eingeordneter Kritik' );
+adm_check( false !== strpos( $gl, 'LaunchPad: Tool mit ersten Verkäufen' ) && false !== strpos( $gl, 'Platz 3 in Lead &amp; Data' ) && false !== strpos( $gl, '1.234-mal gekauft' ) || false !== strpos( $gl, '1,234-mal gekauft' ), 'Auf einen Blick mit Stufe, Platz und Käufen' );
+adm_check( false !== strpos( $up6, '"stufe_bei_appsumo": "LaunchPad' ) && false !== strpos( $up6, 'kaeufe_bei_appsumo' ), 'Prompt mit Stufe und Käufen' );
+wp_reset_postdata();
+wp_update_post( array( 'ID' => (int) $lo6['post_id'], 'post_status' => 'draft' ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

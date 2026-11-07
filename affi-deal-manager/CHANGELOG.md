@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.8.1 (07.11.2026)
+
+- Bewertungen richtig gewichten: Der Abgleich liest die Verteilung der Tacos (1 bis 5) von der AppSumo-Seite. „Auf einen Blick“ zeigt sie live als Balken mit dem Satz „X % der N Bewertungen vergeben 4 oder 5 Tacos“, die Spalten heißen „Was Käufer loben“ und „Kritik aus den N schwächeren Bewertungen (X %)“. Gilt sofort für alle Profile, der gespeicherte Text bleibt unverändert. Shortcode `[adm_ratings]`
+- Dazu Stufe bei AppSumo (Select, LaunchPad, Radar), Platzierung in den AppSumo-Charts und Zahl der Käufe: als Chips in „Auf einen Blick“, Käufe auch im Kopf, alles in den Deal-Details
+- Prompt: bekommt Verteilung, Stufe, Käufe und Platzierung und ordnet Kritik nach ihrem Anteil ein; bei Radar und LaunchPad Hinweis, dass das Tool jung ist
+- Datenbank-Version 7 (Spalten rating_dist, purchases, listing_type, ranks), Deals mit Profil werden nach dem Update neu gelesen
+
 ## 0.8.0 (07.11.2026)
 
 - Website des Herstellers: der Abgleich liest sie aus den Seitendaten von AppSumo (`product_url`, neue Spalte `website`, ohne Parameter wie `?ref=`), im Profil überschreibbar. Link „Website des Herstellers“ im Deal-Kasten und Zeile „Website“ in den Details, beides öffnet in einem neuen Fenster

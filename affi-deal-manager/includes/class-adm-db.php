@@ -50,6 +50,10 @@ class ADM_DB {
 			available_until datetime NULL,
 			rating decimal(3,2) NULL,
 			review_count int(10) unsigned NOT NULL DEFAULT 0,
+			rating_dist varchar(60) NOT NULL DEFAULT '',
+			purchases int(10) unsigned NOT NULL DEFAULT 0,
+			listing_type varchar(20) NOT NULL DEFAULT '',
+			ranks varchar(400) NOT NULL DEFAULT '',
 			category varchar(255) NOT NULL DEFAULT '',
 			category_url varchar(255) NOT NULL DEFAULT '',
 			return_days smallint(5) unsigned NULL,
@@ -93,8 +97,8 @@ class ADM_DB {
 			delete_option( 'adm_sitemap_read' );
 		}
 		// Version 5: Spalte display_name (Anzeigename) kommt über dbDelta, keine Datenänderung nötig.
-		if ( $old && version_compare( (string) $old, '6', '<' ) ) {
-			// Neue Spalte website: Deals mit Profil gleich neu lesen, damit die Website des Herstellers ankommt.
+		if ( $old && version_compare( (string) $old, '7', '<' ) ) {
+			// Neue Spalten website (6), rating_dist, purchases, listing_type, ranks (7): Deals mit Profil gleich neu lesen.
 			global $wpdb;
 			$wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table() . " SET next_check = %s WHERE post_id > 0 AND status IN ('kaufbar','ausgelaufen')", self::now() ) ); // phpcs:ignore
 		}
@@ -211,10 +215,26 @@ class ADM_DB {
 			$v         = isset( $row[ $k ] ) ? json_decode( (string) $row[ $k ], true ) : null;
 			$row[ $k ] = is_array( $v ) ? $v : array();
 		}
+		$row['dist']   = self::dist( isset( $row['rating_dist'] ) ? $row['rating_dist'] : '' );
+		$rk            = isset( $row['ranks'] ) ? json_decode( (string) $row['ranks'], true ) : null;
+		$row['ranks']  = is_array( $rk ) ? $rk : array();
 		$row['reason'] = self::reason( $row );
 		$row['title']  = self::display_name( $row );
 		$row['plus']   = self::is_plus( $row );
 		return $row;
+	}
+
+	/**
+	 * Verteilung der Bewertungen bei AppSumo (Tacos 1 bis 5) aus der Spalte rating_dist („1er,2er,3er,4er,5er“).
+	 *
+	 * @return array array( 1 => n, …, 5 => n ) oder leer.
+	 */
+	public static function dist( $raw ) {
+		$p = array_map( 'intval', explode( ',', (string) $raw ) );
+		if ( 5 !== count( $p ) || array_sum( $p ) <= 0 ) {
+			return array();
+		}
+		return array_combine( array( 1, 2, 3, 4, 5 ), $p );
 	}
 
 	/** SQL-Bedingung für Deals nur für Mitglieder von AppSumo Plus (und die Mitgliedschaft selbst). */

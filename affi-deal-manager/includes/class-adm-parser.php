@@ -129,8 +129,70 @@ class ADM_Parser {
 		$data['appsumo_id']      = isset( $p['sku'] ) && ctype_digit( (string) $p['sku'] ) ? (int) $p['sku'] : ( isset( $p['mpn'] ) && ctype_digit( (string) $p['mpn'] ) ? (int) $p['mpn'] : 0 );
 		$data['appsumo_type']    = self::appsumo_type( $html );
 		$data['website']         = self::website( $html );
+		$data['rating_dist']     = self::rating_dist( $html );
+		$data['purchases']       = self::purchases( $html );
+		$data['listing_type']    = self::listing_type( $html );
+		$data['ranks']           = self::ranks( $html );
 		$data['deal_type']       = self::classify( $data['appsumo_type'], $name, $data['description'] );
 		return $data;
+	}
+
+	/** Käufe laut AppSumo („16,660 bought“, Feld current_purchases). */
+	public static function purchases( $html ) {
+		return preg_match( '#current_purchases\\\\?"\s*:\s*(\d+)#', (string) $html, $m ) ? (int) $m[1] : 0;
+	}
+
+	/** Stufe bei AppSumo: select, launchpad oder radar (Feld listing_type), sonst leer. */
+	public static function listing_type( $html ) {
+		if ( preg_match( '#listing_type\\\\?"\s*:\s*\\\\?"([a-z_\-]+)#i', (string) $html, $m ) ) {
+			$t = strtolower( $m[1] );
+			return in_array( $t, array( 'select', 'launchpad', 'radar' ), true ) ? $t : '';
+		}
+		return '';
+	}
+
+	/**
+	 * Platzierungen in den Charts von AppSumo (rankChips), z. B. #4 in Video.
+	 *
+	 * @return string JSON-Liste aus { name, rank, size } oder leer.
+	 */
+	public static function ranks( $html ) {
+		$html = (string) $html;
+		$pos  = strpos( $html, 'rankChips' );
+		if ( false === $pos ) {
+			return '';
+		}
+		$part = str_replace( '\\"', '"', substr( $html, $pos, 1500 ) );
+		if ( ! preg_match_all( '#"name"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"\s*,\s*"rank"\s*:\s*(\d+)\s*,\s*"size"\s*:\s*(\d+)#', $part, $m, PREG_SET_ORDER ) ) {
+			return '';
+		}
+		$out = array();
+		foreach ( array_slice( $m, 0, 3 ) as $x ) {
+			$name = json_decode( '"' . str_replace( '\\\\u', '\\u', $x[1] ) . '"' );
+			if ( ! is_string( $name ) || '' === trim( $name ) ) {
+				continue;
+			}
+			$out[] = array( 'name' => self::text( $name, 60 ), 'rank' => (int) $x[2], 'size' => (int) $x[3] );
+		}
+		return $out ? wp_json_encode( $out, JSON_UNESCAPED_UNICODE ) : '';
+	}
+
+	/** Verteilung der Bewertungen aus den Seitendaten (review_count_1_tacos … review_count_5_tacos) als „1er,…,5er“. */
+	public static function rating_dist( $html ) {
+		if ( ! preg_match_all( '#review_count_([1-5])_tacos\\\\?"\s*:\s*(\d+)#', (string) $html, $m, PREG_SET_ORDER ) ) {
+			return '';
+		}
+		$d = array();
+		foreach ( $m as $x ) {
+			if ( ! isset( $d[ (int) $x[1] ] ) ) {
+				$d[ (int) $x[1] ] = (int) $x[2];
+			}
+		}
+		if ( 5 !== count( $d ) ) {
+			return '';
+		}
+		ksort( $d );
+		return implode( ',', $d );
 	}
 
 	/** Website des Herstellers aus den eingebetteten Seitendaten (product_url). */

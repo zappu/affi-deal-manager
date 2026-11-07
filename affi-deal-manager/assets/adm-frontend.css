@@ -184,3 +184,17 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-sticky__price{font-size:.85em;color:var(--adm-lime)}
 .adm-sticky .adm-sticky__btn{flex:0 0 auto;padding:11px 16px;background:var(--adm-lime);color:var(--adm-ink)!important;font-size:.95em}
 }
+
+/* Verteilung der Bewertungen */
+.adm-dist{margin:0 0 18px}
+.adm-dist__sum{margin:0 0 10px!important;font-size:1.02em}
+.adm-dist__bars{list-style:none;margin:0;padding:0!important;display:flex;flex-direction:column;gap:5px;max-width:520px}
+.adm-dist__bars li{display:grid;grid-template-columns:62px 1fr 48px;align-items:center;gap:10px;font-size:.86em}
+.adm-dist__k{color:var(--adm-muted);white-space:nowrap}
+.adm-dist__bar{height:10px;border-radius:999px;background:var(--adm-soft);overflow:hidden}
+.adm-dist__fill{display:block;height:100%;border-radius:999px}
+.adm-dist__fill--good{background:var(--adm-pro)}.adm-dist__fill--low{background:#d9825b}
+.adm-dist__n{text-align:right;font-variant-numeric:tabular-nums;color:var(--adm-muted)}
+.adm-dist .adm-source{margin:8px 0 0!important}
+.adm-dist__facts{margin:0 0 14px;font-size:.84em}
+.adm-chip--stage{text-decoration:none}.adm-chip--select{background:#e3f3ea;color:var(--adm-pro)!important}.adm-chip--launchpad{background:#fff4d6;color:#7a5600!important}.adm-chip--radar{background:#f4dcd3;color:var(--adm-con)!important}

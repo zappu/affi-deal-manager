@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage,
  *                     desc="0" ohne die englische Kurzbeschreibung von AppSumo);
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
+ * [adm_ratings]       Verteilung der Bewertungen bei AppSumo (Tacos 1 bis 5) als Balken mit Anteilen
  * [adm_rubrics]       alle Rubriken als Kacheln mit Bild und Zahl der veröffentlichten Profile (Startseite)
  * [adm_tools]         veröffentlichte Tool-Profile als Karten, kaufbare und meistbewertete zuerst;
  *                     limit, rubrik="<slug>", heading="…" setzt Abschnitt mit Überschrift und Link zu /tools/;
@@ -56,7 +57,9 @@ class ADM_Shortcodes {
 		add_shortcode( 'adm_tools', array( __CLASS__, 'tools' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
+		add_filter( 'the_content', array( __CLASS__, 'glance_live' ), 15 );
 		add_filter( 'the_content', array( __CLASS__, 'layout' ), 20 );
+		add_shortcode( 'adm_ratings', array( __CLASS__, 'ratings' ) );
 		add_filter( 'hello_elementor_page_title', array( __CLASS__, 'hide_theme_title' ) );
 	}
 
@@ -202,6 +205,9 @@ class ADM_Shortcodes {
 		if ( '' !== self::rating( $deal ) ) {
 			$chips[] = '<span class="adm-chip"><span aria-hidden="true">★ </span>' . esc_html( number_format_i18n( (float) $deal['rating'], 1 ) . ' / 5 bei ' . number_format_i18n( (int) $deal['review_count'] ) . ' Bewertungen' ) . '</span>';
 		}
+		if ( (int) $deal['purchases'] > 0 ) {
+			$chips[] = '<span class="adm-chip">' . esc_html( number_format_i18n( (int) $deal['purchases'] ) . '-mal gekauft' ) . '</span>';
+		}
 		if ( $deal['return_days'] ) {
 			$chips[] = '<span class="adm-chip">' . esc_html( (int) $deal['return_days'] . ' Tage Rückgabe' ) . '</span>';
 		}
@@ -319,6 +325,15 @@ class ADM_Shortcodes {
 			'Rückgabefrist' => $deal['return_days'] ? esc_html( (int) $deal['return_days'] . ' Tage bei AppSumo' ) : '',
 			'Bewertung'     => esc_html( self::rating( $deal ) ),
 		);
+		if ( '' !== self::stage_label( $deal ) ) {
+			$rows['Stufe bei AppSumo'] = esc_html( self::stage_label( $deal ) . ': ' . self::stage_text( $deal ) );
+		}
+		if ( (int) $deal['purchases'] > 0 ) {
+			$rows['Käufe bei AppSumo'] = esc_html( number_format_i18n( (int) $deal['purchases'] ) );
+		}
+		if ( $deal['ranks'] ) {
+			$rows['Platzierung'] = esc_html( implode( ', ', array_map( array( __CLASS__, 'rank_text' ), $deal['ranks'] ) ) );
+		}
 		$site = ADM_Shots::website( $deal );
 		if ( '' !== $site ) {
 			$rows['Website'] = '<a href="' . esc_url( $site ) . '" target="_blank" rel="noopener">' . esc_html( ADM_Shots::host( $site ) ) . ' <span aria-hidden="true">↗</span></a>';
@@ -570,6 +585,120 @@ class ADM_Shortcodes {
 		return '<div class="adm adm-sticky" hidden><div class="adm-sticky__info"><span class="adm-sticky__name">' . esc_html( $deal['title'] ) . '</span>'
 			. ( $buy && '' !== $amount ? '<span class="adm-sticky__price">' . esc_html( $amount . ( 'kostenlos' === $amount ? '' : ' einmalig' ) ) . '</span>' : '<span class="adm-sticky__price">Ausgelaufen</span>' )
 			. '</div><a class="adm-btn adm-sticky__btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">' . ( $buy ? 'Zum Angebot' : 'Warteliste' ) . '<span class="adm-mark" aria-label="Werbelink">*</span></a></div>';
+	}
+
+	/* ---------------- Verteilung der Bewertungen ---------------- */
+
+	/** Anteile: Zahl gesamt, Zahl und Prozent mit 4 bis 5 und mit 1 bis 3 Tacos. */
+	public static function dist_stats( array $deal ) {
+		$d = isset( $deal['dist'] ) ? $deal['dist'] : array();
+		if ( ! $d ) {
+			return null;
+		}
+		$all  = array_sum( $d );
+		$good = $d[4] + $d[5];
+		$low  = $d[1] + $d[2] + $d[3];
+		$pg   = (int) round( 100 * $good / $all );
+		return array( 'all' => $all, 'good' => $good, 'low' => $low, 'pgood' => $pg, 'plow' => 100 - $pg );
+	}
+
+	public static function ratings( $atts ) {
+		$atts = shortcode_atts( array( 'deal' => '' ), $atts, 'adm_ratings' );
+		$deal = self::deal( $atts );
+		return $deal ? self::assets() . self::dist_html( $deal ) : '';
+	}
+
+	/** Balken 5 bis 1 Taco mit Anzahl und Satz zu den Anteilen. */
+	public static function stage_label( array $deal ) {
+		$map = array( 'select' => 'AppSumo Select', 'launchpad' => 'LaunchPad', 'radar' => 'Radar' );
+		return isset( $deal['listing_type'], $map[ $deal['listing_type'] ] ) ? $map[ $deal['listing_type'] ] : '';
+	}
+
+	public static function stage_text( array $deal ) {
+		$map = array(
+			'select'    => 'von AppSumo geprüft und bewährt',
+			'launchpad' => 'Tool mit ersten Verkäufen',
+			'radar'     => 'ganz neues Tool',
+		);
+		return isset( $map[ $deal['listing_type'] ] ) ? $map[ $deal['listing_type'] ] : '';
+	}
+
+	public static function rank_text( $r ) {
+		return 'Platz ' . (int) $r['rank'] . ' in ' . $r['name'];
+	}
+
+	/** Stufe, Platzierung und Käufe als Chips. */
+	public static function facts_html( array $deal ) {
+		$chips = array();
+		if ( '' !== self::stage_label( $deal ) ) {
+			$page    = get_page_by_path( 'ratgeber/was-ist-appsumo' );
+			$label   = esc_html( self::stage_label( $deal ) . ': ' . self::stage_text( $deal ) );
+			$chips[] = $page ? '<a class="adm-chip adm-chip--stage adm-chip--' . esc_attr( $deal['listing_type'] ) . '" href="' . esc_url( get_permalink( $page ) ) . '#radar-launchpad-und-select">' . $label . '</a>' : '<span class="adm-chip adm-chip--stage adm-chip--' . esc_attr( $deal['listing_type'] ) . '">' . $label . '</span>';
+		}
+		foreach ( array_slice( $deal['ranks'], 0, 2 ) as $r ) {
+			$chips[] = '<span class="adm-chip" title="' . esc_attr( 'Charts bei AppSumo, ' . (int) $r['size'] . ' Tools in dieser Liste' ) . '">' . esc_html( self::rank_text( $r ) ) . '</span>';
+		}
+		if ( (int) $deal['purchases'] > 0 ) {
+			$chips[] = '<span class="adm-chip">' . esc_html( number_format_i18n( (int) $deal['purchases'] ) . '-mal gekauft' ) . '</span>';
+		}
+		return $chips ? '<div class="adm-chips adm-dist__facts">' . implode( '', $chips ) . '</div>' : '';
+	}
+
+	public static function dist_html( array $deal ) {
+		$st    = self::dist_stats( $deal );
+		$facts = self::facts_html( $deal );
+		if ( ! $st ) {
+			return '' !== $facts ? '<div class="adm-dist">' . $facts . '</div>' : '';
+		}
+		$max  = max( $deal['dist'] );
+		$bars = '';
+		for ( $i = 5; $i >= 1; $i-- ) {
+			$n     = (int) $deal['dist'][ $i ];
+			$w     = $max ? max( $n ? 1 : 0, (int) round( 100 * $n / $max ) ) : 0;
+			$bars .= '<li><span class="adm-dist__k">' . $i . ( 1 === $i ? ' Taco' : ' Tacos' ) . '</span><span class="adm-dist__bar"><span class="adm-dist__fill adm-dist__fill--' . ( $i >= 4 ? 'good' : 'low' ) . '" style="width:' . $w . '%"></span></span><span class="adm-dist__n">' . number_format_i18n( $n ) . '</span></li>';
+		}
+		$sum = sprintf(
+			'<strong>%d %%</strong> der %s Bewertungen bei AppSumo vergeben 4 oder 5 Tacos, %d %% vergeben 3 oder weniger.',
+			$st['pgood'],
+			number_format_i18n( $st['all'] ),
+			$st['plow']
+		);
+		return '<div class="adm-dist">' . $facts . '<p class="adm-dist__sum">' . $sum . '</p><ul class="adm-dist__bars">' . $bars . '</ul>'
+			. '<p class="adm-source">Tacos sind die Sterne bei AppSumo. ' . esc_html( self::checked( $deal ) ) . '.</p></div>';
+	}
+
+	/**
+	 * „Auf einen Blick“ mit Live-Zahlen: Verteilung der Bewertungen oben, Spalten mit Anteilen beschriftet.
+	 * Ändert nur die Ausgabe, nicht den gespeicherten Text des Profils.
+	 */
+	public static function glance_live( $content ) {
+		if ( ! is_singular( ADM_Profiles::CPT ) || doing_action( 'wp_head' ) || false === strpos( $content, 'adm-glance' ) || false !== strpos( $content, 'adm-dist' ) ) {
+			return $content;
+		}
+		$deal = self::deal( array( 'deal' => '' ) );
+		$st   = $deal ? self::dist_stats( $deal ) : null;
+		$box  = $deal ? self::dist_html( $deal ) : '';
+		if ( '' === $box ) {
+			return $content;
+		}
+		$content = preg_replace_callback(
+			'#<section class="adm-glance"[^>]*>\s*<h2>Auf einen Blick</h2>#',
+			function ( $m ) use ( $box ) {
+				return $m[0] . $box;
+			},
+			$content,
+			1
+		);
+		if ( ! $st ) {
+			return $content;
+		}
+		$content = str_replace( '<p class="adm-glance__label">Stärken</p>', '<p class="adm-glance__label">Was Käufer loben</p>', $content );
+		$content = str_replace(
+			'<p class="adm-glance__label">Schwächen</p>',
+			'<p class="adm-glance__label">' . esc_html( sprintf( 'Kritik aus den %s schwächeren Bewertungen (%d %%)', number_format_i18n( $st['low'] ), $st['plow'] ) ) . '</p>',
+			$content
+		);
+		return $content;
 	}
 
 }

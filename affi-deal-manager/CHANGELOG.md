@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.8.3 (07.11.2026)
+
+- Screenshots: mindestens 5 Minuten zwischen zwei Abrufen je Profil (mShots braucht Zeit zum Erzeugen, vorher wurden die Versuche zu schnell verbraucht), bis zu 12 Versuche, Abruf immer über https. Zu früh abgebrochene Screenshots werden einmalig neu versucht
+
 ## 0.8.2 (07.11.2026)
 
 - Knopf „Veröffentlichte Profile neu schreiben (N)“ mit Rückfrage: schreibt veröffentlichte Profile über die Warteschlange neu. Sie bleiben online, der neue Text ersetzt den alten, der alte bleibt als Revision erhalten. Die Freigabe gilt je Profil genau einmal (Option `adm_profile_force`); ohne diesen Klick werden veröffentlichte Profile weiterhin nie überschrieben

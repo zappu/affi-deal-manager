@@ -399,6 +399,7 @@ $pid5 = (int) $lo5['post_id'];
 ADM_Shots::reset( $pid5 );
 delete_option( 'adm_test_shot_calls' );
 adm_check( in_array( $pid5, ADM_Shots::pending(), true ) && 'waiting' === ADM_Shots::fetch( $pid5 ), 'Screenshot: erster Abruf wartet auf den Dienst' );
+adm_check( ! in_array( $pid5, ADM_Shots::pending(), true ) && false !== strpos( ADM_Shots::service_url( 'http://tidycal.com/' ), rawurlencode( 'https://tidycal.com/' ) ), 'Screenshot: Pause bis zum nächsten Versuch, Abruf über https' );
 $att5 = ADM_Shots::fetch( $pid5 );
 adm_check( is_int( $att5 ) && $att5 > 0 && ADM_Shots::image_id( $pid5 ) === $att5 && (int) get_post_thumbnail_id( $pid5 ) === $att5 && ! in_array( $pid5, ADM_Shots::pending(), true ), 'Screenshot gespeichert und als Beitragsbild gesetzt' );
 adm_check( 'Screenshot: leadocean.io' === get_post_field( 'post_excerpt', $att5 ), 'Screenshot mit Quellenangabe' );

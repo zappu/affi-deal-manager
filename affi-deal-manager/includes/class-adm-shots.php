@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Screenshot: einmal pro Profil über den Dienst mShots von WordPress.com (Filter adm_screenshot_service),
  * gespeichert in der Mediathek (Meta _adm_shot). Besucher laden nur das eigene Bild, kein Fremddienst.
  * mShots liefert beim ersten Abruf ein Platzhalterbild und erzeugt den Screenshot im Hintergrund;
- * der nächste Lauf holt ihn ab (höchstens 8 Versuche, dann Meta _adm_shot_failed).
+ * ein späterer Lauf holt ihn ab (frühestens nach 5 Minuten, höchstens 12 Versuche, dann Meta _adm_shot_failed).
  */
 class ADM_Shots {
 
@@ -18,10 +18,24 @@ class ADM_Shots {
 	const META_SITE  = '_adm_website';
 	const META_TRIES = '_adm_shot_tries';
 	const META_FAIL  = '_adm_shot_failed';
-	const MAX_TRIES  = 8;
+	const META_LAST  = '_adm_shot_last';
+	const MAX_TRIES  = 12;
+	/** Mindestabstand zwischen zwei Abrufen je Profil (mShots braucht Zeit zum Erzeugen). */
+	const RETRY_WAIT = 300;
 
 	public static function init() {
 		add_action( ADM_Sync::HOOK, array( __CLASS__, 'cron' ), 20 );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_reset_failed' ) );
+	}
+
+	/** Einmalig nach 0.8.3: zu früh abgebrochene Screenshots neu versuchen. */
+	public static function maybe_reset_failed() {
+		if ( get_option( 'adm_shots_retry_v' ) === '2' ) {
+			return;
+		}
+		delete_post_meta_by_key( self::META_FAIL );
+		delete_post_meta_by_key( self::META_TRIES );
+		update_option( 'adm_shots_retry_v', '2', false );
 	}
 
 	public static function enabled() {
@@ -74,7 +88,7 @@ class ADM_Shots {
 		$out = array();
 		foreach ( (array) $ids as $pid ) {
 			$pid = (int) $pid;
-			if ( self::image_id( $pid ) || get_post_meta( $pid, self::META_FAIL, true ) ) {
+			if ( self::image_id( $pid ) || get_post_meta( $pid, self::META_FAIL, true ) || (int) get_post_meta( $pid, self::META_LAST, true ) > time() - self::RETRY_WAIT ) {
 				continue;
 			}
 			$deal = ADM_DB::get_by_post( $pid );
@@ -116,7 +130,8 @@ class ADM_Shots {
 
 	/** Adresse beim Screenshot-Dienst. */
 	public static function service_url( $site ) {
-		$url = 'https://s.wordpress.com/mshots/v1/' . rawurlencode( $site ) . '?w=1280&h=800';
+		$site = preg_replace( '#^http://#i', 'https://', (string) $site ); // fast jede Website läuft über https, der Dienst liefert dafür schneller ein Bild
+		$url  = 'https://s.wordpress.com/mshots/v1/' . rawurlencode( $site ) . '?w=1280&h=800';
 		return (string) apply_filters( 'adm_screenshot_service', $url, $site );
 	}
 
@@ -133,6 +148,7 @@ class ADM_Shots {
 		}
 		$tries = (int) get_post_meta( $post_id, self::META_TRIES, true ) + 1;
 		update_post_meta( $post_id, self::META_TRIES, $tries );
+		update_post_meta( $post_id, self::META_LAST, time() );
 
 		$res = wp_remote_get( self::service_url( $site ), array( 'timeout' => 25, 'redirection' => 3 ) );
 		$ok  = ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res );
@@ -186,6 +202,7 @@ class ADM_Shots {
 		delete_post_meta( $post_id, self::META );
 		delete_post_meta( $post_id, self::META_TRIES );
 		delete_post_meta( $post_id, self::META_FAIL );
+		delete_post_meta( $post_id, self::META_LAST );
 		if ( $old && (int) get_post_thumbnail_id( $post_id ) === $old ) {
 			delete_post_thumbnail( $post_id );
 			ADM_Rubrics::assign_image( $post_id );

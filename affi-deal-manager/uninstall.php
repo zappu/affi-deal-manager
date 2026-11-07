@@ -10,7 +10,7 @@ global $wpdb;
 $wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'adm_deals' ); // phpcs:ignore WordPress.DB
 
 // Tool-Profile (Beiträge) bleiben erhalten, sie sind redaktionelle Inhalte.
-foreach ( array( 'adm_settings', 'adm_db_version', 'adm_health', 'adm_sitemap_read', 'adm_sitemap_retry', 'adm_last_tick', 'adm_profile_queue', 'adm_profile_log', 'adm_profile_paused', 'adm_rewrite_version', 'adm_rubrics_version', 'adm_last_servercron', 'adm_profile_current', 'adm_video_queue', 'adm_profile_force' ) as $opt ) {
+foreach ( array( 'adm_settings', 'adm_db_version', 'adm_health', 'adm_sitemap_read', 'adm_sitemap_retry', 'adm_last_tick', 'adm_profile_queue', 'adm_profile_log', 'adm_profile_paused', 'adm_rewrite_version', 'adm_rubrics_version', 'adm_last_servercron', 'adm_profile_current', 'adm_video_queue', 'adm_profile_force', 'adm_shots_retry_v' ) as $opt ) {
 	delete_option( $opt );
 }
 delete_transient( 'adm_sync_lock' );

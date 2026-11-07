@@ -250,3 +250,4 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-banner__img{display:block;width:100%;height:auto;border-radius:12px}
 .adm-banner__ad{position:absolute;top:6px;right:8px;font-size:11px;line-height:1.4;background:rgba(23,33,43,.72);color:#fff;border-radius:6px;padding:1px 6px}
 .adm-banner--home{margin:0 0 4px}
+.adm-banner--list{margin:0 0 18px;max-width:440px}.adm-banner--list .adm-banner__img{border-radius:8px}.adm-banner--list .adm-banner__ad{top:4px;right:6px;font-size:10px}

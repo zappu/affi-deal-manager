@@ -873,7 +873,7 @@ class ADM_Shortcodes {
 		}
 		$note = '<p class="adm-source">Reihenfolge: kaufbare Angebote zuerst, dann nach dem Anteil der Bewertungen mit 4 oder 5 Tacos bei AppSumo. Bei wenigen Bewertungen ist dieser Anteil unsicherer, solche Tools rutschen etwas nach hinten. Tools mit der Stufe Select bekommen einen kleinen Vorsprung. Bei Gleichstand entscheidet die Zahl der Käufe. Stand ' . esc_html( wp_date( 'd.m.Y' ) ) . ', die Liste aktualisiert sich mit den Daten von AppSumo.</p>';
 		$schema = '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@type' => 'ItemList', 'itemListOrder' => 'https://schema.org/ItemListOrderDescending', 'numberOfItems' => count( $ld ), 'itemListElement' => $ld ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG ) . '</script>';
-		return self::assets() . '<ol class="adm adm-best">' . $out . '</ol>' . $note . $schema;
+		return self::assets() . ADM_Banners::html( 'list' ) . '<ol class="adm adm-best">' . $out . '</ol>' . $note . $schema;
 	}
 
 	/** Einträge der Bestenliste, die auf einer Seite steht (erster [adm_bestenliste] im Inhalt). */
@@ -955,7 +955,7 @@ class ADM_Shortcodes {
 			$out  .= '' !== $intro ? '<p>' . esc_html( $intro ) . '</p>' : '';
 			$out  .= self::top_teaser( $items, $url ) . '</section>';
 		}
-		return '' === $out ? '' : self::assets() . '<div class="adm-bests">' . $out . '</div>';
+		return '' === $out ? '' : self::assets() . ADM_Banners::html( 'list' ) . '<div class="adm-bests">' . $out . '</div>';
 	}
 
 }

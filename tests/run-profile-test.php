@@ -635,6 +635,7 @@ $ban_mock = function ( $pre, $args, $url ) use ( $png ) {
 		array( 'Id' => '4131675', 'Name' => 'as-bf26-thematic-drop4-feature-img.png', 'Type' => 'BANNER', 'Width' => '500', 'Height' => '285', 'StartDate' => gmdate( 'c', $now - DAY_IN_SECONDS ), 'EndDate' => '', 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-4131675' ),
 		array( 'Id' => '1480856', 'Name' => 'Voxpopme Black Friday', 'Type' => 'BANNER', 'Width' => '300', 'Height' => '250', 'StartDate' => gmdate( 'c', $now - DAY_IN_SECONDS ), 'LandingPageUrl' => 'https://appsumo.com/products/voxpopme', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-1480856' ),
 		array( 'Id' => '900', 'Name' => 'Black Friday 2024', 'Type' => 'BANNER', 'Width' => '1216', 'Height' => '381', 'StartDate' => '2024-11-01T00:00:00+01:00', 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-900' ),
+		array( 'Id' => '4131680', 'Name' => 'as-bf26-thematic-drop1-logo.png', 'Type' => 'BANNER', 'Width' => '420', 'Height' => '116', 'StartDate' => gmdate( 'c', $now - DAY_IN_SECONDS ), 'EndDate' => '', 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-4131680' ),
 		array( 'Id' => '901', 'Name' => 'Generic logo', 'Type' => 'BANNER', 'Width' => '420', 'Height' => '116', 'StartDate' => gmdate( 'c', $now ), 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-901' ),
 	) );
 	return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( $body ), 'headers' => array(), 'cookies' => array() );
@@ -648,7 +649,7 @@ $bmail_cb = function ( $null, $atts ) use ( &$bmails ) {
 add_filter( 'pre_wp_mail', $bmail_cb, 10, 2 );
 delete_option( ADM_Banners::OPTION );
 $bnew = ADM_Banners::refresh();
-adm_check( array( '4131673', '4131675' ) === $bnew && 1 === count( $bmails ) && false !== strpos( $bmails[0]['message'], 'as-bf26-thematic-desktop.png' ) && false !== strpos( $bmails[0]['message'], 'Startseite' ), 'Banner: nur neue Aktionsbanner für den ganzen Shop, eine E-Mail' );
+adm_check( array( '4131673', '4131675', '4131680' ) === $bnew && 1 === count( $bmails ) && false !== strpos( $bmails[0]['message'], 'as-bf26-thematic-desktop.png' ) && false !== strpos( $bmails[0]['message'], 'Startseite' ), 'Banner: nur neue Aktionsbanner für den ganzen Shop, eine E-Mail' );
 adm_check( '' === ADM_Banners::html( 'home' ) && '' === do_shortcode( '[adm_promos]' ), 'Banner: ohne Freigabe nichts auf der Seite' );
 ADM_Banners::refresh();
 adm_check( 1 === count( $bmails ), 'Banner: keine zweite E-Mail' );
@@ -658,6 +659,10 @@ adm_check( is_int( $att ) && $att > 0 && false !== strpos( $ADM_home, 'adm-banne
 ADM_Banners::approve( '4131675' );
 $bx11 = do_shortcode( '[adm_deal_box deal="leadocean"]' );
 adm_check( false !== strpos( $bx11, 'adm-banner--side' ) && 'home' === ADM_Banners::slot( array( 'w' => 1216, 'h' => 381 ) ) && '' === ADM_Banners::slot( array( 'w' => 390, 'h' => 570 ) ), 'Banner: kompaktes Format unter dem Deal-Kasten' );
+adm_check( 'list' === ADM_Banners::slot( array( 'w' => 440, 'h' => 116 ) ) && 'side' === ADM_Banners::slot( array( 'w' => 500, 'h' => 285 ) ) && 'side' === ADM_Banners::slot( array( 'w' => 300, 'h' => 250 ) ) && '' === ADM_Banners::slot( array( 'w' => 160, 'h' => 600 ) ), 'Banner: Streifen über die Bestenlisten, 16:9 unter den Deal-Kasten' );
+adm_check( '' === ADM_Banners::html( 'list' ) && false === strpos( $bx11, 'drop1-logo' ), 'Banner: Streifen ohne Freigabe nirgends' );
+ADM_Banners::approve( '4131680' );
+adm_check( false !== strpos( ADM_Banners::html( 'list' ), 'adm-banner--list' ) && false !== strpos( ADM_Banners::html( 'list' ), 'subId1=banner-4131680' ), 'Banner: Streifen nach Freigabe über den Bestenlisten' );
 adm_check( 0 === strpos( ADM_Stats::label( 'banner-4131673' )[0], 'Aktionsbanner: as-bf26' ), 'Banner: eigene Zeile in den Einnahmen' );
 ADM_Banners::set_status( '4131673', 'beendet' );
 adm_check( '' === ADM_Banners::html( 'home' ), 'Banner: beendet verschwindet' );

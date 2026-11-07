@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.11.1 (07.11.2026)
+
+- Aktionsbanner nach Format verteilt: breite Banner (ab 700 px, mindestens 2,2 : 1) oben auf die Startseite, schmale Streifen (z. B. 420 × 116) über jede Bestenliste und die Übersicht der Bestenlisten, etwa 16 : 9 bis 1,2 : 1 (z. B. 500 × 285, 300 × 250) unter den Deal-Kasten. Hochformate wie 390 × 570 bekommen keinen Platz
+- Streifen werden höchstens 440 px breit angezeigt, damit sie nicht unscharf hochskaliert werden
+
 ## 0.11.0 (07.11.2026)
 
 - Aktionsbanner von AppSumo (Impact Ads), nur nach Freigabe: Alle drei Stunden sucht das Plugin neue Banner mit Aktionsbegriffen (Black Friday, BF26, Cyber Monday, Sale …), nicht produktbezogen, nicht älter als 60 Tage, und meldet sie per E-Mail. Im Reiter „Einnahmen“ unter „Aktionsbanner“ Vorschau, Platz und Knöpfe Freigeben, Ablehnen, Beenden

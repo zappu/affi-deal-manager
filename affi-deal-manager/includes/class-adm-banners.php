@@ -139,19 +139,31 @@ class ADM_Banners {
 		wp_mail( $to, '[' . $site . '] Neue AppSumo-Aktionsbanner zur Freigabe', $body );
 	}
 
-	/** Platz nach Format: breite Banner auf die Startseite, kompakte unter den Deal-Kasten. */
+	/**
+	 * Platz nach Format: breite Banner auf die Startseite, schmale Streifen über die Bestenlisten,
+	 * etwa 16:9 unter den Deal-Kasten. Hochformate passen nirgends.
+	 */
 	public static function slot( array $b ) {
-		if ( $b['w'] >= 700 && $b['h'] > 0 && $b['w'] / $b['h'] >= 2.2 ) {
-			return 'home';
+		if ( $b['h'] <= 0 || $b['w'] < 280 ) {
+			return '';
 		}
-		if ( $b['w'] >= 280 && $b['w'] <= 620 && $b['h'] > 0 && $b['w'] / $b['h'] >= 1.2 ) {
+		$r = $b['w'] / $b['h'];
+		if ( $r >= 2.2 ) {
+			return $b['w'] >= 700 ? 'home' : 'list';
+		}
+		if ( $r >= 1.2 && $b['w'] <= 620 ) {
 			return 'side';
 		}
 		return '';
 	}
 
 	public static function slot_label( $slot ) {
-		return 'home' === $slot ? 'Startseite' : ( 'side' === $slot ? 'unter dem Deal-Kasten' : 'Format passt zu keinem Platz' );
+		$labels = array(
+			'home' => 'Startseite',
+			'list' => 'über den Bestenlisten',
+			'side' => 'unter dem Deal-Kasten',
+		);
+		return isset( $labels[ $slot ] ) ? $labels[ $slot ] : 'Format passt zu keinem Platz';
 	}
 
 	/** Bild einmal in die Mediathek kopieren. @return int|WP_Error */

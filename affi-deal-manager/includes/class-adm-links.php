@@ -11,6 +11,51 @@ class ADM_Links {
 
 	public static function init() {
 		add_shortcode( 'adm_link', array( __CLASS__, 'shortcode' ) );
+		// Werbelinks, die nicht aus dem Plugin kommen (Elementor-Widgets, Editor), bekommen rel="sponsored nofollow".
+		add_filter( 'the_content', array( __CLASS__, 'mark_links' ), 999 );
+		add_filter( 'elementor/frontend/the_content', array( __CLASS__, 'mark_links' ), 999 );
+		add_filter( 'widget_text', array( __CLASS__, 'mark_links' ), 999 );
+	}
+
+	/** Hosts, deren Links als Werbelinks gelten: Impact-Tracking-Host und AppSumo. */
+	public static function ad_hosts() {
+		$hosts = array( 'appsumo.com', 'www.appsumo.com' );
+		$track = strtolower( trim( (string) ADM_Settings::get( 'tracking_host' ) ) );
+		if ( '' !== $track ) {
+			$hosts[] = $track;
+		}
+		return (array) apply_filters( 'adm_ad_hosts', $hosts );
+	}
+
+	/**
+	 * Ergänzt rel="sponsored nofollow" an Links zu AppSumo oder zum Tracking-Host.
+	 * Vorhandene rel-Werte bleiben erhalten.
+	 */
+	public static function mark_links( $html ) {
+		if ( ! is_string( $html ) || false === stripos( $html, '<a ' ) ) {
+			return $html;
+		}
+		$hosts = self::ad_hosts();
+		return preg_replace_callback(
+			'#<a\s[^>]*>#i',
+			function ( $m ) use ( $hosts ) {
+				$tag = $m[0];
+				if ( ! preg_match( '#\shref\s*=\s*(["\'])(.*?)\1#i', $tag, $h ) ) {
+					return $tag;
+				}
+				$host = strtolower( (string) wp_parse_url( html_entity_decode( $h[2] ), PHP_URL_HOST ) );
+				if ( '' === $host || ! in_array( $host, $hosts, true ) ) {
+					return $tag;
+				}
+				if ( preg_match( '#\srel\s*=\s*(["\'])(.*?)\1#i', $tag, $r ) ) {
+					$rel = array_filter( preg_split( '/\s+/', strtolower( $r[2] ) ) );
+					$new = implode( ' ', array_unique( array_merge( $rel, array( 'sponsored', 'nofollow' ) ) ) );
+					return str_replace( $r[0], ' rel="' . esc_attr( $new ) . '"', $tag );
+				}
+				return preg_replace( '#^<a\s#i', '<a rel="sponsored nofollow" ', $tag );
+			},
+			$html
+		);
 	}
 
 	/** Nur AppSumo-Adressen werden verlinkt. */

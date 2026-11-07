@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.7.3 (07.11.2026)
+
+- Werbelinks, die nicht aus dem Plugin kommen (Elementor-Widgets in Kopf- und Fußzeile, Links im Editor), bekommen automatisch `rel="sponsored nofollow"`, wenn sie zu AppSumo oder zum Tracking-Host führen. Vorhandene rel-Werte bleiben, weitere Hosts per Filter `adm_ad_hosts`
+
 ## 0.7.2 (07.11.2026)
 
 - Neuer Shortcode `[adm_deals]`: kaufbare Deals als Karten mit Preis, Bewertung und Werbelink, z. B. `[adm_deals plus="only"]` für die AppSumo-Plus-Seite. Die Plus-Mitgliedschaft selbst erscheint nicht in der Liste. `desc="0"` blendet die englische Kurzbeschreibung von AppSumo aus

@@ -369,6 +369,11 @@ adm_check( false !== strpos( $pl, 'subId1=appsumo-plus' ) && false !== strpos( $
 $GLOBALS['wpdb']->query( "DELETE FROM " . ADM_DB::table() . " WHERE slug IN ('plus-test-tool','plus-2019')" );
 adm_check( false !== strpos( do_shortcode( '[adm_deals type="vorlage"]' ), 'keine kaufbaren Angebote' ) && ADM_Shortcodes::is_membership( array( 'name' => 'AppSumo Plus Monthly', 'slug' => 'x' ) ), 'Leere Liste: Hinweis; Mitgliedschaft erkannt' );
 
+// Werbelinks aus Elementor oder dem Editor bekommen rel="sponsored nofollow"
+$mk = ADM_Links::mark_links( '<p><a href="https://appsumo.8odi.net/c/1/2/3?u=x" class="b">A</a> <a href="https://appsumo.com/products/x/" rel="noopener" target="_blank">B</a> <a href="https://example.com/">C</a></p>' );
+adm_check( false !== strpos( $mk, '<a rel="sponsored nofollow" href="https://appsumo.8odi.net' ) && false !== strpos( $mk, 'rel="noopener sponsored nofollow"' ) && false !== strpos( $mk, '<a href="https://example.com/">' ), 'Werbelinks: rel ergänzt, fremde Links unverändert' );
+adm_check( false !== strpos( apply_filters( 'elementor/frontend/the_content', '<a href="https://appsumo.com/products/plus-2019/">P</a>' ), 'sponsored nofollow' ), 'Werbelinks auch in Elementor-Inhalten' );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

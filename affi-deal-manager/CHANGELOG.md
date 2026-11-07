@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.7.1 (07.11.2026)
+
+- Seitentitel und Meta-Beschreibung der Übersichten: /tools/ heißt „Software ohne Abo: alle Tool-Profile“, Rubriken „<Rubrik>: Software ohne Abo kaufen“, ab Seite 2 mit Seitenzahl. Beschreibung aus der Einleitung bzw. der Rubrik-Beschreibung. Gilt für Rank Math und ohne SEO-Plugin, anpassbar per Filter `adm_archive_meta_title`
+
 ## 0.7.0 (07.11.2026)
 
 - Übersichtsseiten im Stil der Profile: /tools/ zeigt alle veröffentlichten Tool-Profile, /rubrik/<slug>/ die Profile einer Rubrik. Kopf mit Titel, Einleitung (Beschreibung der Rubrik) und Rubrikbild, Leiste mit allen Rubriken, Karten mit Preis, Bewertung und Status aus der Deal-Tabelle

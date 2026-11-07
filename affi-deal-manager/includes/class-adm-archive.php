@@ -21,6 +21,54 @@ class ADM_Archive {
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'wp_robots', array( __CLASS__, 'robots' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ), 20 );
+		// Seitentitel und Beschreibung: Rank Math kennt den Beitragstyp oft nicht und zeigt „Tool-Profile Archive“.
+		add_filter( 'rank_math/frontend/title', array( __CLASS__, 'meta_title' ), 20 );
+		add_filter( 'rank_math/frontend/description', array( __CLASS__, 'meta_description' ), 20 );
+		add_filter( 'pre_get_document_title', array( __CLASS__, 'meta_title' ), 20 );
+	}
+
+	/** Überschrift (H1) und Einleitung einer Übersicht. */
+	public static function heading( $term = null ) {
+		if ( $term ) {
+			$h1   = $term->name . ': Software ohne Abo';
+			$lead = '' !== trim( (string) $term->description ) ? $term->description : 'Tool-Profile aus der Rubrik ' . $term->name . ': Software, die du bei AppSumo einmal bezahlst statt monatlich, ausgewertet aus Käuferbewertungen und Videos.';
+		} else {
+			$h1   = 'Software ohne Abo: alle Tool-Profile';
+			$lead = 'Tools, die du bei AppSumo einmal bezahlst statt monatlich. Jedes Profil wertet die Käuferbewertungen bei AppSumo und Videos zum Tool aus.';
+		}
+		return array(
+			(string) apply_filters( 'adm_archive_title', $h1, $term ),
+			wp_strip_all_tags( (string) apply_filters( 'adm_archive_lead', $lead, $term ) ),
+		);
+	}
+
+	private static function current_term() {
+		return is_tax( ADM_Rubrics::TAX ) ? get_queried_object() : null;
+	}
+
+	/**
+	 * Titel im Browser und in den Suchergebnissen.
+	 * Übersicht: „Software ohne Abo: alle Tool-Profile“, Rubrik: „SEO: Software ohne Abo kaufen“, ab Seite 2 mit Seitenzahl.
+	 */
+	public static function meta_title( $title ) {
+		if ( is_admin() || ! self::is_overview() ) {
+			return $title;
+		}
+		$term  = self::current_term();
+		$new   = $term ? $term->name . ': Software ohne Abo kaufen' : self::heading( null )[0];
+		$paged = (int) get_query_var( 'paged' );
+		if ( $paged > 1 ) {
+			$new .= ' - Seite ' . $paged;
+		}
+		return (string) apply_filters( 'adm_archive_meta_title', $new, $term );
+	}
+
+	public static function meta_description( $desc ) {
+		if ( is_admin() || ! self::is_overview() ) {
+			return $desc;
+		}
+		$lead = self::heading( self::current_term() )[1];
+		return function_exists( 'mb_substr' ) && mb_strlen( $lead ) > 160 ? rtrim( mb_substr( $lead, 0, 157 ) ) . '…' : $lead;
 	}
 
 	/** Eine Übersicht der Tool-Profile (ohne Prüfung der Einstellung). */
@@ -100,17 +148,8 @@ class ADM_Archive {
 		$crumb .= $term ? '<a href="' . esc_url( $all ) . '">Tools</a> / ' . esc_html( $term->name ) : 'Tools';
 		$crumb .= '</nav>';
 
-		if ( $term ) {
-			$h1   = $term->name . ': Software ohne Abo';
-			$lead = '' !== trim( (string) $term->description ) ? $term->description : 'Tool-Profile aus der Rubrik ' . $term->name . ': Software, die du bei AppSumo einmal bezahlst statt monatlich, ausgewertet aus Käuferbewertungen und Videos.';
-			$img  = ADM_Rubrics::image_html( $term->term_id, 'medium' );
-		} else {
-			$h1   = 'Software ohne Abo: alle Tool-Profile';
-			$lead = 'Tools, die du bei AppSumo einmal bezahlst statt monatlich. Jedes Profil wertet die Käuferbewertungen bei AppSumo und Videos zum Tool aus.';
-			$img  = '';
-		}
-		$h1   = (string) apply_filters( 'adm_archive_title', $h1, $term );
-		$lead = (string) apply_filters( 'adm_archive_lead', $lead, $term );
+		list( $h1, $lead ) = self::heading( $term );
+		$img = $term ? ADM_Rubrics::image_html( $term->term_id, 'medium' ) : '';
 
 		$out  = '<main id="content" class="site-main adm adm-page adm-overview">';
 		$out .= '<header class="adm-head">' . $crumb . '<div class="adm-head__card">';

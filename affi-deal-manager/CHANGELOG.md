@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.5 (07.11.2026)
+
+- Top-Empfehlung als kurzer Teaser statt großer Karte: Pokal, Name mit Link zum Profil, Siegel „AppSumo Select“ (eigenes Symbol, kein AppSumo-Logo), Zufriedenheit mit Zahl der Bewertungen, Käufe, ein Punkt aus dem Lob und „Alle N Tools der Liste“
+- Neuer Shortcode `[adm_best_top page="beste/seo-tools"]` (Pfad oder ID) setzt den Teaser an beliebiger Stelle ein, etwa unter einem Listenpunkt. `[adm_bestenlisten]` nutzt denselben Teaser
+
 ## 0.9.4 (07.11.2026)
 
 - Übersicht der Bestenlisten: Die Top-Empfehlung zeigt nur das Lob, ohne Kritik und ohne Preis. Beides bleibt in der vollständigen Liste und im Tool-Profil

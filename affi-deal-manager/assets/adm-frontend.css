@@ -215,11 +215,17 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-best .adm-btn--quiet{background:var(--adm-card)}
 @media (max-width:640px){.adm-best__item{grid-template-columns:minmax(0,1fr);gap:12px;padding:14px}.adm-best__img{aspect-ratio:16/9}.adm-best__rank{top:-8px;left:-6px;width:34px;height:34px}}
 
-/* Übersicht der Bestenlisten [adm_bestenlisten] */
-.adm-bests{display:flex;flex-direction:column;gap:36px;margin:24px 0}
-.adm-bests__sec h2{margin:0 0 8px!important}.adm-bests__sec h2 a{color:inherit!important;text-decoration:none!important}
-.adm-bests__sec>p{margin:0 0 6px!important}
-.adm-best--top{margin-top:24px!important}
-.adm-best__rank--badge{width:auto;height:auto;border-radius:999px;padding:5px 12px;font-size:.8em;letter-spacing:.02em;top:-13px;left:14px;background:var(--adm-lime);color:var(--adm-ink)}
-.adm-bests__more{font-size:.92em;margin:12px 0 0!important}.adm-bests__all{font-weight:700}
-@media (max-width:640px){.adm-best__rank--badge{top:-12px;left:10px;width:auto;height:auto}}
+/* Übersicht der Bestenlisten [adm_bestenlisten] und Teaser [adm_best_top] */
+.adm-bests{display:flex;flex-direction:column;gap:28px;margin:20px 0}
+.adm-bests__sec h3{margin:0 0 6px!important}.adm-bests__sec h3 a{color:inherit!important}
+.adm-bests__sec>p{margin:0 0 4px!important}
+.adm-top{display:flex;gap:14px;align-items:flex-start;background:var(--adm-soft);border-left:4px solid #f2b705;border-radius:12px;padding:14px 16px;margin:12px 0 4px;line-height:1.45}
+.adm-ico--trophy{flex:0 0 auto;margin-top:2px}
+.adm-top__body{min-width:0}.adm-top__body p{margin:0!important}
+.adm-top__label{font-size:.75em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9a7400}
+.adm-top__name{font-family:var(--adm-head-font);font-size:1.15em;font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.adm-top__name a{color:var(--adm-ink)!important;text-decoration:none!important}
+.adm-top__select{display:inline-flex;align-items:center;gap:4px;font-family:var(--adm-body-font);font-size:.68em;font-weight:700;color:var(--adm-accent-dark);background:#e6f4f1;border-radius:999px;padding:2px 9px 2px 6px}
+.adm-top__facts{font-size:.9em;color:var(--adm-muted);margin-top:2px!important}
+.adm-top__pro{font-size:.95em;margin-top:6px!important}.adm-top__pro strong{color:var(--adm-pro)}
+.adm-top__more{font-size:.88em;margin-top:6px!important}.adm-top__more a{font-weight:700}

@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
  * [adm_bestenliste]   Rangliste veröffentlichter Profile (rubrik= oder tools=), nach Anteil zufriedener Käufer
  * [adm_bestenlisten]  Übersicht der Unterseiten mit Bestenlisten und ihrer Top-Empfehlung
+ * [adm_best_top]      Teaser zu Platz 1 einer Bestenliste (page=Pfad oder ID)
  * [adm_ratings]       Verteilung der Bewertungen bei AppSumo (Tacos 1 bis 5) als Balken mit Anteilen
  * [adm_rubrics]       alle Rubriken als Kacheln mit Bild und Zahl der veröffentlichten Profile (Startseite)
  * [adm_tools]         veröffentlichte Tool-Profile als Karten, kaufbare und meistbewertete zuerst;
@@ -59,6 +60,7 @@ class ADM_Shortcodes {
 		add_shortcode( 'adm_tools', array( __CLASS__, 'tools' ) );
 		add_shortcode( 'adm_bestenliste', array( __CLASS__, 'bestenliste' ) );
 		add_shortcode( 'adm_bestenlisten', array( __CLASS__, 'bestenlisten' ) );
+		add_shortcode( 'adm_best_top', array( __CLASS__, 'best_top' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'the_content', array( __CLASS__, 'glance_live' ), 15 );
@@ -851,10 +853,66 @@ class ADM_Shortcodes {
 		return self::assets() . '<ol class="adm adm-best">' . $out . '</ol>' . $note . $schema;
 	}
 
+	/** Einträge der Bestenliste, die auf einer Seite steht (erster [adm_bestenliste] im Inhalt). */
+	public static function page_best_items( $page ) {
+		$page = get_post( $page );
+		if ( ! $page || ! preg_match( '/' . get_shortcode_regex( array( 'adm_bestenliste' ) ) . '/', $page->post_content, $m ) ) {
+			return array();
+		}
+		return self::best_items( (array) shortcode_parse_atts( $m[3] ) );
+	}
+
+	/** Pokal (Top-Empfehlung) und Haken-Siegel (Stufe Select) als Inline-SVG. */
+	private static function icon( $name ) {
+		if ( 'trophy' === $name ) {
+			return '<svg class="adm-ico adm-ico--trophy" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><path fill="#f2b705" d="M7 3h10v2h3a1 1 0 0 1 1 1v2a5 5 0 0 1-4.6 5A5 5 0 0 1 13 15.9V18h3a1 1 0 0 1 1 1v2H7v-2a1 1 0 0 1 1-1h3v-2.1A5 5 0 0 1 7.6 13 5 5 0 0 1 3 8V6a1 1 0 0 1 1-1h3V3Zm10 4v3.9A3 3 0 0 0 19 8V7h-2ZM5 7v1a3 3 0 0 0 2 2.9V7H5Z"/><path fill="#fff" fill-opacity=".45" d="M9.5 5.5h1.6v5.2a2.6 2.6 0 0 1-1.6-2.4V5.5Z"/></svg>';
+		}
+		return '<svg class="adm-ico adm-ico--select" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="m12 1 2.6 2.1 3.3-.3.9 3.2 2.9 1.7-1.2 3.1 1.2 3.1-2.9 1.7-.9 3.2-3.3-.3L12 23l-2.6-2.1-3.3.3-.9-3.2-2.9-1.7 1.2-3.1L2.3 8.1l2.9-1.7.9-3.2 3.3.3L12 1Zm-1.3 14.6 6-6-1.4-1.4-4.6 4.6-2.3-2.3L7 11.9l3.7 3.7Z"/></svg>';
+	}
+
+	/** Kurzer, positiver Teaser zur Top-Empfehlung: Name, Zufriedenheit, Käufe, Select, ein Punkt aus dem Lob. */
+	private static function top_teaser( array $items, $list_url = '' ) {
+		$it   = $items[0];
+		$p    = $it['post'];
+		$deal = $it['deal'];
+		$st   = self::dist_stats( $deal );
+		$pro  = self::glance_point( $p->post_content, 'pro' );
+		$fact = array();
+		if ( $st ) {
+			$fact[] = sprintf( "%d\xc2\xa0%% zufrieden (%s Bewertungen)", $st['pgood'], number_format_i18n( $st['all'] ) );
+		}
+		if ( (int) $deal['purchases'] > 0 ) {
+			$fact[] = number_format_i18n( (int) $deal['purchases'] ) . '-mal gekauft';
+		}
+		$sel  = 'select' === $deal['listing_type'] ? ' <span class="adm-top__select" title="Von AppSumo geprüft und bewährt">' . self::icon( 'select' ) . 'AppSumo Select</span>' : '';
+		$out  = '<div class="adm adm-top">' . self::icon( 'trophy' ) . '<div class="adm-top__body">';
+		$out .= '<p class="adm-top__label">Top-Empfehlung</p>';
+		$out .= '<p class="adm-top__name"><a href="' . esc_url( get_permalink( $p ) ) . '">' . esc_html( $deal['title'] ) . '</a>' . $sel . '</p>';
+		$out .= $fact ? '<p class="adm-top__facts">' . esc_html( implode( ' · ', $fact ) ) . '</p>' : '';
+		$out .= '' !== $pro ? '<p class="adm-top__pro"><strong>Gelobt:</strong> ' . esc_html( $pro ) . '</p>' : '';
+		$out .= '' !== $list_url ? '<p class="adm-top__more"><a href="' . esc_url( $list_url ) . '">Alle ' . count( $items ) . ' Tools der Liste</a></p>' : '';
+		return $out . '</div></div>';
+	}
+
+	/**
+	 * [adm_best_top page="beste/seo-tools"] (Pfad oder ID der Seite mit der Bestenliste)
+	 * Teaser zu Platz 1 dieser Liste, etwa unter einem Eintrag auf der Übersichtsseite.
+	 */
+	public static function best_top( $atts ) {
+		$atts = shortcode_atts( array( 'page' => '' ), $atts, 'adm_best_top' );
+		$ref  = trim( (string) $atts['page'] );
+		$page = ctype_digit( $ref ) ? get_post( (int) $ref ) : get_page_by_path( trim( $ref, '/' ) );
+		if ( ! $page || 'publish' !== $page->post_status ) {
+			return '';
+		}
+		$items = self::page_best_items( $page );
+		return $items ? self::assets() . self::top_teaser( $items, get_permalink( $page ) ) : '';
+	}
+
 	/**
 	 * [adm_bestenlisten parent="123"]
-	 * Übersicht aller Bestenlisten: jede Unterseite mit [adm_bestenliste] bekommt Überschrift, ersten Absatz,
-	 * ihre Top-Empfehlung (Platz 1, ohne Kritik und Preis) und Links zu den Plätzen 2 und 3. Die Auswahl steht nur auf der Unterseite.
+	 * Übersicht aller Bestenlisten: jede Unterseite mit [adm_bestenliste] bekommt Überschrift, ersten Absatz
+	 * und den Teaser ihrer Top-Empfehlung. Die Auswahl steht nur auf der Unterseite.
 	 */
 	public static function bestenlisten( $atts ) {
 		$atts   = shortcode_atts( array( 'parent' => 0 ), $atts, 'adm_bestenlisten' );
@@ -862,26 +920,17 @@ class ADM_Shortcodes {
 		if ( ! $parent ) {
 			return '';
 		}
-		$pages = get_pages( array( 'parent' => $parent, 'sort_column' => 'menu_order,post_title', 'post_status' => 'publish' ) );
-		$out   = '';
-		foreach ( $pages as $page ) {
-			if ( ! preg_match( '/' . get_shortcode_regex( array( 'adm_bestenliste' ) ) . '/', $page->post_content, $m ) ) {
-				continue;
-			}
-			$items = self::best_items( (array) shortcode_parse_atts( $m[3] ) );
+		$out = '';
+		foreach ( get_pages( array( 'parent' => $parent, 'sort_column' => 'menu_order,post_title', 'post_status' => 'publish' ) ) as $page ) {
+			$items = self::page_best_items( $page );
 			if ( ! $items ) {
 				continue;
 			}
 			$url   = get_permalink( $page );
 			$intro = preg_match( '#<p>(.*?)</p>#s', $page->post_content, $pm ) ? trim( wp_strip_all_tags( $pm[1] ) ) : '';
-			$out  .= '<section class="adm-bests__sec"><h2><a href="' . esc_url( $url ) . '">' . esc_html( get_the_title( $page ) ) . '</a></h2>';
+			$out  .= '<section class="adm-bests__sec"><h3><a href="' . esc_url( $url ) . '">' . esc_html( get_the_title( $page ) ) . '</a></h3>';
 			$out  .= '' !== $intro ? '<p>' . esc_html( $intro ) . '</p>' : '';
-			$out  .= '<ol class="adm adm-best adm-best--top">' . self::best_item_html( $items[0], 1, 'Top-Empfehlung', true ) . '</ol>';
-			$more  = array();
-			foreach ( array_slice( $items, 1, 2 ) as $i => $it ) {
-				$more[] = 'Platz ' . ( $i + 2 ) . ': <a href="' . esc_url( get_permalink( $it['post'] ) ) . '">' . esc_html( $it['deal']['title'] ) . '</a>';
-			}
-			$out .= '<p class="adm-bests__more">' . ( $more ? implode( ' · ', $more ) . ' · ' : '' ) . '<a class="adm-bests__all" href="' . esc_url( $url ) . '">Alle ' . count( $items ) . ' Tools der Liste ansehen</a></p></section>';
+			$out  .= self::top_teaser( $items, $url ) . '</section>';
 		}
 		return '' === $out ? '' : self::assets() . '<div class="adm-bests">' . $out . '</div>';
 	}

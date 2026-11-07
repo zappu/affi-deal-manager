@@ -472,8 +472,10 @@ $par8 = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish'
 $kid8 = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_parent' => $par8, 'post_title' => 'Beste Lead-Tools', 'post_content' => '<p>Erster Absatz der Liste.</p>[adm_bestenliste tools="' . get_post_field( 'post_name', $p8 ) . '"]' ) );
 wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_parent' => $par8, 'post_title' => 'Ohne Liste', 'post_content' => '<p>Nichts</p>' ) );
 $ov8 = do_shortcode( '[adm_bestenlisten parent="' . $par8 . '"]' );
-adm_check( false !== strpos( $ov8, 'Beste Lead-Tools</a></h2>' ) && false !== strpos( $ov8, 'Erster Absatz der Liste.' ) && false !== strpos( $ov8, '>Top-Empfehlung</span>' ) && false !== strpos( $ov8, 'Alle 1 Tools der Liste ansehen' ) && false === strpos( $ov8, 'Ohne Liste' ) && false !== strpos( $ov8, get_permalink( $kid8 ) ), 'Übersicht der Bestenlisten mit Top-Empfehlung' );
-adm_check( false === strpos( $ov8, 'Kritisiert:' ) && false === strpos( $ov8, 'adm-chip--price' ) && false !== strpos( $ov8, 'Gelobt:' ) && false !== strpos( $bl, 'Kritisiert:' ), 'Top-Empfehlung ohne Kritik und Preis, die Liste behält beides' );
+adm_check( false !== strpos( $ov8, 'Beste Lead-Tools</a></h3>' ) && false !== strpos( $ov8, 'Erster Absatz der Liste.' ) && false !== strpos( $ov8, 'adm-top__label">Top-Empfehlung' ) && false !== strpos( $ov8, 'Alle 1 Tools der Liste' ) && false === strpos( $ov8, 'Ohne Liste' ) && false !== strpos( $ov8, get_permalink( $kid8 ) ), 'Übersicht der Bestenlisten mit Top-Empfehlung' );
+adm_check( false === strpos( $ov8, 'Kritisiert:' ) && false === strpos( $ov8, ' $' ) && false !== strpos( $ov8, 'Gelobt:' ) && false !== strpos( $ov8, "96\xc2\xa0% zufrieden (141 Bewertungen)" ) && false !== strpos( $ov8, 'adm-ico--trophy' ) && false !== strpos( $bl, 'Kritisiert:' ), 'Top-Empfehlung kurz und positiv: Zufriedenheit, Lob, Pokal, ohne Kritik und Preis' );
+$tp8 = do_shortcode( '[adm_best_top page="' . get_page_uri( $kid8 ) . '"]' );
+adm_check( false !== strpos( $tp8, 'adm-top__name' ) && $tp8 === do_shortcode( '[adm_best_top page="' . $kid8 . '"]' ) && '' === do_shortcode( '[adm_best_top page="gibt-es-nicht"]' ), 'Teaser einzeln per Pfad oder ID' );
 wp_delete_post( $kid8, true );
 wp_delete_post( $par8, true );
 wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );

@@ -403,7 +403,7 @@ class ADM_Admin {
 						<th scope="row"><label for="adm-box_placement">Deal-Kasten</label></th>
 						<td><select id="adm-box_placement" name="adm[box_placement]">
 							<option value="content" <?php selected( $s['box_placement'], 'content' ); ?>>Einfach: Kasten oben im Text, Titel vom Theme</option>
-							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>Profil-Layout: Kopfbereich mit Eckdaten, Kasten in der Seitenleiste (auf dem Handy oben im Text)</option>
+							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>Profil-Layout: Kopfbereich mit Eckdaten, Kasten in der Seitenleiste (auf dem Handy oben im Text), Übersichten /tools/ und /rubrik/ im selben Stil</option>
 						</select>
 						<p class="description">Beim Profil-Layout baut das Plugin Kopfbereich und Seitenleiste um den Beitragsinhalt; das Theme oder Elementor gibt nur den Inhalt aus. Bei Hello Elementor entfällt der Theme-Titel automatisch, andere Themes zeigen ihn eventuell doppelt.</p></td>
 					</tr>

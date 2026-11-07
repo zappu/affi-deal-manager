@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.7.0 (07.11.2026)
+
+- Übersichtsseiten im Stil der Profile: /tools/ zeigt alle veröffentlichten Tool-Profile, /rubrik/<slug>/ die Profile einer Rubrik. Kopf mit Titel, Einleitung (Beschreibung der Rubrik) und Rubrikbild, Leiste mit allen Rubriken, Karten mit Preis, Bewertung und Status aus der Deal-Tabelle
+- Sortierung: kaufbare zuerst, dann nach Zahl der Bewertungen; 24 Profile pro Seite mit Seitenzahlen
+- Leere Übersichten bekommen noindex
+- Aktiv mit dem Profil-Layout; eine passende Archiv-Vorlage in Elementor Pro hat Vorrang, abschaltbar per Filter `adm_archive_layout`, Titel und Einleitung per `adm_archive_title` und `adm_archive_lead`
+
 ## 0.6.3 (06.11.2026)
 
 - Videotexte: „die sprechende Person“ wird zu „die Person im Video“, der Gemini-Prompt schreibt über das Video statt über die sprechende Person

@@ -330,6 +330,30 @@ wp_reset_postdata();
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'content', 'mode' => 'wpcron' ) ) );
 wp_update_post( array( 'ID' => (int) $lo2['post_id'], 'post_status' => 'draft' ) );
 
+// Übersicht /tools/: Karte und Sortierung (kaufbare zuerst)
+$lo3 = adm_get_deal( 'leadocean' );
+wp_update_post( array( 'ID' => (int) $lo3['post_id'], 'post_status' => 'publish' ) );
+$card = ADM_Archive::card( get_post( (int) $lo3['post_id'] ) );
+adm_check( false !== strpos( $card, 'class="adm-card"' ) && false !== strpos( $card, get_permalink( (int) $lo3['post_id'] ) ) && false !== strpos( $card, 'adm-chip--price' ) && false !== strpos( $card, 'Bewertungen auf AppSumo' ), 'Übersicht: Karte mit Link, Preis und Bewertung' );
+$other = wp_insert_post( array( 'post_type' => 'adm_tool', 'post_status' => 'publish', 'post_title' => 'AAA ausgelaufen' ) );
+$GLOBALS['wpdb']->insert( ADM_DB::table(), array( 'slug' => 'aaa-test-alt', 'name' => 'AAA', 'url' => 'https://appsumo.com/products/aaa-test-alt/', 'status' => 'ausgelaufen', 'review_count' => 9999, 'post_id' => $other ) );
+$q = new WP_Query( array( 'post_type' => 'adm_tool', 'adm_sort' => 1, 'posts_per_page' => 10, 'post__in' => array( $other, (int) $lo3['post_id'] ) ) );
+adm_check( 2 === count( $q->posts ) && (int) $q->posts[0]->ID === (int) $lo3['post_id'], 'Übersicht: kaufbare vor ausgelaufenen, auch bei mehr Bewertungen' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'sidebar', 'mode' => 'wpcron' ) ) );
+$GLOBALS['wp_query'] = new WP_Query( array( 'post_type' => 'adm_tool' ) );
+$GLOBALS['wp_query']->is_post_type_archive = true;
+$GLOBALS['wp_query']->is_archive = true;
+$GLOBALS['wp_query']->set( 'post_type', 'adm_tool' );
+adm_check( ADM_DIR . 'templates/archive.php' === apply_filters( 'template_include', 'index.php' ) && in_array( 'adm-overview', get_body_class(), true ), 'Übersicht: Plugin-Vorlage mit Profil-Layout' );
+$page = ADM_Archive::render();
+adm_check( false !== strpos( $page, '<h1>Software ohne Abo: alle Tool-Profile</h1>' ) && substr_count( $page, 'class="adm-card"' ) >= 2, 'Übersicht: Titel und Karten' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'content', 'mode' => 'wpcron' ) ) );
+adm_check( 'index.php' === apply_filters( 'template_include', 'index.php' ), 'Übersicht: ohne Profil-Layout bleibt die Vorlage des Themes' );
+$GLOBALS['wpdb']->delete( ADM_DB::table(), array( 'slug' => 'aaa-test-alt' ) );
+wp_delete_post( $other, true );
+wp_update_post( array( 'ID' => (int) $lo3['post_id'], 'post_status' => 'draft' ) );
+wp_reset_query();
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

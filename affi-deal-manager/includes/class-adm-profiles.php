@@ -13,6 +13,8 @@ class ADM_Profiles {
 
 	const CPT        = 'adm_tool';
 	const QUEUE      = 'adm_profile_queue';
+	/** Deals, deren veröffentlichtes Profil auf ausdrücklichen Wunsch neu geschrieben werden darf. */
+	const FORCE      = 'adm_profile_force';
 	const QUEUE_HOOK = 'adm_profile_tick';
 	const LOG        = 'adm_profile_log';
 	const LOCK       = 'adm_profile_lock';
@@ -228,6 +230,7 @@ class ADM_Profiles {
 
 	public static function clear_queue() {
 		update_option( self::QUEUE, array(), false );
+		delete_option( self::FORCE );
 		delete_option( self::PAUSED );
 	}
 
@@ -237,7 +240,30 @@ class ADM_Profiles {
 			return false;
 		}
 		$post = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
+		if ( $post && 'publish' === $post->post_status && in_array( (int) $deal['id'], array_map( 'intval', (array) get_option( self::FORCE, array() ) ), true ) ) {
+			return true; // Ausdrücklich angefordert über „Veröffentlichte Profile neu schreiben“.
+		}
 		return ! $post || in_array( $post->post_status, array( 'draft', 'auto-draft', 'pending' ), true );
+	}
+
+	/** Deals mit veröffentlichtem Profil. */
+	public static function published_deals() {
+		global $wpdb;
+		$rows = $wpdb->get_col( $wpdb->prepare(
+			'SELECT d.id FROM ' . ADM_DB::table() . " d INNER JOIN {$wpdb->posts} p ON p.ID = d.post_id AND p.post_type = %s AND p.post_status = 'publish' WHERE d.name <> '' AND NOT " . ADM_DB::PLUS_SQL . ' ORDER BY d.review_count DESC',
+			self::CPT
+		) );
+		return array_map( 'intval', (array) $rows );
+	}
+
+	/**
+	 * Veröffentlichte Profile neu schreiben lassen (nur auf ausdrücklichen Klick im Backend).
+	 * Die Profile bleiben online, der neue Text ersetzt den alten; WordPress hebt den alten als Revision auf.
+	 */
+	public static function enqueue_published( array $ids ) {
+		$force = array_values( array_unique( array_merge( array_map( 'intval', (array) get_option( self::FORCE, array() ) ), array_map( 'intval', $ids ) ) ) );
+		update_option( self::FORCE, $force, false );
+		return self::enqueue( $ids );
 	}
 
 	/** Die besten kaufbaren Software-Deals ohne Profil (nach Anzahl der Bewertungen). */
@@ -452,15 +478,15 @@ class ADM_Profiles {
 		$title   = str_replace( '{tool}', $name, (string) ADM_Settings::get( 'title_template' ) );
 		$seo     = str_replace( '{tool}', $name, (string) ADM_Settings::get( 'seo_title_template' ) );
 
-		$postarr = array(
+		$existing = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
+		$postarr  = array(
 			'post_type'    => self::CPT,
-			'post_status'  => 'draft',
+			'post_status'  => $existing && 'publish' === $existing->post_status ? 'publish' : 'draft',
 			'post_title'   => $title,
 			'post_name'    => sanitize_title( $deal['slug'] ),
 			'post_content' => $content,
 			'post_excerpt' => self::plain( isset( $json['auszug'] ) ? $json['auszug'] : '', 300 ),
 		);
-		$existing = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
 		if ( $existing && self::CPT === $existing->post_type ) {
 			$postarr['ID'] = $existing->ID;
 			$post_id       = wp_update_post( wp_slash( $postarr ), true );
@@ -482,6 +508,8 @@ class ADM_Profiles {
 		update_post_meta( $post_id, 'rank_math_description', self::plain( isset( $json['meta_beschreibung'] ) ? $json['meta_beschreibung'] : '', 170 ) );
 		update_post_meta( $post_id, 'rank_math_focus_keyword', mb_strtolower( $name ) . ' ohne abo,' . mb_strtolower( $name ) . ' lifetime deal' );
 		ADM_DB::update( (int) $deal['id'], array( 'post_id' => (int) $post_id ) );
+		$force = array_diff( array_map( 'intval', (array) get_option( self::FORCE, array() ) ), array( (int) $deal['id'] ) );
+		update_option( self::FORCE, array_values( $force ), false );
 		self::$last_hints = array_merge( $hints ? array( 'Stilhinweise: ' . implode( '; ', $hints ) ) : array(), $notes );
 		return (int) $post_id;
 	}

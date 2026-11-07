@@ -109,7 +109,7 @@ class ADM_Admin {
 		check_admin_referer( 'adm_profile' );
 		$do  = isset( $_REQUEST['do'] ) ? sanitize_key( $_REQUEST['do'] ) : '';
 		$msg = '';
-		if ( ! ADM_AI::configured() && in_array( $do, array( 'one', 'best', 'run', 'drafts' ), true ) ) {
+		if ( ! ADM_AI::configured() && in_array( $do, array( 'one', 'best', 'run', 'drafts', 'published' ), true ) ) {
 			$msg = ADM_AI::missing_key_message();
 		} elseif ( 'one' === $do ) {
 			$id  = isset( $_REQUEST['id'] ) ? (int) $_REQUEST['id'] : 0;
@@ -127,6 +127,9 @@ class ADM_Admin {
 		} elseif ( 'drafts' === $do ) {
 			$n   = ADM_Profiles::enqueue( ADM_Profiles::draft_deals() );
 			$msg = $n . ' Entwürfe zum Neuschreiben vorgemerkt. Veröffentlichte Profile bleiben unangetastet.';
+		} elseif ( 'published' === $do ) {
+			$n   = ADM_Profiles::enqueue_published( ADM_Profiles::published_deals() );
+			$msg = $n . ' veröffentlichte Profile zum Neuschreiben vorgemerkt. Sie bleiben online, der neue Text ersetzt den alten; der alte bleibt als Revision erhalten.';
 		} elseif ( 'run' === $do ) {
 			$before = count( ADM_Profiles::queue() ) + count( ADM_Profiles::video_queue() );
 			delete_option( ADM_Profiles::PAUSED );
@@ -462,6 +465,8 @@ class ADM_Admin {
 				<button class="button button-primary" name="do" value="best" <?php disabled( ! $cands ); ?>>Profile für die <?php echo (int) $n; ?> besten Software-Deals vormerken (<?php echo (int) $cands; ?> ohne Profil)</button>
 				<?php $drafts = count( ADM_Profiles::draft_deals() ); ?>
 				<button class="button" name="do" value="drafts" <?php disabled( ! $drafts ); ?>>Alle Entwürfe neu erzeugen (<?php echo (int) $drafts; ?>)</button>
+				<?php $pub = count( ADM_Profiles::published_deals() ); ?>
+				<button class="button" name="do" value="published" <?php disabled( ! $pub ); ?> onclick="return confirm('Alle <?php echo (int) $pub; ?> veröffentlichten Profile neu schreiben lassen? Eigene Änderungen am Text gehen verloren (der alte Text bleibt als Revision erhalten).');">Veröffentlichte Profile neu schreiben (<?php echo (int) $pub; ?>)</button>
 				<?php $novid = count( ADM_Profiles::drafts_without_videos() ); ?>
 				<button class="button" name="do" value="videos" <?php disabled( ! $novid ); ?>>Videos nachtragen (<?php echo (int) $novid; ?> Entwürfe ohne Video)</button>
 				<button class="button" name="do" value="run" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Nächstes jetzt erzeugen</button>

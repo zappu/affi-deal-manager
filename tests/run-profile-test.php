@@ -438,6 +438,19 @@ adm_check( false !== strpos( $up6, '"stufe_bei_appsumo": "LaunchPad' ) && false 
 wp_reset_postdata();
 wp_update_post( array( 'ID' => (int) $lo6['post_id'], 'post_status' => 'draft' ) );
 
+// Veröffentlichte Profile nur auf ausdrücklichen Wunsch neu schreiben
+$lo7 = adm_get_deal( 'leadocean' );
+$p7  = (int) $lo7['post_id'];
+wp_update_post( array( 'ID' => $p7, 'post_status' => 'publish', 'post_content' => '<p>Alter Text</p>' ) );
+ADM_Profiles::clear_queue();
+adm_check( 0 === ADM_Profiles::enqueue( array( (int) $lo7['id'] ) ) && is_wp_error( ADM_Profiles::generate( (int) $lo7['id'] ) ), 'Veröffentlichtes Profil wird ohne Freigabe nicht überschrieben' );
+adm_check( in_array( (int) $lo7['id'], ADM_Profiles::published_deals(), true ) && 1 === ADM_Profiles::enqueue_published( array( (int) $lo7['id'] ) ), 'Neuschreiben veröffentlichter Profile vorgemerkt' );
+$r7 = ADM_Profiles::generate( (int) $lo7['id'] );
+adm_check( $p7 === $r7 && 'publish' === get_post_status( $p7 ) && false === strpos( get_post_field( 'post_content', $p7 ), 'Alter Text' ) && ! in_array( (int) $lo7['id'], (array) get_option( ADM_Profiles::FORCE, array() ), true ), 'Neu geschrieben, bleibt veröffentlicht, Freigabe verbraucht' );
+adm_check( is_wp_error( ADM_Profiles::generate( (int) $lo7['id'] ) ), 'Danach wieder geschützt' );
+ADM_Profiles::clear_queue();
+wp_update_post( array( 'ID' => $p7, 'post_status' => 'draft' ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

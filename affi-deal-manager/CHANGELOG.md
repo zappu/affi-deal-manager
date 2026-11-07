@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.8.2 (07.11.2026)
+
+- Knopf „Veröffentlichte Profile neu schreiben (N)“ mit Rückfrage: schreibt veröffentlichte Profile über die Warteschlange neu. Sie bleiben online, der neue Text ersetzt den alten, der alte bleibt als Revision erhalten. Die Freigabe gilt je Profil genau einmal (Option `adm_profile_force`); ohne diesen Klick werden veröffentlichte Profile weiterhin nie überschrieben
+
 ## 0.8.1 (07.11.2026)
 
 - Bewertungen richtig gewichten: Der Abgleich liest die Verteilung der Tacos (1 bis 5) von der AppSumo-Seite. „Auf einen Blick“ zeigt sie live als Balken mit dem Satz „X % der N Bewertungen vergeben 4 oder 5 Tacos“, die Spalten heißen „Was Käufer loben“ und „Kritik aus den N schwächeren Bewertungen (X %)“. Gilt sofort für alle Profile, der gespeicherte Text bleibt unverändert. Shortcode `[adm_ratings]`

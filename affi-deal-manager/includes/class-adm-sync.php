@@ -181,6 +181,8 @@ class ADM_Sync {
 			delete_transient( self::LOCK );
 		}
 		$report['purged'] = ADM_Cache::flush();
+		// Weitere tägliche Aufgaben (Einnahmen, Aktionen von AppSumo) hängen sich hier an.
+		do_action( 'adm_tick_done', $report );
 		update_option( 'adm_last_tick', array( 'time' => time(), 'report' => $report ), false );
 		return $report;
 	}

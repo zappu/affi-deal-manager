@@ -123,4 +123,21 @@ class ADM_Cache {
 		update_option( 'adm_last_purge', array( 'time' => time(), 'count' => count( $urls ) ), false );
 		return count( $urls );
 	}
+	/** Ganzen Seiten-Cache leeren (Aktionshinweise stehen auf allen Profilen). */
+	public static function purge_all() {
+		if ( class_exists( '\FlyingPress\Purge' ) ) {
+			try {
+				if ( method_exists( '\FlyingPress\Purge', 'purge_pages' ) ) {
+					\FlyingPress\Purge::purge_pages();
+				} elseif ( method_exists( '\FlyingPress\Purge', 'purge_everything' ) ) {
+					\FlyingPress\Purge::purge_everything();
+				}
+			} catch ( \Throwable $e ) {
+				unset( $e );
+			}
+		}
+		do_action( 'adm_purged_all' );
+		update_option( 'adm_last_purge', array( 'time' => time(), 'count' => -1 ), false );
+	}
+
 }

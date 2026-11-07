@@ -26,6 +26,8 @@
   - `includes/class-adm-shots.php`: Website des Herstellers (Spalte `website` aus `product_url` der AppSumo-Seitendaten, Meta `_adm_website` überschreibt) und Screenshot per mShots (Meta `_adm_shot`, Versuche `_adm_shot_tries`, Abbruch `_adm_shot_failed`), wird Beitragsbild statt Rubrikbild; Handy-Leiste mit Kauf-Button in `ADM_Shortcodes::sticky_bar()`
   - `includes/class-adm-cache.php`: leert den Seiten-Cache (FlyingPress `Purge::purge_urls`) bei geändertem Preis, Status oder Stufe, bei Veröffentlichung eines Profils und neuem Screenshot; Filter `adm_purge_urls`
   - `includes/class-adm-impact.php`: Impact-Partner-API nur lesend (`THOKA_IMPACT_ACCOUNT_SID`, `THOKA_IMPACT_AUTH_TOKEN` in der wp-config.php), Verbindungstest in den Einstellungen (Option `adm_impact_test`)
+  - `includes/class-adm-stats.php`: Reiter „Einnahmen“ (`affi-deal-manager-stats`), Impact-Bericht `partner_performance_by_subid` je subId1 für 7/30/90 Tage, täglich über `adm_tick_done`
+  - `includes/class-adm-promos.php`: Aktionen und Codes von AppSumo (Impact Deals, PromoCodes, Promotions) alle 3 Stunden, E-Mail bei neuen, Hinweis im Deal-Kasten und `[adm_promos]`, `ADM_Cache::purge_all()` bei Änderung
   - `includes/class-adm-admin.php`, `class-adm-list-table.php`: Backend
   - `includes/class-adm-updater.php`: Updates über update.json
 - `tests/`: Testdaten und Testskript (nicht im ZIP)

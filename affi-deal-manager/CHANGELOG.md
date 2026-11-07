@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.10.0 (07.11.2026)
+
+- Neuer Reiter „Einnahmen“: Klicks, Verkäufe, Conversion, Umsatz, Provision und Verdienst je Klick für jede subId1 (Profil, Bestenliste, Deal-Karte, Fußzeile …) für 7, 30 und 90 Tage, aus dem Impact-Bericht „Performance by Sub ID“, nur Programm AppSumo. Einmal täglich, Knopf „Jetzt aktualisieren“ (Klasse `ADM_Stats`, Option `adm_impact_stats`)
+- Aktionen von AppSumo: Deals, Gutscheincodes und Promotions aus der Impact-API alle drei Stunden. Neue Aktionen meldet eine E-Mail an „E-Mail bei Störungen“ (Name, Zeitraum, Code, Rabatt, Geltung). Laufende Aktionen erscheinen im Deal-Kasten (für alle Produkte oder genau dieses) und über `[adm_promos]` als Leiste mit Werbelink (subId1 `aktion`); geplante erst ab Start, abgelaufene verschwinden. Ändern sich die laufenden Aktionen, wird der ganze Seiten-Cache geleert (Klasse `ADM_Promos`)
+- Nach jedem Abgleich-Schritt Aktion `adm_tick_done` für weitere Aufgaben
+
 ## 0.9.9 (07.11.2026)
 
 - Impact-API: Feld „Abfrage (nur lesend)“ unten in den Einstellungen für freie GET-Abfragen relativ zum Partnerkonto (z. B. `Marketplace/Products?Query=DocPro`). Nur einfache Pfade, Listen auf 5 Einträge gekürzt, Zugangsdaten maskiert (Option `adm_impact_query`)

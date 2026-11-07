@@ -43,6 +43,14 @@ class ADM_Admin {
 			'capability' => 'manage_options',
 			'callback'   => array( __CLASS__, 'page_settings' ),
 		) );
+		Thoka_Admin_Menu::add_page( array(
+			'group'      => 'affi-deal-manager',
+			'slug'       => ADM_Stats::SLUG,
+			'page_title' => 'Thoka Affi Deal Manager: Einnahmen',
+			'menu_title' => 'Einnahmen',
+			'capability' => 'manage_options',
+			'callback'   => array( 'ADM_Stats', 'page' ),
+		) );
 	}
 
 	public static function action_links( $links ) {

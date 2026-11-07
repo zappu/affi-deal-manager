@@ -236,3 +236,11 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 @container (min-width:536px) and (max-width:811px){.adm-cards--rows2>:nth-child(n+5){display:none}}
 @container (min-width:812px) and (max-width:1087px){.adm-cards--rows2>:nth-child(n+7){display:none}}
 .adm-cards--rows2{grid-template-columns:repeat(auto-fill,minmax(max(260px,calc((100% - 48px) / 4)),1fr))}
+
+/* Aktionen von AppSumo (Impact) */
+.adm-promo{margin:10px 0!important;padding:9px 12px;border-radius:10px;background:#fff6d6;border:1px solid #f2d36b;font-size:.9em;line-height:1.45;color:var(--adm-ink)}
+.adm-promo__label{display:inline-block;font-weight:700;font-size:.78em;text-transform:uppercase;letter-spacing:.05em;background:#f2b705;color:var(--adm-ink);border-radius:999px;padding:2px 8px;margin-right:4px}
+.adm-promo__code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#fff;border:1px dashed #c9a400;border-radius:6px;padding:1px 6px;font-weight:700}
+.adm-promos{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.adm-promo--bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:1em;padding:12px 16px}
+.adm-promo--bar .adm-btn{margin-left:auto}

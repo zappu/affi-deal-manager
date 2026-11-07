@@ -549,6 +549,71 @@ remove_filter( 'pre_http_request', $imp_mock, 5 );
 adm_check( 200 === $q1['http'] && 'DocPro' === $q1['antwort']['Items'][0]['Name'] && false !== strpos( $q1['abfrage'], 'Keyword=DocPro' ), 'Impact-Abfrage: Pfad mit Parametern' );
 adm_check( 'Ungültiger Pfad' === $q2['fehler'] && 'Ungültiger Pfad' === $q3['fehler'] && 404 === $q4['http'] && false === strpos( wp_json_encode( $q4 ), 'IRtestSID123' ), 'Impact-Abfrage: nur einfache Pfade, Zugangsdaten maskiert' );
 
+// Einnahmen je subId1 und Aktionen von AppSumo (Impact)
+$stat_mock = function ( $pre, $args, $url ) {
+	if ( 0 !== strpos( $url, 'https://api.impact.com/' ) ) {
+		return $pre;
+	}
+	$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+	if ( false !== strpos( $path, '/Reports/partner_performance_by_subid' ) ) {
+		$body = array( '@numpages' => '1', 'Records' => array(
+			array( 'pubsubid1_' => 'leadocean', 'Campaign' => 'AppSumo', 'Clicks' => '40', 'raw_clicks' => '44', 'Actions' => '2', 'sale_amount' => '98.0', 'Earnings' => '98.0' ),
+			array( 'pubsubid1_' => 'beste-leadocean', 'Campaign' => 'AppSumo', 'Clicks' => '10', 'raw_clicks' => '10', 'Actions' => '0', 'sale_amount' => '0', 'Earnings' => '0' ),
+			array( 'pubsubid1_' => '', 'Campaign' => 'Envato Placeit', 'Clicks' => '999', 'raw_clicks' => '999', 'Actions' => '5', 'sale_amount' => '5', 'Earnings' => '5' ),
+		) );
+	} elseif ( preg_match( '#/Campaigns/7443$#', $path ) ) {
+		$body = array( 'CampaignId' => '7443', 'CampaignName' => 'AppSumo' );
+	} elseif ( false !== strpos( $path, '/Deals' ) ) {
+		$body = array( 'Deals' => array(
+			array( 'Id' => '11', 'Name' => 'Black Friday', 'State' => 'ACTIVE', 'StartDate' => gmdate( 'c', time() - 3600 ), 'EndDate' => gmdate( 'c', time() + 5 * DAY_IN_SECONDS ), 'DefaultPromoCode' => 'BF26', 'DiscountPercent' => '10', 'CampaignId' => '7443' ),
+			array( 'Id' => '12', 'Name' => 'Nur LeadOcean', 'State' => 'ACTIVE', 'StartDate' => gmdate( 'c', time() - 3600 ), 'EndDate' => gmdate( 'c', time() + DAY_IN_SECONDS ), 'Products' => array( 'https://appsumo.com/products/other-tool/' ), 'CampaignId' => '7443' ),
+			array( 'Id' => '13', 'Name' => 'Cyber Monday', 'State' => 'PENDING', 'StartDate' => gmdate( 'c', time() + 10 * DAY_IN_SECONDS ), 'EndDate' => gmdate( 'c', time() + 12 * DAY_IN_SECONDS ), 'CampaignId' => '7443' ),
+			array( 'Id' => '14', 'Name' => 'Alt', 'State' => 'EXPIRED', 'CampaignId' => '7443' ),
+		) );
+	} elseif ( false !== strpos( $path, '/PromoCodes' ) ) {
+		return array( 'response' => array( 'code' => 403, 'message' => 'Forbidden' ), 'body' => '{"status":403,"title":"Access Denied"}', 'headers' => array(), 'cookies' => array() );
+	} else {
+		$body = array( 'Promotions' => array() );
+	}
+	return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( $body ), 'headers' => array(), 'cookies' => array() );
+};
+add_filter( 'pre_http_request', $stat_mock, 5, 3 );
+$mails = array();
+$mail_cb = function ( $null, $atts ) use ( &$mails ) {
+	$mails[] = $atts;
+	return true;
+};
+add_filter( 'pre_wp_mail', $mail_cb, 10, 2 );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'notify_email' => 'info@example.org' ) ) );
+delete_option( ADM_Promos::SEEN );
+$st = ADM_Stats::refresh();
+adm_check( '' === $st['error'] && 2 === count( $st['ranges'][30] ) && 98.0 === $st['ranges'][30]['leadocean']['earnings'] && ! isset( $st['ranges'][30][''] ), 'Einnahmen: nur AppSumo, je subId1' );
+$lo10 = adm_get_deal( 'leadocean' );
+wp_update_post( array( 'ID' => (int) $lo10['post_id'], 'post_status' => 'publish' ) );
+$lb1 = ADM_Stats::label( get_post_field( 'post_name', (int) $lo10['post_id'] ) );
+$lb2 = ADM_Stats::label( 'beste-leadocean' );
+adm_check( 0 === strpos( $lb1[0], 'Profil: ' ) && 'Bestenliste: LeadOcean' === $lb2[0] && 'Fußzeile: AppSumo Plus' === ADM_Stats::label( 'footer-plus' )[0], 'Einnahmen: lesbare Namen zu subId1' );
+$items = ADM_Promos::refresh();
+adm_check( 3 === count( $items ) && isset( $items['deal:11'] ) && 'BF26' === $items['deal:11']['code'] && '10 % Rabatt' === $items['deal:11']['discount'] && ! isset( $items['deal:14'] ) && isset( ADM_Promos::data()['errors']['code'] ), 'Aktionen: Deals gelesen, abgelaufene weg, 403 vermerkt' );
+adm_check( 1 === count( $mails ) && 'info@example.org' === $mails[0]['to'] && false !== strpos( $mails[0]['message'], 'Code: BF26' ) && false !== strpos( $mails[0]['message'], 'Cyber Monday' ), 'Aktionen: E-Mail mit allen neuen Aktionen' );
+ADM_Promos::refresh();
+adm_check( 1 === count( $mails ), 'Aktionen: keine zweite E-Mail für dieselben Aktionen' );
+$act = ADM_Promos::active();
+$fd  = ADM_Promos::for_deal( $lo10 );
+adm_check( 2 === count( $act ) && isset( $fd['deal:11'] ) && ! isset( $fd['deal:12'] ) && ! isset( $act['deal:13'] ), 'Aktionen: laufend, nur passende Produkte, geplante noch nicht' );
+$bx10 = do_shortcode( '[adm_deal_box deal="leadocean"]' );
+$pr10 = do_shortcode( '[adm_promos]' );
+adm_check( false !== strpos( $bx10, 'adm-promo' ) && false !== strpos( $bx10, 'BF26' ) && false !== strpos( $pr10, 'Black Friday' ) && false === strpos( $pr10, 'Nur LeadOcean' ) && false !== strpos( $pr10, 'subId1=aktion' ), 'Aktionen: Hinweis im Kasten und Leiste mit Werbelink' );
+ob_start();
+ADM_Stats::page();
+$sp = ob_get_clean();
+adm_check( false !== strpos( $sp, 'Bestenliste: LeadOcean' ) && false !== strpos( $sp, 'Summe' ) && false !== strpos( $sp, 'Black Friday' ), 'Einnahmen: Seite mit Tabelle und Aktionen' );
+remove_filter( 'pre_http_request', $stat_mock, 5 );
+remove_filter( 'pre_wp_mail', $mail_cb, 10 );
+delete_option( ADM_Promos::OPTION );
+delete_option( ADM_Stats::OPTION );
+wp_update_post( array( 'ID' => (int) $lo10['post_id'], 'post_status' => 'draft' ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

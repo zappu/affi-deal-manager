@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.0 (07.11.2026)
+
+- Bestenlisten: Shortcode `[adm_bestenliste rubrik="seo"]` oder `[adm_bestenliste tools="slug,slug"]` (dazu `exclude` und `limit`) stellt veröffentlichte Tool-Profile als Rangliste dar. Reihenfolge nachvollziehbar: kaufbare zuerst, dann Anteil der Bewertungen mit 4 oder 5 Tacos (untere Grenze des Wilson-Intervalls, damit wenige Bewertungen nicht vorn landen), kleiner Vorsprung für Select, bei Gleichstand die Käufe. Jeder Eintrag mit Screenshot, Kurzbeschreibung, je einem Punkt aus Lob und Kritik des Profils, Preis, Käufen und Stufe live, Link aufs Profil und Werbelink. Erklärung der Reihenfolge unter der Liste, strukturierte Daten (ItemList)
+
 ## 0.8.3 (07.11.2026)
 
 - Screenshots: mindestens 5 Minuten zwischen zwei Abrufen je Profil (mShots braucht Zeit zum Erzeugen, vorher wurden die Versuche zu schnell verbraucht), bis zu 12 Versuche, Abruf immer über https. Zu früh abgebrochene Screenshots werden einmalig neu versucht

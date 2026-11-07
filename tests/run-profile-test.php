@@ -452,6 +452,24 @@ adm_check( is_wp_error( ADM_Profiles::generate( (int) $lo7['id'] ) ), 'Danach wi
 ADM_Profiles::clear_queue();
 wp_update_post( array( 'ID' => $p7, 'post_status' => 'draft' ) );
 
+// Bestenliste
+$lo8 = adm_get_deal( 'leadocean' );
+$p8  = (int) $lo8['post_id'];
+adm_check( '' === do_shortcode( '[adm_bestenliste]' ) && '' === do_shortcode( '[adm_bestenliste tools="' . get_post_field( 'post_name', $p8 ) . '"]' ), 'Bestenliste: ohne Auswahl oder ohne veröffentlichte Profile leer' );
+wp_update_post( array( 'ID' => $p8, 'post_status' => 'publish' ) );
+$bl = do_shortcode( '[adm_bestenliste tools="' . get_post_field( 'post_name', $p8 ) . '"]' );
+adm_check( 1 === substr_count( $bl, 'class="adm-best__item"' ) && false !== strpos( $bl, 'aria-label="Platz 1"' ) && false !== strpos( $bl, "96\xc2\xa0% zufrieden (141 Bewertungen)" ), 'Bestenliste: Eintrag mit Platz und Anteil zufriedener Käufer' );
+adm_check( false !== strpos( $bl, 'rel="sponsored nofollow noopener"' ) && false !== strpos( $bl, 'subId1=beste-leadocean' ) && false !== strpos( $bl, get_permalink( $p8 ) ) && false !== strpos( $bl, 'Reihenfolge:' ), 'Bestenliste: Werbelink, Profil-Link und Erklärung der Reihenfolge' );
+$tt8 = get_the_terms( $p8, ADM_Rubrics::TAX );
+$br8 = do_shortcode( '[adm_bestenliste rubrik="' . $tt8[0]->slug . '"]' );
+$bx8 = do_shortcode( '[adm_bestenliste rubrik="' . $tt8[0]->slug . '" exclude="leadocean"]' );
+adm_check( $tt8 && false !== strpos( $br8, get_permalink( $p8 ) ) && false === strpos( $bx8, get_permalink( $p8 ) ) && substr_count( $bx8, 'class="adm-best__item"' ) === substr_count( $br8, 'class="adm-best__item"' ) - 1, 'Bestenliste nach Rubrik, mit Ausschluss' );
+adm_check( false !== strpos( $br8, '"@type":"ItemList"' ) && false !== strpos( $br8, '"position":1' ), 'Bestenliste mit strukturierten Daten' );
+$few  = array( 'dist' => array( 1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 5 ), 'listing_type' => '' );
+$many = array( 'dist' => array( 1 => 2, 2 => 1, 3 => 2, 4 => 20, 5 => 175 ), 'listing_type' => '' );
+adm_check( ADM_Shortcodes::best_score( $many ) > ADM_Shortcodes::best_score( $few ) && ADM_Shortcodes::best_score( array_merge( $many, array( 'listing_type' => 'select' ) ) ) > ADM_Shortcodes::best_score( $many ) && 0.0 === ADM_Shortcodes::best_score( array( 'dist' => array() ) ), 'Bestenliste: wenige Bewertungen zählen weniger, Select bekommt Vorsprung' );
+wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

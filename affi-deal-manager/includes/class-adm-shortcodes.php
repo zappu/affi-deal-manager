@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage,
  *                     desc="0" ohne die englische Kurzbeschreibung von AppSumo);
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
+ * [adm_bestenliste]   Rangliste veröffentlichter Profile (rubrik= oder tools=), nach Anteil zufriedener Käufer
  * [adm_ratings]       Verteilung der Bewertungen bei AppSumo (Tacos 1 bis 5) als Balken mit Anteilen
  * [adm_rubrics]       alle Rubriken als Kacheln mit Bild und Zahl der veröffentlichten Profile (Startseite)
  * [adm_tools]         veröffentlichte Tool-Profile als Karten, kaufbare und meistbewertete zuerst;
@@ -55,6 +56,7 @@ class ADM_Shortcodes {
 		add_shortcode( 'adm_deals', array( __CLASS__, 'deals' ) );
 		add_shortcode( 'adm_rubrics', array( __CLASS__, 'rubrics' ) );
 		add_shortcode( 'adm_tools', array( __CLASS__, 'tools' ) );
+		add_shortcode( 'adm_bestenliste', array( __CLASS__, 'bestenliste' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'the_content', array( __CLASS__, 'glance_live' ), 15 );
@@ -596,6 +598,9 @@ class ADM_Shortcodes {
 			return null;
 		}
 		$all  = array_sum( $d );
+		if ( $all < 1 ) {
+			return null;
+		}
 		$good = $d[4] + $d[5];
 		$low  = $d[1] + $d[2] + $d[3];
 		$pg   = (int) round( 100 * $good / $all );
@@ -699,6 +704,130 @@ class ADM_Shortcodes {
 			$content
 		);
 		return $content;
+	}
+
+	/* ---------------- Bestenliste ---------------- */
+
+	/**
+	 * Untere Grenze des Anteils zufriedener Käufer (4 oder 5 Tacos), Wilson-Intervall mit z = 1,64.
+	 * Tools mit wenigen Bewertungen rutschen so etwas nach hinten, statt mit 5 von 5 vorn zu stehen.
+	 */
+	public static function best_score( array $deal ) {
+		$st = self::dist_stats( $deal );
+		if ( ! $st || $st['all'] < 1 ) {
+			return 0.0;
+		}
+		$n = (float) $st['all'];
+		$p = $st['good'] / $n;
+		$z = 1.64;
+		$lb = ( $p + $z * $z / ( 2 * $n ) - $z * sqrt( ( $p * ( 1 - $p ) + $z * $z / ( 4 * $n ) ) / $n ) ) / ( 1 + $z * $z / $n );
+		// Stufe Select (von AppSumo geprüft): kleiner Vorsprung.
+		return $lb + ( isset( $deal['listing_type'] ) && 'select' === $deal['listing_type'] ? 0.03 : 0.0 );
+	}
+
+	/** Erster Punkt aus einer Spalte von „Auf einen Blick“ im gespeicherten Profil (pro oder con). */
+	private static function glance_point( $content, $kind ) {
+		if ( preg_match( '#adm-glance__col--' . $kind . '".*?<li>(.*?)</li>#s', (string) $content, $m ) ) {
+			return trim( wp_strip_all_tags( $m[1] ) );
+		}
+		return '';
+	}
+
+	/**
+	 * [adm_bestenliste rubrik="seo" tools="slug,slug" limit="10"]
+	 * Veröffentlichte Tool-Profile, kaufbare zuerst, geordnet nach best_score(), bei Gleichstand nach Käufen.
+	 * rubrik: Slugs der Rubriken (Komma), tools: Slugs der Profile oder Deals (Komma), exclude: auszuschließende Slugs.
+	 */
+	public static function bestenliste( $atts ) {
+		$atts = shortcode_atts( array( 'rubrik' => '', 'tools' => '', 'exclude' => '', 'limit' => 10 ), $atts, 'adm_bestenliste' );
+		$args = array(
+			'post_type'      => ADM_Profiles::CPT,
+			'post_status'    => 'publish',
+			'posts_per_page' => 100,
+			'no_found_rows'  => true,
+		);
+		$list = array_filter( array_map( 'sanitize_title', explode( ',', (string) $atts['tools'] ) ) );
+		if ( $list ) {
+			$args['post_name__in'] = $list;
+		} elseif ( '' !== trim( (string) $atts['rubrik'] ) ) {
+			$args['tax_query'] = array( array( 'taxonomy' => ADM_Rubrics::TAX, 'field' => 'slug', 'terms' => array_map( 'sanitize_title', explode( ',', (string) $atts['rubrik'] ) ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery
+		} else {
+			return '';
+		}
+		$skip  = array_filter( array_map( 'sanitize_title', explode( ',', (string) $atts['exclude'] ) ) );
+		$items = array();
+		foreach ( get_posts( $args ) as $p ) {
+			$deal = ADM_DB::get_by_post( $p->ID );
+			if ( ! $deal || in_array( $p->post_name, $skip, true ) || in_array( $deal['slug'], $skip, true ) ) {
+				continue;
+			}
+			$items[] = array( 'post' => $p, 'deal' => $deal, 'score' => self::best_score( $deal ), 'buy' => 'kaufbar' === $deal['status'] ? 1 : 0 );
+		}
+		if ( ! $items ) {
+			return '';
+		}
+		usort( $items, function ( $a, $b ) {
+			if ( $a['buy'] !== $b['buy'] ) {
+				return $b['buy'] - $a['buy'];
+			}
+			if ( abs( $a['score'] - $b['score'] ) > 0.0001 ) {
+				return $b['score'] < $a['score'] ? -1 : 1;
+			}
+			return (int) $b['deal']['purchases'] - (int) $a['deal']['purchases'];
+		} );
+		$items = array_slice( $items, 0, max( 1, min( 30, (int) $atts['limit'] ) ) );
+
+		$out = '';
+		$ld  = array();
+		foreach ( $items as $i => $it ) {
+			$p    = $it['post'];
+			$ld[] = array( '@type' => 'ListItem', 'position' => $i + 1, 'url' => get_permalink( $p ), 'name' => $it['deal']['title'] );
+			$deal = $it['deal'];
+			$st   = self::dist_stats( $deal );
+			$term = null;
+			$tt   = get_the_terms( $p->ID, ADM_Rubrics::TAX );
+			if ( $tt && ! is_wp_error( $tt ) ) {
+				$term = $tt[0];
+			}
+			list( $img_id, $is_shot ) = ADM_Shots::display_image_id( $p->ID, $term );
+			$lead = has_excerpt( $p ) ? get_the_excerpt( $p ) : $deal['description'];
+			$pro  = self::glance_point( $p->post_content, 'pro' );
+			$con  = self::glance_point( $p->post_content, 'con' );
+
+			$chips = array();
+			$price = self::price( $deal );
+			if ( 'kaufbar' === $deal['status'] && '' !== $price ) {
+				$chips[] = '<span class="adm-chip adm-chip--price">' . esc_html( $price ) . '</span>';
+			} elseif ( 'kaufbar' !== $deal['status'] ) {
+				$chips[] = '<span class="adm-chip adm-chip--off">Ausgelaufen</span>';
+			}
+			if ( $st ) {
+				$chips[] = '<span class="adm-chip">' . esc_html( sprintf( "%d\xc2\xa0%% zufrieden (%s Bewertungen)", $st['pgood'], number_format_i18n( $st['all'] ) ) ) . '</span>';
+			}
+			if ( (int) $deal['purchases'] > 0 ) {
+				$chips[] = '<span class="adm-chip">' . esc_html( number_format_i18n( (int) $deal['purchases'] ) . '-mal gekauft' ) . '</span>';
+			}
+			if ( '' !== self::stage_label( $deal ) ) {
+				$chips[] = '<span class="adm-chip adm-chip--stage adm-chip--' . esc_attr( $deal['listing_type'] ) . '">' . esc_html( self::stage_label( $deal ) ) . '</span>';
+			}
+			$link = ADM_Links::url( $deal['url'], 'beste-' . $deal['slug'] );
+
+			$out .= '<li class="adm-best__item" id="platz-' . ( $i + 1 ) . '">';
+			$out .= '<span class="adm-best__rank" aria-label="Platz ' . ( $i + 1 ) . '">' . ( $i + 1 ) . '</span>';
+			$out .= $img_id ? '<a class="adm-best__img' . ( $is_shot ? ' adm-best__img--shot' : '' ) . '" href="' . esc_url( get_permalink( $p ) ) . '" tabindex="-1" aria-hidden="true">' . wp_get_attachment_image( $img_id, 'medium_large', false, array( 'alt' => '', 'loading' => 'lazy', 'sizes' => '(max-width: 600px) 100vw, 240px' ) ) . '</a>' : '';
+			$out .= '<div class="adm-best__body"><h3 class="adm-best__name"><a href="' . esc_url( get_permalink( $p ) ) . '">' . esc_html( $deal['title'] ) . '</a></h3>';
+			$out .= '' !== trim( (string) $lead ) ? '<p class="adm-best__lead">' . esc_html( wp_strip_all_tags( $lead ) ) . '</p>' : '';
+			if ( '' !== $pro || '' !== $con ) {
+				$out .= '<ul class="adm-best__pc">' . ( '' !== $pro ? '<li class="adm-best__pro"><strong>Gelobt:</strong> ' . esc_html( $pro ) . '</li>' : '' ) . ( '' !== $con ? '<li class="adm-best__con"><strong>Kritisiert:</strong> ' . esc_html( $con ) . '</li>' : '' ) . '</ul>';
+			}
+			$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
+			$out .= '<div class="adm-best__cta"><a class="adm-btn adm-btn--quiet adm-btn--small" href="' . esc_url( get_permalink( $p ) ) . '">Zum Tool-Profil</a>';
+			$out .= '' !== $link ? '<a class="adm-btn adm-btn--small" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">' . ( 'kaufbar' === $deal['status'] ? 'Zum Angebot' : 'Zur Warteliste' ) . '<span class="adm-mark" aria-label="Werbelink">*</span></a>' : '';
+			$out .= '</div></div></li>';
+		}
+		$note = '<p class="adm-source">Reihenfolge: kaufbare Angebote zuerst, dann nach dem Anteil der Bewertungen mit 4 oder 5 Tacos bei AppSumo. Bei wenigen Bewertungen ist dieser Anteil unsicherer, solche Tools rutschen etwas nach hinten. Tools mit der Stufe Select bekommen einen kleinen Vorsprung. Bei Gleichstand entscheidet die Zahl der Käufe. Stand ' . esc_html( wp_date( 'd.m.Y' ) ) . ', die Liste aktualisiert sich mit den Daten von AppSumo.</p>';
+		$schema = '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@type' => 'ItemList', 'itemListOrder' => 'https://schema.org/ItemListOrderDescending', 'numberOfItems' => count( $ld ), 'itemListElement' => $ld ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG ) . '</script>';
+		return self::assets() . '<ol class="adm adm-best">' . $out . '</ol>' . $note . $schema;
 	}
 
 }

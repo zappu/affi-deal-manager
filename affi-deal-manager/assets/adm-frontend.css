@@ -198,3 +198,19 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-dist .adm-source{margin:8px 0 0!important}
 .adm-dist__facts{margin:0 0 14px;font-size:.84em}
 .adm-chip--stage{text-decoration:none}.adm-chip--select{background:#e3f3ea;color:var(--adm-pro)!important}.adm-chip--launchpad{background:#fff4d6;color:#7a5600!important}.adm-chip--radar{background:#f4dcd3;color:var(--adm-con)!important}
+
+/* Bestenliste [adm_bestenliste] */
+.adm-best{list-style:none;margin:20px 0 10px;padding:0!important;display:flex;flex-direction:column;gap:16px;counter-reset:none}
+.adm-best__item{position:relative;display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start;background:var(--adm-soft);border-radius:16px;padding:18px;margin:0!important}
+.adm-best__rank{position:absolute;top:-10px;left:-10px;width:40px;height:40px;border-radius:50%;background:var(--adm-ink);color:#fff;font-family:var(--adm-head-font);font-weight:700;font-size:1.15em;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.adm-best__item:first-child .adm-best__rank{background:var(--adm-lime);color:var(--adm-ink)}
+.adm-best__img{display:block;border-radius:12px;overflow:hidden;aspect-ratio:16/10;background:#dfe7ea}
+.adm-best__img img{width:100%;height:100%;object-fit:cover;display:block}.adm-best__img--shot img{object-position:top}
+.adm-best__name{font-family:var(--adm-head-font);font-size:1.3em!important;margin:0 0 6px!important}.adm-best__name a{color:var(--adm-ink)!important;text-decoration:none!important}
+.adm-best__lead{margin:0 0 10px!important;font-size:.95em;line-height:1.5}
+.adm-best__pc{list-style:none;margin:0 0 10px!important;padding:0!important;font-size:.9em;display:flex;flex-direction:column;gap:4px}
+.adm-best__pc li{margin:0!important}.adm-best__pro strong{color:var(--adm-pro)}.adm-best__con strong{color:var(--adm-con)}
+.adm-best .adm-chips{font-size:.8em;margin:0 0 12px}
+.adm-best__cta{display:flex;flex-wrap:wrap;gap:8px}.adm-best__cta .adm-btn{display:inline-block;margin:0}
+.adm-best .adm-btn--quiet{background:var(--adm-card)}
+@media (max-width:640px){.adm-best__item{grid-template-columns:minmax(0,1fr);gap:12px;padding:14px}.adm-best__img{aspect-ratio:16/9}.adm-best__rank{top:-8px;left:-6px;width:34px;height:34px}}

@@ -435,7 +435,7 @@ $GLOBALS['wp_query'] = new WP_Query( array( 'p' => (int) $lo6['post_id'], 'post_
 $GLOBALS['wp_the_query'] = $GLOBALS['wp_query'];
 $GLOBALS['wp_query']->the_post();
 $gl = apply_filters( 'the_content', get_post( (int) $lo6['post_id'] )->post_content );
-adm_check( 1 === substr_count( $gl, 'class="adm-dist"' ) && false !== strpos( $gl, '<strong>96 %</strong> der 141 Bewertungen' ) && false !== strpos( $gl, 'Was Käufer loben' ) && false !== strpos( $gl, 'Kritik aus den 6 schwächeren Bewertungen (4 %)' ) && false === strpos( $gl, '>Schwächen<' ), 'Auf einen Blick mit Verteilung und eingeordneter Kritik' );
+adm_check( 1 === substr_count( $gl, 'class="adm-dist"' ) && false !== strpos( $gl, '<strong>96 %</strong> der 141 Bewertungen' ) && false !== strpos( $gl, 'Was Käufer loben' ) && false !== strpos( $gl, 'Was 4 % der Käufer bemängeln' ) && preg_match( '#adm-glance__col--con">.*?<ul>(.*?)</ul>#s', $gl, $cm ) && substr_count( $cm[1], '<li>' ) <= 3 && false === strpos( $gl, '>Schwächen<' ), 'Auf einen Blick mit Verteilung und eingeordneter Kritik' );
 adm_check( false !== strpos( $gl, 'LaunchPad: Tool mit ersten Verkäufen' ) && false !== strpos( $gl, 'Platz 3 in Lead &amp; Data' ) && false !== strpos( $gl, '1.234-mal gekauft' ) || false !== strpos( $gl, '1,234-mal gekauft' ), 'Auf einen Blick mit Stufe, Platz und Käufen' );
 adm_check( false !== strpos( $up6, '"stufe_bei_appsumo": "LaunchPad' ) && false !== strpos( $up6, 'kaeufe_bei_appsumo' ), 'Prompt mit Stufe und Käufen' );
 wp_reset_postdata();

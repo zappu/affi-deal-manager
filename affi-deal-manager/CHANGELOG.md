@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.10.2 (07.11.2026)
+
+- „Auf einen Blick“: Kritik tritt zurück. Lob nimmt zwei Drittel der Breite ein, die Kritik ein Drittel in neutralem Grau mit 96 % Schriftgröße. Überschrift „Was X % der Käufer bemängeln“, höchstens drei Punkte (die häufigsten). Gilt sofort für alle Profile, gespeicherte Texte bleiben unverändert
+
 ## 0.10.1 (07.11.2026)
 
 - Aktionen: Deals werden über `Campaigns/<Programm>/Deals` abgerufen (der Pfad `Deals?CampaignId=` ist für Partner gesperrt und lieferte 403)

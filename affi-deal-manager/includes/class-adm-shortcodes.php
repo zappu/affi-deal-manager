@@ -717,8 +717,18 @@ class ADM_Shortcodes {
 		$content = str_replace( '<p class="adm-glance__label">Stärken</p>', '<p class="adm-glance__label">Was Käufer loben</p>', $content );
 		$content = str_replace(
 			'<p class="adm-glance__label">Schwächen</p>',
-			'<p class="adm-glance__label">' . esc_html( sprintf( 'Kritik aus den %s schwächeren Bewertungen (%d %%)', number_format_i18n( $st['low'] ), $st['plow'] ) ) . '</p>',
+			'<p class="adm-glance__label">' . esc_html( sprintf( "Was %d\xc2\xa0%% der Käufer bemängeln", $st['plow'] ) ) . '</p>',
 			$content
+		);
+		// Kritik nach ihrem Anteil einordnen: höchstens drei Punkte (die häufigsten stehen oben).
+		$content = preg_replace_callback(
+			'#(<div class="adm-glance__col adm-glance__col--con">.*?<ul>)(.*?)(</ul>)#s',
+			function ( $m ) {
+				$items = preg_split( '#(?=<li>)#', $m[2], -1, PREG_SPLIT_NO_EMPTY );
+				return $m[1] . implode( '', array_slice( $items, 0, 3 ) ) . $m[3];
+			},
+			$content,
+			1
 		);
 		return $content;
 	}

@@ -162,3 +162,25 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-home .adm-card__name a{color:var(--adm-ink)}
 .adm-rubgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 @media (max-width:600px){.adm-rubgrid{grid-template-columns:minmax(0,1fr);gap:8px}.adm-rub{flex-direction:row;align-items:center;border-radius:12px}.adm-rub__img{flex:0 0 64px;width:64px;height:64px;aspect-ratio:auto}.adm-rub__name{padding:0 12px;flex:1}.adm-rub__count{padding:0 12px 0 0;white-space:nowrap}}
+
+/* Screenshot der Hersteller-Website */
+.adm-head__img--shot{flex:0 1 320px;width:320px;height:auto;margin:0;order:2;border-radius:12px;overflow:visible;background:none}
+.adm-head__img--shot img{width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top;border-radius:12px;border:1px solid var(--adm-line);display:block}
+.adm-head__img--shot figcaption{font-size:.75em;color:var(--adm-muted);margin-top:6px}.adm-head__img--shot figcaption a{color:var(--adm-muted)}
+@media (max-width:860px){.adm-head__img--shot{order:2;flex:1 1 100%;width:100%}}
+.adm-card__img{margin:-22px -22px 4px;aspect-ratio:16/10;overflow:hidden;border-radius:var(--adm-radius) var(--adm-radius) 0 0;background:#dfe7ea}
+.adm-card__img img{width:100%;height:100%;object-fit:cover;display:block}.adm-card__img--shot img{object-position:top}
+@media (max-width:600px){.adm-card__img{margin:-18px -18px 4px;border-radius:14px 14px 0 0}}
+.adm-box__site{display:block;text-align:center;margin-top:10px;font-size:.9em;font-weight:600}
+.adm .screen-reader-text{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+
+/* Leiste mit Kauf-Button auf dem Handy */
+.adm-sticky{display:none}
+@media (max-width:860px){
+.adm-sticky{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9990;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--adm-ink);color:#fff;box-shadow:0 8px 28px rgba(0,0,0,.25);font-family:var(--adm-body-font)}
+.adm-sticky[hidden]{display:none}
+.adm-sticky__info{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.adm-sticky__name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-sticky__price{font-size:.85em;color:var(--adm-lime)}
+.adm-sticky .adm-sticky__btn{flex:0 0 auto;padding:11px 16px;background:var(--adm-lime);color:var(--adm-ink)!important;font-size:.95em}
+}

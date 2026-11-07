@@ -77,7 +77,7 @@ class ADM_Shortcodes {
 		$head = false === strpos( $content, 'adm-head' ) ? do_shortcode( '[adm_deal_header]' ) : '';
 		$side = do_shortcode( '[adm_deal_box placement="sidebar"]' );
 		return '<div class="adm adm-page">' . $head . '<div class="adm-page__cols"><div class="adm-page__main">' . $content . '</div>'
-			. ( '' !== $side ? '<div class="adm-page__side">' . $side . '</div>' : '' ) . '</div></div>';
+			. ( '' !== $side ? '<div class="adm-page__side">' . $side . '</div>' : '' ) . '</div></div>' . self::sticky_bar();
 	}
 
 	/** Hello Elementor: eigenen Seitentitel weglassen, der Kopfbereich bringt die H1 mit. */
@@ -87,6 +87,8 @@ class ADM_Shortcodes {
 
 	public static function register_assets() {
 		wp_register_style( 'adm-frontend', ADM_URL . 'assets/adm-frontend.css', array(), ADM_VERSION );
+		wp_register_script( 'adm-sticky', '', array(), ADM_VERSION, true );
+		wp_add_inline_script( 'adm-sticky', '(function(){var bar=document.querySelector(".adm-sticky"),box=document.querySelector(".adm-box--inline");if(!bar||!box)return;var foot=document.querySelector("[data-elementor-type=footer]")||document.querySelector("body>footer,#site-footer"),t=0;function up(){t=0;var gone=box.getBoundingClientRect().bottom<0,end=foot&&foot.getBoundingClientRect().top<window.innerHeight;bar.hidden=!(gone&&!end);}function on(){if(!t)t=requestAnimationFrame(up);}window.addEventListener("scroll",on,{passive:true});window.addEventListener("resize",on);up();})();' );
 		wp_register_script( 'adm-video', '', array(), ADM_VERSION, true );
 		wp_add_inline_script( 'adm-video', 'document.addEventListener("click",function(e){var b=e.target.closest(".adm-video__btn");if(!b)return;var v=b.closest(".adm-video");if(!v||!/^[A-Za-z0-9_-]{11}$/.test(v.dataset.id||""))return;var f=document.createElement("iframe");f.src="https://www.youtube-nocookie.com/embed/"+v.dataset.id+"?autoplay=1&rel=0";f.title=v.dataset.title||"Video";f.allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture";f.allowFullscreen=true;f.referrerPolicy="strict-origin-when-cross-origin";v.innerHTML="";v.appendChild(f);});' );
 		// Im Kopf laden, wenn die Seite Bausteine des Plugins enthält; sonst landet das Stylesheet erst im Fuß.
@@ -186,10 +188,9 @@ class ADM_Shortcodes {
 		}
 		$crumb .= esc_html( $deal['title'] ) . '</nav>';
 
-		$img = get_the_post_thumbnail( $post, 'medium', array( 'alt' => '', 'loading' => 'eager' ) );
-		if ( ! $img && $term ) {
-			$img = ADM_Rubrics::image_html( $term->term_id, 'medium' );
-		}
+		list( $img_id, $is_shot ) = ADM_Shots::display_image_id( $post->ID, $term );
+		$site = ADM_Shots::website( $deal );
+		$img  = $img_id ? wp_get_attachment_image( $img_id, $is_shot ? 'medium_large' : 'medium', false, array( 'alt' => $is_shot ? 'Screenshot der Website von ' . $deal['title'] : '', 'loading' => 'eager', 'sizes' => $is_shot ? '(max-width: 600px) 100vw, 320px' : '120px' ) ) : '';
 		$chips = array();
 		$price = self::price( $deal );
 		if ( '' !== $price ) {
@@ -214,7 +215,12 @@ class ADM_Shortcodes {
 		$lead = has_excerpt( $post ) ? get_the_excerpt( $post ) : $deal['description'];
 
 		$out  = self::assets() . '<header class="adm adm-head">' . $crumb . '<div class="adm-head__card">';
-		$out .= $img ? '<div class="adm-head__img">' . $img . '</div>' : '';
+		if ( $img && $is_shot ) {
+			$cap  = '' !== $site ? 'Screenshot: <a href="' . esc_url( $site ) . '" target="_blank" rel="noopener">' . esc_html( ADM_Shots::host( $site ) ) . '</a>' : 'Screenshot der Website';
+			$out .= '<figure class="adm-head__img adm-head__img--shot">' . $img . '<figcaption>' . $cap . '</figcaption></figure>';
+		} elseif ( $img ) {
+			$out .= '<div class="adm-head__img">' . $img . '</div>';
+		}
 		$out .= '<div class="adm-head__body">' . ( '0' !== (string) $atts['title'] ? '<h1>' . esc_html( get_the_title( $post ) ) . '</h1>' : '' );
 		$out .= '' !== trim( (string) $lead ) ? '<p class="adm-head__lead">' . esc_html( wp_strip_all_tags( $lead ) ) . '</p>' : '';
 		$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
@@ -265,6 +271,10 @@ class ADM_Shortcodes {
 		} else {
 			$out .= '<a class="adm-btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a>';
 		}
+		$site = ADM_Shots::website( $deal );
+		if ( '' !== $site ) {
+			$out .= '<a class="adm-box__site" href="' . esc_url( $site ) . '" target="_blank" rel="noopener">Website des Herstellers<span aria-hidden="true"> ↗</span><span class="screen-reader-text"> (öffnet in neuem Fenster)</span></a>';
+		}
 		// Der Werbehinweis steht zentral im Footer; der Kasten zeigt nur den Stand. Per Filter wieder einschaltbar.
 		$note = (string) apply_filters( 'adm_box_note', '' );
 		$out .= '<p class="adm-box__small">' . esc_html( trim( self::checked( $deal ) . '.' . ( '' !== $note ? ' ' . $note : '' ) ) ) . '</p>';
@@ -309,6 +319,10 @@ class ADM_Shortcodes {
 			'Rückgabefrist' => $deal['return_days'] ? esc_html( (int) $deal['return_days'] . ' Tage bei AppSumo' ) : '',
 			'Bewertung'     => esc_html( self::rating( $deal ) ),
 		);
+		$site = ADM_Shots::website( $deal );
+		if ( '' !== $site ) {
+			$rows['Website'] = '<a href="' . esc_url( $site ) . '" target="_blank" rel="noopener">' . esc_html( ADM_Shots::host( $site ) ) . ' <span aria-hidden="true">↗</span></a>';
+		}
 		$term = self::rubric_term( $deal );
 		if ( $term ) {
 			$rows['Rubrik'] = $term->count ? '<a href="' . esc_url( get_term_link( $term ) ) . '">' . esc_html( $term->name ) . '</a>' : esc_html( $term->name );
@@ -535,6 +549,27 @@ class ADM_Shortcodes {
 			return self::assets() . $grid;
 		}
 		return self::assets() . '<section class="adm-home-sec"><div class="adm-home-sec__head"><h2>' . esc_html( $atts['heading'] ) . '</h2><a href="' . esc_url( get_post_type_archive_link( ADM_Profiles::CPT ) ) . '">Alle Tools</a></div>' . $grid . '</section>';
+	}
+
+	/**
+	 * Schmale Leiste mit Preis und Kauf-Button am unteren Rand (nur Handy, Profil-Layout).
+	 * Erscheint, sobald der Kasten oben im Text aus dem Bild gescrollt ist, und verschwindet vor der Fußzeile.
+	 */
+	private static function sticky_bar() {
+		$deal = self::deal( array( 'deal' => '' ) );
+		if ( ! $deal || ! (bool) apply_filters( 'adm_sticky_bar', true, $deal ) ) {
+			return '';
+		}
+		$buy  = 'kaufbar' === $deal['status'];
+		$link = ADM_Links::url( $deal['url'], self::subid( $deal ) . '-leiste' );
+		if ( '' === $link ) {
+			return '';
+		}
+		list( $amount ) = self::price_parts( $deal );
+		wp_enqueue_script( 'adm-sticky' );
+		return '<div class="adm adm-sticky" hidden><div class="adm-sticky__info"><span class="adm-sticky__name">' . esc_html( $deal['title'] ) . '</span>'
+			. ( $buy && '' !== $amount ? '<span class="adm-sticky__price">' . esc_html( $amount . ( 'kostenlos' === $amount ? '' : ' einmalig' ) ) . '</span>' : '<span class="adm-sticky__price">Ausgelaufen</span>' )
+			. '</div><a class="adm-btn adm-sticky__btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">' . ( $buy ? 'Zum Angebot' : 'Warteliste' ) . '<span class="adm-mark" aria-label="Werbelink">*</span></a></div>';
 	}
 
 }

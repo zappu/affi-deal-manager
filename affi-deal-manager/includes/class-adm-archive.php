@@ -247,7 +247,15 @@ class ADM_Archive {
 			}
 		}
 
+		$term = null;
+		$terms = get_the_terms( $post->ID, ADM_Rubrics::TAX );
+		if ( $terms && ! is_wp_error( $terms ) ) {
+			$term = $terms[0];
+		}
+		list( $img_id, $is_shot ) = ADM_Shots::display_image_id( $post->ID, $term );
+
 		$out  = '<article class="adm-card">';
+		$out .= $img_id ? '<div class="adm-card__img' . ( $is_shot ? ' adm-card__img--shot' : '' ) . '">' . wp_get_attachment_image( $img_id, $is_shot ? 'medium_large' : 'medium', false, array( 'alt' => '', 'loading' => 'lazy', 'sizes' => '(max-width: 600px) 100vw, 300px' ) ) . '</div>' : '';
 		$out .= $rubric;
 		$out .= '<h2 class="adm-card__name"><a href="' . esc_url( get_permalink( $post ) ) . '">' . esc_html( $name ) . '</a></h2>';
 		$out .= '' !== trim( (string) $lead ) ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( wp_strip_all_tags( $lead ), 22 ) ) . '</p>' : '';

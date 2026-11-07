@@ -107,6 +107,7 @@ class ADM_Settings {
 			'reviews_critical'      => 40,
 			'video_summaries'       => 1,
 			'box_placement'         => 'content',
+			'screenshots'           => 1,
 			'gemini_model'          => 'gemini-3.6-flash',
 		);
 	}
@@ -186,6 +187,7 @@ class ADM_Settings {
 			'auto_profiles'         => array_key_exists( 'mode', $in ) ? ( empty( $in['auto_profiles'] ) ? 0 : 1 ) : (int) $cur['auto_profiles'],
 			'reviews_newest'        => self::range( $in, 'reviews_newest', 0, 100, $cur['reviews_newest'] ),
 			'reviews_critical'      => self::range( $in, 'reviews_critical', 0, 100, $cur['reviews_critical'] ),
+			'screenshots'           => empty( $in['screenshots'] ) ? 0 : 1,
 			'box_placement'         => isset( $in['box_placement'] ) && in_array( $in['box_placement'], array( 'content', 'sidebar' ), true ) ? $in['box_placement'] : $cur['box_placement'],
 			'video_summaries'       => array_key_exists( 'mode', $in ) ? ( empty( $in['video_summaries'] ) ? 0 : 1 ) : (int) $cur['video_summaries'],
 			'gemini_model'          => isset( $in['gemini_model'] ) && '' !== trim( (string) $in['gemini_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._\-]/', '', (string) $in['gemini_model'] ), 0, 80 ) : $cur['gemini_model'],

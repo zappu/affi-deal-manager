@@ -23,6 +23,7 @@
   - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_header]`, `[adm_deal_box]` (placement content/sidebar), `[adm_toc]`, `[adm_deal_details]`, `[adm_video]` (Zwei-Klick), `[adm_alternatives]`, `[adm_deals]` (Deal-Karten, `plus="only"` für die Plus-Seite), `[adm_rubrics]` und `[adm_tools]` (Startseite, Block-Gruppe mit Klasse `adm-home`); Gestaltung in `assets/adm-frontend.css` (Variablen `--adm-*`, Stil „Verzeichnis“)
   - Profil-Layout (Einstellung „Deal-Kasten“ = `sidebar`): Filter `the_content` legt `[adm_deal_header]` und `[adm_deal_box placement="sidebar"]` um den Inhalt; Elementor-Single für `adm_tool` enthält nur `theme-post-content` (Elementor-MCP kann keine Shortcode-Widgets setzen)
   - `includes/class-adm-archive.php` und `templates/archive.php`: Übersichten `/tools/` und `/rubrik/<slug>/` (mit Profil-Layout, Elementor-Archivvorlage hat Vorrang), Sortierung kaufbar zuerst über `posts_clauses` (`adm_sort`)
+  - `includes/class-adm-shots.php`: Website des Herstellers (Spalte `website` aus `product_url` der AppSumo-Seitendaten, Meta `_adm_website` überschreibt) und Screenshot per mShots (Meta `_adm_shot`, Versuche `_adm_shot_tries`, Abbruch `_adm_shot_failed`), wird Beitragsbild statt Rubrikbild; Handy-Leiste mit Kauf-Button in `ADM_Shortcodes::sticky_bar()`
   - `includes/class-adm-admin.php`, `class-adm-list-table.php`: Backend
   - `includes/class-adm-updater.php`: Updates über update.json
 - `tests/`: Testdaten und Testskript (nicht im ZIP)

@@ -408,6 +408,11 @@ class ADM_Admin {
 						<p class="description">Beim Profil-Layout baut das Plugin Kopfbereich und Seitenleiste um den Beitragsinhalt; das Theme oder Elementor gibt nur den Inhalt aus. Bei Hello Elementor entfällt der Theme-Titel automatisch, andere Themes zeigen ihn eventuell doppelt.</p></td>
 					</tr>
 					<tr>
+						<th scope="row">Screenshots</th>
+						<td><label><input type="checkbox" name="adm[screenshots]" value="1" <?php checked( $s['screenshots'] ); ?>> Startseite des Herstellers als Produktbild aufnehmen</label>
+						<p class="description">Der Screenshot entsteht beim Dienst mShots von WordPress.com und wird in der Mediathek gespeichert; Besucher laden nur das eigene Bild. Pro Abgleichschritt höchstens drei. Noch offen: <?php echo (int) count( ADM_Shots::pending( 200 ) ); ?>.</p></td>
+					</tr>
+					<tr>
 						<th scope="row">Videos zusammenfassen</th>
 						<td><label><input type="checkbox" name="adm[video_summaries]" value="1" <?php checked( $s['video_summaries'] ); ?>> Gemini sieht sich die ausgewählten YouTube-Videos an und fasst sie zusammen</label>
 						<p class="description">Braucht <code><?php echo esc_html( ADM_Settings::GEMINI_CONSTANT ); ?></code> in der wp-config.php (<?php echo '' !== ADM_Settings::gemini_key() ? 'gesetzt' : 'fehlt'; ?>). Schlüssel bei aistudio.google.com. Ohne Schlüssel zeigt das Profil die Videos ohne Inhaltsangabe.</p></td>

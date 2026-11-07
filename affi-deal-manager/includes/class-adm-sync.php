@@ -110,6 +110,9 @@ class ADM_Sync {
 			$report['profiles_left'] = count( ADM_Profiles::queue() );
 			$report['videos_left']   = count( ADM_Profiles::video_queue() );
 		}
+		if ( class_exists( 'ADM_Shots' ) && ADM_Shots::enabled() ) {
+			$report['screenshots'] = ADM_Shots::process( 3 );
+		}
 		return new WP_REST_Response( $report, 200 );
 	}
 

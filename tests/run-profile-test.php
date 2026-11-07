@@ -391,6 +391,34 @@ foreach ( $pub as $pid ) {
 	wp_update_post( array( 'ID' => $pid, 'post_status' => 'publish' ) );
 }
 
+// Website des Herstellers und Screenshot
+$lo5 = adm_get_deal( 'leadocean' );
+adm_check( 'https://www.leadocean.io/' === $lo5['website'] && 'https://www.leadocean.io/' === ADM_Shots::website( $lo5 ), 'Website aus den Seitendaten, ohne ref-Parameter' );
+adm_check( '' === ADM_Shots::clean_url( 'https://appsumo.com/x/' ) && '' === ADM_Shots::clean_url( 'javascript:alert(1)' ) && 'leadocean.io' === ADM_Shots::host( 'https://www.leadocean.io/' ), 'Website: nur fremde http(s)-Adressen, Host ohne www' );
+$pid5 = (int) $lo5['post_id'];
+ADM_Shots::reset( $pid5 );
+delete_option( 'adm_test_shot_calls' );
+adm_check( in_array( $pid5, ADM_Shots::pending(), true ) && 'waiting' === ADM_Shots::fetch( $pid5 ), 'Screenshot: erster Abruf wartet auf den Dienst' );
+$att5 = ADM_Shots::fetch( $pid5 );
+adm_check( is_int( $att5 ) && $att5 > 0 && ADM_Shots::image_id( $pid5 ) === $att5 && (int) get_post_thumbnail_id( $pid5 ) === $att5 && ! in_array( $pid5, ADM_Shots::pending(), true ), 'Screenshot gespeichert und als Beitragsbild gesetzt' );
+adm_check( 'Screenshot: leadocean.io' === get_post_field( 'post_excerpt', $att5 ), 'Screenshot mit Quellenangabe' );
+wp_update_post( array( 'ID' => $pid5, 'post_status' => 'publish' ) );
+$GLOBALS['wp_query'] = new WP_Query( array( 'p' => $pid5, 'post_type' => 'adm_tool' ) );
+$GLOBALS['wp_the_query'] = $GLOBALS['wp_query'];
+$GLOBALS['wp_query']->the_post();
+$hd = do_shortcode( '[adm_deal_header]' );
+$bx = do_shortcode( '[adm_deal_box]' );
+$dt = do_shortcode( '[adm_deal_details]' );
+adm_check( false !== strpos( $hd, 'adm-head__img--shot' ) && false !== strpos( $hd, 'Screenshot: <a href="https://www.leadocean.io/" target="_blank" rel="noopener">leadocean.io</a>' ), 'Kopf: Screenshot mit Quelle' );
+adm_check( false !== strpos( $bx, 'class="adm-box__site" href="https://www.leadocean.io/" target="_blank" rel="noopener"' ) && false !== strpos( $dt, '<th scope="row">Website</th>' ), 'Website-Link im Kasten (neues Fenster) und in den Details' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'sidebar', 'mode' => 'wpcron' ) ) );
+$pg = apply_filters( 'the_content', get_post( $pid5 )->post_content );
+adm_check( false !== strpos( $pg, 'class="adm adm-sticky" hidden' ) && false !== strpos( $pg, 'subId1=' ) && false !== strpos( $pg, 'Zum Angebot' ), 'Handy-Leiste mit Kauf-Button' );
+adm_check( false !== strpos( ADM_Archive::card( get_post( $pid5 ) ), 'adm-card__img--shot' ), 'Karte mit Screenshot' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'box_placement' => 'content', 'mode' => 'wpcron' ) ) );
+wp_reset_postdata();
+wp_update_post( array( 'ID' => $pid5, 'post_status' => 'draft' ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

@@ -42,6 +42,7 @@ class ADM_DB {
 			name varchar(255) NOT NULL DEFAULT '',
 			display_name varchar(255) NOT NULL DEFAULT '',
 			brand varchar(255) NOT NULL DEFAULT '',
+			website varchar(255) NOT NULL DEFAULT '',
 			description text NULL,
 			price decimal(10,2) NULL,
 			currency varchar(8) NOT NULL DEFAULT '',
@@ -92,6 +93,11 @@ class ADM_DB {
 			delete_option( 'adm_sitemap_read' );
 		}
 		// Version 5: Spalte display_name (Anzeigename) kommt über dbDelta, keine Datenänderung nötig.
+		if ( $old && version_compare( (string) $old, '6', '<' ) ) {
+			// Neue Spalte website: Deals mit Profil gleich neu lesen, damit die Website des Herstellers ankommt.
+			global $wpdb;
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table() . " SET next_check = %s WHERE post_id > 0 AND status IN ('kaufbar','ausgelaufen')", self::now() ) ); // phpcs:ignore
+		}
 		if ( $old && version_compare( (string) $old, '3', '<' ) ) {
 			global $wpdb;
 			$t = self::table();

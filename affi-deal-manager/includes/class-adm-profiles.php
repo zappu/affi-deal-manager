@@ -135,6 +135,19 @@ class ADM_Profiles {
 		echo '<p><label for="adm-display-name"><strong>Anzeigename</strong></label><br>';
 		echo '<input type="text" id="adm-display-name" name="adm_display_name" class="widefat" value="' . esc_attr( (string) $deal['display_name'] ) . '" placeholder="' . esc_attr( ADM_DB::clean_name( $deal['name'], in_array( $deal['deal_type'], array( 'software', '' ), true ) ) ) . '"></p>';
 		echo '<p class="description">Leer lassen für den bereinigten Namen. Gilt für Kasten, Alternativen und künftige Texte; Titel und Text dieses Profils änderst du selbst oder mit „Text neu erzeugen“.</p>';
+		$own = (string) get_post_meta( $post->ID, ADM_Shots::META_SITE, true );
+		echo '<p><label for="adm-website"><strong>Website des Herstellers</strong></label><br>';
+		echo '<input type="url" id="adm-website" name="adm_website" class="widefat" value="' . esc_attr( $own ) . '" placeholder="' . esc_attr( (string) $deal['website'] ) . '"></p>';
+		echo '<p class="description">Leer lassen für die Adresse von AppSumo' . ( '' !== (string) $deal['website'] ? '' : ' (bisher keine bekannt)' ) . '.</p>';
+		$shot = ADM_Shots::image_id( $post->ID );
+		if ( $shot ) {
+			echo '<p>' . wp_get_attachment_image( $shot, 'medium', false, array( 'style' => 'max-width:100%;height:auto;border-radius:6px' ) ) . '</p>'; // phpcs:ignore
+		} elseif ( get_post_meta( $post->ID, ADM_Shots::META_FAIL, true ) ) {
+			echo '<p style="color:#996800">Kein Screenshot möglich (Dienst lieferte kein Bild).</p>';
+		} elseif ( '' !== ADM_Shots::website( $deal ) ) {
+			echo '<p style="color:#646970">Screenshot folgt mit dem nächsten Abgleich.</p>';
+		}
+		echo '<p><label><input type="checkbox" name="adm_shot_reset" value="1"> Screenshot neu aufnehmen</label></p>';
 		if ( is_array( $hints ) && $hints ) {
 			echo '<p style="color:#996800"><strong>Stilhinweise:</strong> ' . esc_html( implode( '; ', $hints ) ) . '</p>';
 		}
@@ -155,6 +168,18 @@ class ADM_Profiles {
 		$deal = ADM_DB::get_by_post( $post_id );
 		if ( ! $deal ) {
 			return;
+		}
+		$site = isset( $_POST['adm_website'] ) ? ADM_Shots::clean_url( esc_url_raw( wp_unslash( $_POST['adm_website'] ) ) ) : '';
+		$old  = (string) get_post_meta( $post_id, ADM_Shots::META_SITE, true );
+		if ( $site !== $old ) {
+			if ( '' === $site ) {
+				delete_post_meta( $post_id, ADM_Shots::META_SITE );
+			} else {
+				update_post_meta( $post_id, ADM_Shots::META_SITE, $site );
+			}
+			ADM_Shots::reset( $post_id );
+		} elseif ( ! empty( $_POST['adm_shot_reset'] ) ) {
+			ADM_Shots::reset( $post_id );
 		}
 		$name = substr( trim( sanitize_text_field( wp_unslash( $_POST['adm_display_name'] ) ) ), 0, 120 );
 		if ( $name !== (string) $deal['display_name'] ) {

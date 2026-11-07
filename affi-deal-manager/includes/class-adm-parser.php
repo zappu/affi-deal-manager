@@ -128,8 +128,17 @@ class ADM_Parser {
 		$data['videos']          = self::videos( $data['videos'], $name );
 		$data['appsumo_id']      = isset( $p['sku'] ) && ctype_digit( (string) $p['sku'] ) ? (int) $p['sku'] : ( isset( $p['mpn'] ) && ctype_digit( (string) $p['mpn'] ) ? (int) $p['mpn'] : 0 );
 		$data['appsumo_type']    = self::appsumo_type( $html );
+		$data['website']         = self::website( $html );
 		$data['deal_type']       = self::classify( $data['appsumo_type'], $name, $data['description'] );
 		return $data;
+	}
+
+	/** Website des Herstellers aus den eingebetteten Seitendaten (product_url). */
+	public static function website( $html ) {
+		if ( preg_match( '#product_url\\\\?"\s*:\s*\\\\?"(https?:(?:[^"\\\\]|\\\\/)+)#i', (string) $html, $m ) ) {
+			return substr( ADM_Shots::clean_url( $m[1] ), 0, 255 );
+		}
+		return '';
 	}
 
 	/**

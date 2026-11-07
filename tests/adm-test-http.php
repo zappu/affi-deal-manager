@@ -41,6 +41,23 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		}
 		return $json( array( 'choices' => array( array( 'message' => array( 'content' => "```json\n" . $answer . "\n```" ) ) ) ) );
 	}
+	// Screenshot-Dienst mShots: erster Abruf Platzhalter (GIF), danach ein JPEG
+	if ( false !== strpos( $url, 's.wordpress.com/mshots/' ) ) {
+		$GLOBALS['adm_test_shot_requests'][] = $url;
+		$n = (int) get_option( 'adm_test_shot_calls', 0 ) + 1;
+		update_option( 'adm_test_shot_calls', $n );
+		if ( 1 === $n % 2 ) {
+			return array( 'headers' => array( 'content-type' => 'image/gif' ), 'body' => 'GIF89a', 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );
+		}
+		$im = imagecreatetruecolor( 640, 400 );
+		for ( $i = 0; $i < 4000; $i++ ) {
+			imagesetpixel( $im, wp_rand( 0, 639 ), wp_rand( 0, 399 ), imagecolorallocate( $im, wp_rand( 0, 255 ), wp_rand( 0, 255 ), wp_rand( 0, 255 ) ) );
+		}
+		ob_start();
+		imagejpeg( $im, null, 90 );
+		$jpg = ob_get_clean();
+		return array( 'headers' => array( 'content-type' => 'image/jpeg' ), 'body' => $jpg, 'response' => array( 'code' => 200, 'message' => 'OK' ), 'cookies' => array(), 'filename' => null );
+	}
 	// Gemini: Videozusammenfassung
 	if ( false !== strpos( $url, 'generativelanguage.googleapis.com' ) ) {
 		$body = json_decode( $args['body'], true );

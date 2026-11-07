@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.8.0 (07.11.2026)
+
+- Website des Herstellers: der Abgleich liest sie aus den Seitendaten von AppSumo (`product_url`, neue Spalte `website`, ohne Parameter wie `?ref=`), im Profil überschreibbar. Link „Website des Herstellers“ im Deal-Kasten und Zeile „Website“ in den Details, beides öffnet in einem neuen Fenster
+- Screenshot der Startseite des Herstellers als Produktbild: entsteht im Hintergrund beim Dienst mShots von WordPress.com (höchstens drei pro Abgleichschritt, Platzhalter werden beim nächsten Schritt erneut abgefragt), liegt in der Mediathek mit Quellenangabe und wird Beitragsbild statt des Rubrikbilds. Erscheint im Kopf des Profils (mit „Screenshot: <Domain>“) und auf den Karten der Übersichten. Einstellung „Screenshots“, im Profil „Screenshot neu aufnehmen“
+- Handy: Leiste mit Name, Preis und Kauf-Button am unteren Rand, sobald der Kasten oben aus dem Bild gescrollt ist; verschwindet vor der Fußzeile (Filter `adm_sticky_bar`)
+- Datenbank-Version 6: Deals mit Profil werden nach dem Update gleich neu gelesen
+
 ## 0.7.4 (07.11.2026)
 
 - Bausteine für die Startseite: `[adm_rubrics]` zeigt alle Rubriken als Kacheln mit Bild und Zahl der Profile (auf dem Handy als kompakte Liste), `[adm_tools limit="6" heading="…"]` die veröffentlichten Tool-Profile als Karten, kaufbare und meistbewertete zuerst; ohne veröffentlichte Profile bleibt der Abschnitt leer

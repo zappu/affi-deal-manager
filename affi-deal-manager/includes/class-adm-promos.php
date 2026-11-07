@@ -100,12 +100,13 @@ class ADM_Promos {
 		$program = (string) ADM_Settings::get( 'program_id' );
 		$items   = array();
 		$errors  = array();
+		// Deals gibt es für Partner nur unter Campaigns/<ID>/Deals, Codes und Promotions mit Filter CampaignId.
 		foreach ( array(
-			'deal'      => array( 'Deals', 'Deals' ),
-			'code'      => array( 'PromoCodes', 'PromoCodes' ),
-			'promotion' => array( 'Promotions', 'Promotions' ),
+			'deal'      => array( 'Campaigns/' . rawurlencode( $program ) . '/Deals', 'Deals', array( 'PageSize' => '100' ) ),
+			'code'      => array( 'PromoCodes', 'PromoCodes', array( 'CampaignId' => $program, 'PageSize' => '100' ) ),
+			'promotion' => array( 'Promotions', 'Promotions', array( 'CampaignId' => $program, 'PageSize' => '100' ) ),
 		) as $type => $cfg ) {
-			$r = ADM_Impact::get( $cfg[0], array( 'CampaignId' => $program, 'PageSize' => '100' ) );
+			$r = ADM_Impact::get( $cfg[0], $cfg[2] );
 			if ( '' !== $r['error'] ) {
 				$errors[ $type ] = $r['error'];
 				continue;

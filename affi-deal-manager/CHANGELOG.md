@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.10.1 (07.11.2026)
+
+- Aktionen: Deals werden über `Campaigns/<Programm>/Deals` abgerufen (der Pfad `Deals?CampaignId=` ist für Partner gesperrt und lieferte 403)
+
 ## 0.10.0 (07.11.2026)
 
 - Neuer Reiter „Einnahmen“: Klicks, Verkäufe, Conversion, Umsatz, Provision und Verdienst je Klick für jede subId1 (Profil, Bestenliste, Deal-Karte, Fußzeile …) für 7, 30 und 90 Tage, aus dem Impact-Bericht „Performance by Sub ID“, nur Programm AppSumo. Einmal täglich, Knopf „Jetzt aktualisieren“ (Klasse `ADM_Stats`, Option `adm_impact_stats`)

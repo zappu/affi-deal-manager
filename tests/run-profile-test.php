@@ -468,6 +468,13 @@ adm_check( false !== strpos( $br8, '"@type":"ItemList"' ) && false !== strpos( $
 $few  = array( 'dist' => array( 1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 5 ), 'listing_type' => '' );
 $many = array( 'dist' => array( 1 => 2, 2 => 1, 3 => 2, 4 => 20, 5 => 175 ), 'listing_type' => '' );
 adm_check( ADM_Shortcodes::best_score( $many ) > ADM_Shortcodes::best_score( $few ) && ADM_Shortcodes::best_score( array_merge( $many, array( 'listing_type' => 'select' ) ) ) > ADM_Shortcodes::best_score( $many ) && 0.0 === ADM_Shortcodes::best_score( array( 'dist' => array() ) ), 'Bestenliste: wenige Bewertungen zählen weniger, Select bekommt Vorsprung' );
+$par8 = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Bestenlisten', 'post_content' => '[adm_bestenlisten]' ) );
+$kid8 = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_parent' => $par8, 'post_title' => 'Beste Lead-Tools', 'post_content' => '<p>Erster Absatz der Liste.</p>[adm_bestenliste tools="' . get_post_field( 'post_name', $p8 ) . '"]' ) );
+wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_parent' => $par8, 'post_title' => 'Ohne Liste', 'post_content' => '<p>Nichts</p>' ) );
+$ov8 = do_shortcode( '[adm_bestenlisten parent="' . $par8 . '"]' );
+adm_check( false !== strpos( $ov8, 'Beste Lead-Tools</a></h2>' ) && false !== strpos( $ov8, 'Erster Absatz der Liste.' ) && false !== strpos( $ov8, '>Top-Empfehlung</span>' ) && false !== strpos( $ov8, 'Alle 1 Tools der Liste ansehen' ) && false === strpos( $ov8, 'Ohne Liste' ) && false !== strpos( $ov8, get_permalink( $kid8 ) ), 'Übersicht der Bestenlisten mit Top-Empfehlung' );
+wp_delete_post( $kid8, true );
+wp_delete_post( $par8, true );
 wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );
 
 // Videos: allgemeine Namen brauchen den ganzen Namen

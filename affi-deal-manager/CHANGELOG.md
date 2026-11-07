@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.3 (07.11.2026)
+
+- Übersicht der Bestenlisten: `[adm_bestenlisten]` (oder mit `parent="ID"`) zeigt für jede Unterseite mit `[adm_bestenliste]` die Überschrift, den ersten Absatz, Platz 1 als „Top-Empfehlung“, Links zu Platz 2 und 3 und „Alle N Tools der Liste ansehen“. Die Auswahl der Tools steht nur auf der Unterseite
+- „Was Käufer sagen“: bei genau einer kritischen Bewertung „die kritischste“ statt „die 1 kritischsten“
+
 ## 0.9.2 (07.11.2026)
 
 - Videosuche bei allgemeinen Namen: Neben dem ganzen Namen muss das Video die Domain des Herstellers, AppSumo oder „Lifetime Deal“ nennen. „Google Flow AI“ passte sonst zu Flow AI, einem ganz anderen Tool

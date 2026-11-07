@@ -214,3 +214,12 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-best__cta{display:flex;flex-wrap:wrap;gap:8px}.adm-best__cta .adm-btn{display:inline-block;margin:0}
 .adm-best .adm-btn--quiet{background:var(--adm-card)}
 @media (max-width:640px){.adm-best__item{grid-template-columns:minmax(0,1fr);gap:12px;padding:14px}.adm-best__img{aspect-ratio:16/9}.adm-best__rank{top:-8px;left:-6px;width:34px;height:34px}}
+
+/* Übersicht der Bestenlisten [adm_bestenlisten] */
+.adm-bests{display:flex;flex-direction:column;gap:36px;margin:24px 0}
+.adm-bests__sec h2{margin:0 0 8px!important}.adm-bests__sec h2 a{color:inherit!important;text-decoration:none!important}
+.adm-bests__sec>p{margin:0 0 6px!important}
+.adm-best--top{margin-top:24px!important}
+.adm-best__rank--badge{width:auto;height:auto;border-radius:999px;padding:5px 12px;font-size:.8em;letter-spacing:.02em;top:-13px;left:14px;background:var(--adm-lime);color:var(--adm-ink)}
+.adm-bests__more{font-size:.92em;margin:12px 0 0!important}.adm-bests__all{font-weight:700}
+@media (max-width:640px){.adm-best__rank--badge{top:-12px;left:10px;width:auto;height:auto}}

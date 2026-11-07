@@ -540,6 +540,14 @@ ADM_Impact::settings_row();
 $imp_row = ob_get_clean();
 adm_check( false !== strpos( $imp_row, 'gesetzt' ) && false === strpos( $imp_row, 'geheimTOKEN456' ) && false !== strpos( $imp_row, 'Verbindung testen' ), 'Impact: Einstellungen zeigen Status, nie den Token' );
 delete_option( ADM_Impact::TEST_OPTION );
+add_filter( 'pre_http_request', $imp_mock, 5, 3 );
+$q1 = ADM_Impact::query( 'Catalogs/ItemSearch?Keyword=DocPro&PageSize=2' );
+$q2 = ADM_Impact::query( '../Admin' );
+$q3 = ADM_Impact::query( 'https://evil.example/x' );
+$q4 = ADM_Impact::query( 'Gibt/Es/Nicht' );
+remove_filter( 'pre_http_request', $imp_mock, 5 );
+adm_check( 200 === $q1['http'] && 'DocPro' === $q1['antwort']['Items'][0]['Name'] && false !== strpos( $q1['abfrage'], 'Keyword=DocPro' ), 'Impact-Abfrage: Pfad mit Parametern' );
+adm_check( 'Ungültiger Pfad' === $q2['fehler'] && 'Ungültiger Pfad' === $q3['fehler'] && 404 === $q4['http'] && false === strpos( wp_json_encode( $q4 ), 'IRtestSID123' ), 'Impact-Abfrage: nur einfache Pfade, Zugangsdaten maskiert' );
 
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );

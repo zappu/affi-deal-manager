@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.9 (07.11.2026)
+
+- Impact-API: Feld „Abfrage (nur lesend)“ unten in den Einstellungen für freie GET-Abfragen relativ zum Partnerkonto (z. B. `Marketplace/Products?Query=DocPro`). Nur einfache Pfade, Listen auf 5 Einträge gekürzt, Zugangsdaten maskiert (Option `adm_impact_query`)
+
 ## 0.9.8 (07.11.2026)
 
 - Impact-API (nur lesend): Zugang über `THOKA_IMPACT_ACCOUNT_SID` und `THOKA_IMPACT_AUTH_TOKEN` in der wp-config.php. In den Einstellungen unter „Affiliate-Links“ Status und Knopf „Verbindung testen“: zeigt das AppSumo-Programm, die Kataloge, Felder und Werte eines Beispielprodukts und prüft mögliche Pfade für Marktplatz-Produkte (EPC, Conversion-Rate). Zugangsdaten erscheinen nie in der Ausgabe. Neue Klasse `ADM_Impact`

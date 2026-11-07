@@ -440,6 +440,7 @@ class ADM_Admin {
 				<input type="hidden" name="action" value="adm_check_update">
 				<p>Version <?php echo esc_html( ADM_VERSION ); ?> · <button class="button">Nach Updates suchen</button></p>
 			</form>
+			<?php ADM_Impact::query_box(); ?>
 		</div>
 		<?php
 	}

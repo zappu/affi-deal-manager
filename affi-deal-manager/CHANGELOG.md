@@ -2,7 +2,8 @@
 
 ## 0.7.2 (07.11.2026)
 
-- Neuer Shortcode `[adm_deals]`: kaufbare Deals als Karten mit Preis, Bewertung und Werbelink, z. B. `[adm_deals plus="only"]` für die AppSumo-Plus-Seite. Die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
+- Neuer Shortcode `[adm_deals]`: kaufbare Deals als Karten mit Preis, Bewertung und Werbelink, z. B. `[adm_deals plus="only"]` für die AppSumo-Plus-Seite. Die Plus-Mitgliedschaft selbst erscheint nicht in der Liste. `desc="0"` blendet die englische Kurzbeschreibung von AppSumo aus
+- `[adm_link url="https://appsumo.com/…"]` verlinkt auch AppSumo-Seiten, die nicht in der Deal-Tabelle stehen (z. B. die Plus-Mitgliedschaft)
 - Rubrikseiten: Rubrikbild als Vorschaubild beim Teilen (Rank Math)
 
 ## 0.7.1 (07.11.2026)

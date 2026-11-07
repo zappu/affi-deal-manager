@@ -363,6 +363,9 @@ $GLOBALS['wpdb']->insert( ADM_DB::table(), array( 'slug' => 'plus-2019', 'name' 
 $list = do_shortcode( '[adm_deals plus="only"]' );
 adm_check( false !== strpos( $list, '<h3 class="adm-card__name">Test Tool</h3>' ) && false === strpos( $list, 'Yearly Plan' ) && false !== strpos( $list, 'rel="sponsored nofollow noopener"' ) && false !== strpos( $list, 'aria-label="Werbelink"' ), 'Plus-Liste: Plus-Deal mit Werbelink, ohne die Mitgliedschaft' );
 adm_check( false === strpos( do_shortcode( '[adm_deals]' ), 'Test Tool' ), 'Normale Liste ohne Plus-Deals' );
+adm_check( false === strpos( do_shortcode( '[adm_deals plus="only" desc="0"]' ), 'Ein Testwerkzeug' ), 'Plus-Liste ohne Kurzbeschreibung mit desc="0"' );
+$pl = do_shortcode( '[adm_link url="https://appsumo.com/products/plus-2019/" subid="appsumo-plus"]AppSumo Plus[/adm_link]' );
+adm_check( false !== strpos( $pl, 'subId1=appsumo-plus' ) && false !== strpos( $pl, 'sponsored nofollow' ) && 'X' === do_shortcode( '[adm_link url="https://example.com/"]X[/adm_link]' ), 'adm_link mit url: Werbelink nur für appsumo.com' );
 $GLOBALS['wpdb']->query( "DELETE FROM " . ADM_DB::table() . " WHERE slug IN ('plus-test-tool','plus-2019')" );
 adm_check( false !== strpos( do_shortcode( '[adm_deals type="vorlage"]' ), 'keine kaufbaren Angebote' ) && ADM_Shortcodes::is_membership( array( 'name' => 'AppSumo Plus Monthly', 'slug' => 'x' ) ), 'Leere Liste: Hinweis; Mitgliedschaft erkannt' );
 

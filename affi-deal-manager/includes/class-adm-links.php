@@ -54,11 +54,15 @@ class ADM_Links {
 
 	/**
 	 * [adm_link deal="neuronwriter" subid="tool-neuronwriter"]Zum Deal bei AppSumo[/adm_link]
-	 * Ohne subid wird der Slug der aktuellen Seite verwendet.
+	 * [adm_link url="https://appsumo.com/products/plus-2019/"]AppSumo Plus ansehen[/adm_link] für Seiten ohne Deal in der Tabelle
+	 * (nur HTTPS-Adressen auf appsumo.com). Ohne subid wird der Slug der aktuellen Seite verwendet.
 	 */
 	public static function shortcode( $atts, $content = '' ) {
-		$atts = shortcode_atts( array( 'deal' => '', 'subid' => '', 'class' => '' ), $atts, 'adm_link' );
-		$deal = ADM_DB::get_by_slug( $atts['deal'] );
+		$atts = shortcode_atts( array( 'deal' => '', 'url' => '', 'subid' => '', 'class' => '' ), $atts, 'adm_link' );
+		$deal = '' !== $atts['deal'] ? ADM_DB::get_by_slug( $atts['deal'] ) : null;
+		if ( ! $deal && '' !== $atts['url'] && self::is_appsumo( $atts['url'] ) ) {
+			$deal = array( 'url' => $atts['url'], 'slug' => ADM_DB::slug_from_url( $atts['url'] ), 'status' => 'kaufbar' );
+		}
 		if ( ! $deal ) {
 			return '' !== $content ? do_shortcode( $content ) : '';
 		}

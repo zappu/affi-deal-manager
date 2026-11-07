@@ -16,7 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * [adm_alternatives]  bis zu drei andere Tool-Profile aus derselben Rubrik, kaufbare zuerst;
  *                     heading="1" setzt Karte und Überschrift drumherum, ohne Alternativen bleibt alles leer
  * [adm_deals]         kaufbare Deals als Karten mit Werbelink, z. B. plus="only" für die AppSumo-Plus-Seite
- *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage);
+ *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage,
+ *                     desc="0" ohne die englische Kurzbeschreibung von AppSumo);
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
  *
  * Alle Bausteine nehmen optional deal="<slug>"; ohne Angabe gilt der Deal des aktuellen Profils.
@@ -440,7 +441,7 @@ class ADM_Shortcodes {
 	}
 
 	public static function deals( $atts ) {
-		$atts = shortcode_atts( array( 'plus' => 'exclude', 'limit' => 12, 'orderby' => 'reviews', 'type' => '' ), $atts, 'adm_deals' );
+		$atts = shortcode_atts( array( 'plus' => 'exclude', 'limit' => 12, 'orderby' => 'reviews', 'type' => '', 'desc' => '1' ), $atts, 'adm_deals' );
 		$plus = in_array( $atts['plus'], array( 'only', 'all', 'exclude' ), true ) ? $atts['plus'] : 'exclude';
 		$max  = max( 1, min( 48, (int) $atts['limit'] ) );
 		$rows = adm_get_deals( array( 'plus' => $plus, 'limit' => $max + 3, 'orderby' => $atts['orderby'], 'type' => $atts['type'] ) );
@@ -461,7 +462,7 @@ class ADM_Shortcodes {
 			}
 			$link = ADM_Links::url( $d['url'], 'liste-' . $d['slug'] );
 			$out .= '<article class="adm-card adm-card--deal"><h3 class="adm-card__name">' . esc_html( $d['title'] ) . '</h3>';
-			$out .= '' !== trim( (string) $d['description'] ) ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( $d['description'], 22 ) ) . '</p>' : '';
+			$out .= '0' !== (string) $atts['desc'] && '' !== trim( (string) $d['description'] ) ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( $d['description'], 22 ) ) . '</p>' : '';
 			$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
 			$out .= '' !== $link ? '<a class="adm-btn adm-btn--small" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Bei AppSumo ansehen<span class="adm-mark" aria-label="Werbelink">*</span></a>' : '';
 			$out .= '</article>';

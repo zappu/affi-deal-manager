@@ -225,10 +225,14 @@ class ADM_Promos {
 		$list = array_filter( self::active(), function ( $p ) use ( $atts ) {
 			return '' !== $atts['all'] || ! $p['products'];
 		} );
-		if ( ! $list ) {
+		$banner = class_exists( 'ADM_Banners' ) ? ADM_Banners::html( 'home' ) : '';
+		if ( ! $list && '' === $banner ) {
 			return '';
 		}
 		wp_enqueue_style( 'adm-frontend' );
+		if ( ! $list ) {
+			return '<div class="adm adm-promos">' . $banner . '</div>';
+		}
 		$out = '';
 		foreach ( array_slice( $list, 0, 3 ) as $p ) {
 			$link = ADM_Links::url( '' !== $p['url'] ? $p['url'] : 'https://appsumo.com/', 'aktion' );
@@ -236,7 +240,7 @@ class ADM_Promos {
 			$out .= '' !== $link ? ' <a class="adm-btn adm-btn--small" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Aktion<span class="adm-mark" aria-label="Werbelink">*</span></a>' : '';
 			$out .= '</div>';
 		}
-		return '<div class="adm adm-promos">' . $out . '</div>';
+		return '<div class="adm adm-promos">' . $banner . $out . '</div>';
 	}
 
 	/** Liste im Backend (Seite „Einnahmen“). */

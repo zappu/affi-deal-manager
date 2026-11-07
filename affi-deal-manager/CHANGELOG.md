@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.11.0 (07.11.2026)
+
+- Aktionsbanner von AppSumo (Impact Ads), nur nach Freigabe: Alle drei Stunden sucht das Plugin neue Banner mit Aktionsbegriffen (Black Friday, BF26, Cyber Monday, Sale …), nicht produktbezogen, nicht älter als 60 Tage, und meldet sie per E-Mail. Im Reiter „Einnahmen“ unter „Aktionsbanner“ Vorschau, Platz und Knöpfe Freigeben, Ablehnen, Beenden
+- Nach Freigabe wird das Bild einmal in die Mediathek kopiert (kein Zählpixel, kein Impact-Server beim Besucher). Breite Banner erscheinen oben auf der Startseite ([adm_promos]), kompakte unter dem Deal-Kasten der Profile, mit Kennzeichnung „Anzeige“, Tracking-Link des Banners und subId1 `banner-<ID>` (eigene Zeile in den Einnahmen). Ende laut Impact, sonst nach 14 Tagen; jede Änderung leert den Seiten-Cache (Klasse `ADM_Banners`)
+
 ## 0.10.3 (07.11.2026)
 
 - „Auf einen Blick“: Lob und Kritik gleich hoch, Schrift der Kritik auf 90 %

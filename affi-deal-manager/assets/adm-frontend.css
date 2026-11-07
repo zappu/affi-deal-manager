@@ -244,3 +244,9 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-promos{display:flex;flex-direction:column;gap:10px;margin:16px 0}
 .adm-promo--bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:1em;padding:12px 16px}
 .adm-promo--bar .adm-btn{margin-left:auto}
+
+/* Aktionsbanner (Impact, nach Freigabe) */
+.adm-banner{position:relative;margin:14px 0 0}.adm-banner a{display:block;line-height:0}
+.adm-banner__img{display:block;width:100%;height:auto;border-radius:12px}
+.adm-banner__ad{position:absolute;top:6px;right:8px;font-size:11px;line-height:1.4;background:rgba(23,33,43,.72);color:#fff;border-radius:6px;padding:1px 6px}
+.adm-banner--home{margin:0 0 4px}

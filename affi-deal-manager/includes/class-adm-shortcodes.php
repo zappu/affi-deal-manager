@@ -291,7 +291,7 @@ class ADM_Shortcodes {
 		// Der Werbehinweis steht zentral im Footer; der Kasten zeigt nur den Stand. Per Filter wieder einschaltbar.
 		$note = (string) apply_filters( 'adm_box_note', '' );
 		$out .= '<p class="adm-box__small">' . esc_html( trim( self::checked( $deal ) . '.' . ( '' !== $note ? ' ' . $note : '' ) ) ) . '</p>';
-		return $out . '</aside>';
+		return $out . ADM_Banners::html( 'side' ) . '</aside>';
 	}
 
 	/* ---------------- Sprungmenü ---------------- */

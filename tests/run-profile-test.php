@@ -614,6 +614,57 @@ delete_option( ADM_Promos::OPTION );
 delete_option( ADM_Stats::OPTION );
 wp_update_post( array( 'ID' => (int) $lo10['post_id'], 'post_status' => 'draft' ) );
 
+// Aktionsbanner (Impact Ads), nur nach Freigabe
+$png = ( function () {
+	$im = imagecreatetruecolor( 1216, 381 );
+	imagefill( $im, 0, 0, imagecolorallocate( $im, 20, 20, 20 ) );
+	ob_start();
+	imagepng( $im );
+	return ob_get_clean();
+} )();
+$ban_mock = function ( $pre, $args, $url ) use ( $png ) {
+	if ( 0 === strpos( $url, 'https://a.impactradius-go.com/' ) ) {
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $png, 'headers' => array( 'content-type' => 'image/png' ), 'cookies' => array() );
+	}
+	if ( 0 !== strpos( $url, 'https://api.impact.com/' ) ) {
+		return $pre;
+	}
+	$now  = time();
+	$body = array( '@numpages' => '1', 'Ads' => array(
+		array( 'Id' => '4131673', 'Name' => 'as-bf26-thematic-desktop.png', 'Type' => 'BANNER', 'Width' => '1216', 'Height' => '381', 'StartDate' => gmdate( 'c', $now - DAY_IN_SECONDS ), 'EndDate' => '', 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-4131673' ),
+		array( 'Id' => '4131675', 'Name' => 'as-bf26-thematic-drop4-feature-img.png', 'Type' => 'BANNER', 'Width' => '500', 'Height' => '285', 'StartDate' => gmdate( 'c', $now - DAY_IN_SECONDS ), 'EndDate' => '', 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-4131675' ),
+		array( 'Id' => '1480856', 'Name' => 'Voxpopme Black Friday', 'Type' => 'BANNER', 'Width' => '300', 'Height' => '250', 'StartDate' => gmdate( 'c', $now - DAY_IN_SECONDS ), 'LandingPageUrl' => 'https://appsumo.com/products/voxpopme', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-1480856' ),
+		array( 'Id' => '900', 'Name' => 'Black Friday 2024', 'Type' => 'BANNER', 'Width' => '1216', 'Height' => '381', 'StartDate' => '2024-11-01T00:00:00+01:00', 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-900' ),
+		array( 'Id' => '901', 'Name' => 'Generic logo', 'Type' => 'BANNER', 'Width' => '420', 'Height' => '116', 'StartDate' => gmdate( 'c', $now ), 'LandingPageUrl' => 'https://appsumo.com', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-901' ),
+	) );
+	return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( $body ), 'headers' => array(), 'cookies' => array() );
+};
+add_filter( 'pre_http_request', $ban_mock, 5, 3 );
+$bmails = array();
+$bmail_cb = function ( $null, $atts ) use ( &$bmails ) {
+	$bmails[] = $atts;
+	return true;
+};
+add_filter( 'pre_wp_mail', $bmail_cb, 10, 2 );
+delete_option( ADM_Banners::OPTION );
+$bnew = ADM_Banners::refresh();
+adm_check( array( '4131673', '4131675' ) === $bnew && 1 === count( $bmails ) && false !== strpos( $bmails[0]['message'], 'as-bf26-thematic-desktop.png' ) && false !== strpos( $bmails[0]['message'], 'Startseite' ), 'Banner: nur neue Aktionsbanner für den ganzen Shop, eine E-Mail' );
+adm_check( '' === ADM_Banners::html( 'home' ) && '' === do_shortcode( '[adm_promos]' ), 'Banner: ohne Freigabe nichts auf der Seite' );
+ADM_Banners::refresh();
+adm_check( 1 === count( $bmails ), 'Banner: keine zweite E-Mail' );
+$att = ADM_Banners::approve( '4131673' );
+$ADM_home = do_shortcode( '[adm_promos]' );
+adm_check( is_int( $att ) && $att > 0 && false !== strpos( $ADM_home, 'adm-banner--home' ) && false !== strpos( $ADM_home, '/c/' ) && false !== strpos( $ADM_home, '/4131673/' ) && false !== strpos( $ADM_home, 'subId1=banner-4131673' ) && false !== strpos( $ADM_home, 'sponsored nofollow' ) && false === strpos( $ADM_home, 'impactradius' ), 'Banner: nach Freigabe auf der Startseite, Bild lokal, Werbelink' );
+ADM_Banners::approve( '4131675' );
+$bx11 = do_shortcode( '[adm_deal_box deal="leadocean"]' );
+adm_check( false !== strpos( $bx11, 'adm-banner--side' ) && 'home' === ADM_Banners::slot( array( 'w' => 1216, 'h' => 381 ) ) && '' === ADM_Banners::slot( array( 'w' => 390, 'h' => 570 ) ), 'Banner: kompaktes Format unter dem Deal-Kasten' );
+adm_check( 0 === strpos( ADM_Stats::label( 'banner-4131673' )[0], 'Aktionsbanner: as-bf26' ), 'Banner: eigene Zeile in den Einnahmen' );
+ADM_Banners::set_status( '4131673', 'beendet' );
+adm_check( '' === ADM_Banners::html( 'home' ), 'Banner: beendet verschwindet' );
+remove_filter( 'pre_http_request', $ban_mock, 5 );
+remove_filter( 'pre_wp_mail', $bmail_cb, 10 );
+delete_option( ADM_Banners::OPTION );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

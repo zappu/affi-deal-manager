@@ -104,6 +104,11 @@ class ADM_Stats {
 		if ( isset( $fixed[ $subid ] ) ) {
 			return array( $fixed[ $subid ], '' );
 		}
+		if ( 0 === strpos( $subid, 'banner-' ) ) {
+			$items = ADM_Banners::data()['items'];
+			$bid   = substr( $subid, 7 );
+			return array( 'Aktionsbanner: ' . ( isset( $items[ $bid ] ) ? $items[ $bid ]['name'] : $bid ), '' );
+		}
 		foreach ( array( 'beste-' => 'Bestenliste', 'liste-' => 'Deal-Karte', 'aktion-' => 'Aktionshinweis' ) as $prefix => $what ) {
 			if ( 0 === strpos( $subid, $prefix ) ) {
 				$deal = ADM_DB::get_by_slug( substr( $subid, strlen( $prefix ) ) );
@@ -129,6 +134,7 @@ class ADM_Stats {
 		if ( ADM_Impact::configured() ) {
 			self::refresh();
 			ADM_Promos::refresh();
+			ADM_Banners::refresh();
 		}
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SLUG . ( isset( $_GET['days'] ) ? '&days=' . (int) $_GET['days'] : '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification
 		exit;
@@ -148,6 +154,11 @@ class ADM_Stats {
 		} );
 		$base = admin_url( 'admin.php?page=' . self::SLUG );
 		echo '<div class="wrap"><h1>Thoka Affi Deal Manager: Einnahmen</h1>';
+		$notice = get_transient( 'adm_notice_' . get_current_user_id() );
+		if ( $notice ) {
+			delete_transient( 'adm_notice_' . get_current_user_id() );
+			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html( $notice ) . '</p></div>';
+		}
 		if ( ! ADM_Impact::configured() ) {
 			echo '<div class="notice notice-warning inline"><p>Für diese Übersicht braucht das Plugin den Zugang zur Impact-API (' . esc_html( ADM_Impact::SID_CONSTANT . ', ' . ADM_Impact::TOKEN_CONSTANT ) . ' in der wp-config.php).</p></div></div>';
 			return;
@@ -183,6 +194,7 @@ class ADM_Stats {
 		}
 		echo '</table><p class="description">Quelle: Impact, Bericht „Performance by Sub ID“, nur Programm ' . esc_html( isset( $d['campaign'] ) ? $d['campaign'] : 'AppSumo' ) . '. Klicks sind eindeutige Klicks. Verkäufe und Provision erscheinen bei Impact oft erst mit einigen Tagen Verzug. Aktualisierung einmal täglich.</p>';
 		ADM_Promos::admin_table();
+		ADM_Banners::admin_table();
 		echo '</div>';
 	}
 }

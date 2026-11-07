@@ -643,7 +643,8 @@ class ADM_Profiles {
 		if ( $stats['used'] > 0 ) {
 			$total = max( $stats['total'], $stats['used'] );
 			if ( $stats['critical'] > 0 ) {
-				$intro = sprintf( 'Auswertung von %d der %s Bewertungen bei AppSumo (die %d neuesten und die %d kritischsten), Stand %s.', $stats['used'], number_format_i18n( $total ), $stats['newest'], $stats['critical'], $date );
+				$crit  = 1 === (int) $stats['critical'] ? 'die kritischste' : sprintf( 'die %d kritischsten', $stats['critical'] );
+				$intro = sprintf( 'Auswertung von %d der %s Bewertungen bei AppSumo (die %d neuesten und %s), Stand %s.', $stats['used'], number_format_i18n( $total ), $stats['newest'], $crit, $date );
 			} elseif ( $stats['used'] >= $total ) {
 				$intro = sprintf( 'Auswertung aller %s Bewertungen bei AppSumo, Stand %s.', number_format_i18n( $total ), $date );
 			} else {

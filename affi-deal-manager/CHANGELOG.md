@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.6 (07.11.2026)
+
+- `[adm_tools rows="2"]`: Die Karten füllen immer ganze Reihen. Geladen werden 8 Profile, sichtbar sind je nach Breite 8 (4 Spalten), 6 (3 Spalten), 4 (2 Spalten) oder 3 (Handy), höchstens 4 Spalten
+
 ## 0.9.5 (07.11.2026)
 
 - Top-Empfehlung als kurzer Teaser statt großer Karte: Pokal, Name mit Link zum Profil, Siegel „AppSumo Select“ (eigenes Symbol, kein AppSumo-Logo), Zufriedenheit mit Zahl der Bewertungen, Käufe, ein Punkt aus dem Lob und „Alle N Tools der Liste“

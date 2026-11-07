@@ -545,8 +545,17 @@ class ADM_Shortcodes {
 		return self::assets() . '<div class="adm adm-rubgrid">' . $out . '</div>';
 	}
 
+	/**
+	 * [adm_tools limit="6" rubrik="" heading="" rows="2"]
+	 * rows="2": immer volle Reihen. Es werden 8 Profile geladen und je nach verfügbarer Breite
+	 * 8 (4 Spalten), 6 (3 Spalten), 4 (2 Spalten) oder 3 (1 Spalte) gezeigt (Container-Abfrage, siehe CSS).
+	 */
 	public static function tools( $atts ) {
-		$atts = shortcode_atts( array( 'limit' => 6, 'rubrik' => '', 'heading' => '' ), $atts, 'adm_tools' );
+		$atts = shortcode_atts( array( 'limit' => 6, 'rubrik' => '', 'heading' => '', 'rows' => 0 ), $atts, 'adm_tools' );
+		$fit  = 2 === (int) $atts['rows'];
+		if ( $fit ) {
+			$atts['limit'] = 8;
+		}
 		$args = array(
 			'post_type'      => ADM_Profiles::CPT,
 			'post_status'    => 'publish',
@@ -565,7 +574,10 @@ class ADM_Shortcodes {
 		foreach ( $q->posts as $p ) {
 			$cards .= ADM_Archive::card( $p, '' === $atts['rubrik'] );
 		}
-		$grid = '<div class="adm adm-cards">' . $cards . '</div>';
+		$grid = '<div class="adm adm-cards' . ( $fit ? ' adm-cards--rows2' : '' ) . '">' . $cards . '</div>';
+		if ( $fit ) {
+			$grid = '<div class="adm-fit">' . $grid . '</div>';
+		}
 		if ( '' === trim( (string) $atts['heading'] ) ) {
 			return self::assets() . $grid;
 		}

@@ -229,3 +229,10 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-top__facts{font-size:.9em;color:var(--adm-muted);margin-top:2px!important}
 .adm-top__pro{font-size:.95em;margin-top:6px!important}.adm-top__pro strong{color:var(--adm-pro)}
 .adm-top__more{font-size:.88em;margin-top:6px!important}.adm-top__more a{font-weight:700}
+
+/* [adm_tools rows="2"]: nur volle Reihen (Spalten wie auto-fill mit 260px und 16px Abstand) */
+.adm-fit{container-type:inline-size}
+@container (max-width:535px){.adm-cards--rows2>:nth-child(n+4){display:none}}
+@container (min-width:536px) and (max-width:811px){.adm-cards--rows2>:nth-child(n+5){display:none}}
+@container (min-width:812px) and (max-width:1087px){.adm-cards--rows2>:nth-child(n+7){display:none}}
+.adm-cards--rows2{grid-template-columns:repeat(auto-fill,minmax(max(260px,calc((100% - 48px) / 4)),1fr))}

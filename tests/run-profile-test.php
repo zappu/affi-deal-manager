@@ -386,6 +386,8 @@ $lo4 = adm_get_deal( 'leadocean' );
 wp_update_post( array( 'ID' => (int) $lo4['post_id'], 'post_status' => 'publish' ) );
 $tl = do_shortcode( '[adm_tools heading="Beliebte Tool-Profile"]' );
 adm_check( false !== strpos( $tl, '<h2>Beliebte Tool-Profile</h2>' ) && 1 === substr_count( $tl, 'class="adm-card"' ), 'Startseite: Abschnitt mit veröffentlichtem Profil' );
+$tr = do_shortcode( '[adm_tools rows="2" heading="Beliebte Tool-Profile"]' );
+adm_check( false !== strpos( $tr, '<div class="adm-fit"><div class="adm adm-cards adm-cards--rows2">' ), 'Startseite: volle Reihen per rows="2"' );
 wp_update_post( array( 'ID' => (int) $lo4['post_id'], 'post_status' => 'draft' ) );
 foreach ( $pub as $pid ) {
 	wp_update_post( array( 'ID' => $pid, 'post_status' => 'publish' ) );

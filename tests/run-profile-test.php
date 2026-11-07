@@ -486,6 +486,25 @@ wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );
 adm_check( ! ADM_Sources::mentions( 'Surfer SEO Tutorial (2026): bestes SEO KI Tool AppSumo', 'SEO Generator' ) && ADM_Sources::mentions( 'SEO Generator Review: AppSumo Lifetime Deal', 'SEO Generator' ) && ADM_Sources::mentions( 'walkthrough of seogenerator.io', 'SEO Generator', 'https://seogenerator.io/' ), 'Videosuche: SEO Generator nur mit vollem Namen und Bezug zum Deal' );
 adm_check( ADM_Sources::mentions( 'Nuwtonic Review 2026', 'Nuwtonic SEO' ) && ! ADM_Sources::mentions( 'Google Flow AI 2026: Das neue Update', 'Flow AI', 'https://www.flowai.com/' ) && ADM_Sources::mentions( 'Flow AI lifetime deal review', 'Flow AI' ) && ADM_Sources::mentions( 'The Link Chest review, appsumo', 'The Link Chest' ), 'Videosuche: unverwechselbares erstes Wort reicht, Google Flow passt nicht zu Flow AI' );
 
+// Seiten-Cache leeren (FlyingPress)
+if ( ! class_exists( '\\FlyingPress\\Purge' ) ) {
+	eval( 'namespace FlyingPress; class Purge { public static $got = array(); public static function purge_urls( $u ) { self::$got = $u; } }' ); // phpcs:ignore Squiz.PHP.Eval
+}
+$lo9 = adm_get_deal( 'leadocean' );
+$p9  = (int) $lo9['post_id'];
+ADM_Cache::flush();
+\FlyingPress\Purge::$got = array();
+$pg9 = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Liste Cache', 'post_content' => '[adm_bestenliste tools="x"]' ) );
+wp_update_post( array( 'ID' => $p9, 'post_status' => 'publish' ) );
+$n9  = ADM_Cache::flush();
+$got = \FlyingPress\Purge::$got;
+adm_check( $n9 > 0 && in_array( get_permalink( $p9 ), $got, true ) && in_array( get_post_type_archive_link( 'adm_tool' ), $got, true ) && in_array( get_permalink( $pg9 ), $got, true ) && in_array( home_url( '/' ), $got, true ), 'Cache: Profil veröffentlicht, Profil, /tools/, Startseite und Seiten mit Bausteinen geleert' );
+adm_check( 0 === ADM_Cache::flush(), 'Cache: nichts vorgemerkt, nichts geleert' );
+adm_check( ADM_Cache::changed( $lo9, array( 'price' => 59 ), $lo9['status'] ) && ADM_Cache::changed( $lo9, array(), 'ausgelaufen' ) && ! ADM_Cache::changed( $lo9, array( 'price' => (float) $lo9['price'], 'rating' => 1.0 ), $lo9['status'] ), 'Cache: Preis oder Status geändert, Bewertung allein nicht' );
+wp_delete_post( $pg9, true );
+wp_update_post( array( 'ID' => $p9, 'post_status' => 'draft' ) );
+ADM_Cache::flush();
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

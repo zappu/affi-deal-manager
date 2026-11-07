@@ -106,6 +106,7 @@ class ADM_Shots {
 	public static function cron() {
 		if ( self::enabled() ) {
 			self::process( 3 );
+			ADM_Cache::flush();
 		}
 	}
 
@@ -193,6 +194,7 @@ class ADM_Shots {
 		if ( ! $thumb || self::is_rubric_image( $thumb ) ) {
 			set_post_thumbnail( $post_id, $att );
 		}
+		ADM_Cache::mark( $post_id ); // neues Bild auf Profil, Karten und Listen
 		return (int) $att;
 	}
 

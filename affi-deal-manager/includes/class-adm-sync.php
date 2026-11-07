@@ -180,6 +180,7 @@ class ADM_Sync {
 		} finally {
 			delete_transient( self::LOCK );
 		}
+		$report['purged'] = ADM_Cache::flush();
 		update_option( 'adm_last_tick', array( 'time' => time(), 'report' => $report ), false );
 		return $report;
 	}
@@ -337,6 +338,9 @@ class ADM_Sync {
 	}
 
 	private static function set_status( array $row, $status, array $data ) {
+		if ( (int) $row['post_id'] && ADM_Cache::changed( $row, $data, $status ) ) {
+			ADM_Cache::mark( (int) $row['post_id'] );
+		}
 		$data['status'] = $status;
 		if ( $status !== $row['status'] ) {
 			$data['last_changed'] = ADM_DB::now();

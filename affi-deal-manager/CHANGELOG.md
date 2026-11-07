@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.7 (07.11.2026)
+
+- Seiten-Cache: Ändert der Abgleich bei einem Deal mit Profil Preis, Status oder Stufe, leert das Plugin bei FlyingPress gezielt das Profil, /tools/, die Rubrik-Seiten des Profils, die Startseite und alle Seiten mit Bausteinen des Plugins (Bestenlisten, Plus-Seite). Ebenso, wenn ein Profil veröffentlicht oder zurückgezogen wird oder ein neuer Screenshot da ist. Neue Klasse `ADM_Cache`, Filter `adm_purge_urls`, Aktion `adm_purged_urls` für andere Caches
+
 ## 0.9.6 (07.11.2026)
 
 - `[adm_tools rows="2"]`: Die Karten füllen immer ganze Reihen. Geladen werden 8 Profile, sichtbar sind je nach Breite 8 (4 Spalten), 6 (3 Spalten), 4 (2 Spalten) oder 3 (Handy), höchstens 4 Spalten

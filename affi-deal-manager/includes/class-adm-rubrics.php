@@ -16,7 +16,7 @@ class ADM_Rubrics {
 
 	/** Slug => Name, Reihenfolge wie im Projektplan (die letzten drei aus den AppSumo-Bereichen unter „Build & Code“). */
 	const RUBRICS = array(
-		'seo'                        => 'SEO',
+		'seo'                        => 'SEO und Analyse',
 		'content-und-ki-text'        => 'Content und KI-Text',
 		'video-und-audio'            => 'Video und Audio',
 		'social-media'               => 'Social Media',

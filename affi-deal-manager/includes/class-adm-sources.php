@@ -121,7 +121,7 @@ class ADM_Sources {
 		foreach ( $cands as $v ) {
 			$v = array_merge( array( 'lang' => '', 'duration' => 0, 'channel' => '', 'date' => '', 'description' => '' ), $v );
 			// Videos aus der eigenen Suche müssen das Tool nennen; die AppSumo-Liste gehört ohnehin zum Deal.
-			if ( empty( $v['from_appsumo_list'] ) && ! self::mentions( $v['title'] . ' ' . $v['description'], $name ) ) {
+			if ( empty( $v['from_appsumo_list'] ) && ! self::mentions( $v['title'] . ' ' . $v['description'], $name, ADM_Shots::website( $deal ) ) ) {
 				continue;
 			}
 			if ( $v['duration'] && $v['duration'] < 60 ) {
@@ -319,9 +319,10 @@ class ADM_Sources {
 
 	/**
 	 * Erwähnt der Text das Tool? Ein unverwechselbares erstes Wort reicht („Nuwtonic“),
-	 * bei allgemeinen Wörtern muss der ganze Name vorkommen, auch zusammengeschrieben („SEO Generator“, „seogenerator“).
+	 * bei allgemeinen Wörtern muss der ganze Name vorkommen, auch zusammengeschrieben („SEO Generator“, „seogenerator“),
+	 * und zusätzlich die Domain des Herstellers, AppSumo oder „Lifetime Deal“ (sonst passt „Flow AI“ auf Videos zu Google Flow).
 	 */
-	public static function mentions( $text, $name ) {
+	public static function mentions( $text, $name, $site = '' ) {
 		$words = preg_split( '/[^\\p{L}\\p{N}]+/u', strtolower( $name ), -1, PREG_SPLIT_NO_EMPTY );
 		$text  = strtolower( (string) $text );
 		$first = '';
@@ -339,7 +340,14 @@ class ADM_Sources {
 		}
 		$flat = implode( ' ', preg_split( '/[^\\p{L}\\p{N}]+/u', $text, -1, PREG_SPLIT_NO_EMPTY ) );
 		$name = implode( ' ', $words );
-		return false !== strpos( ' ' . $flat . ' ', ' ' . $name . ' ' ) || false !== strpos( str_replace( ' ', '', $flat ), str_replace( ' ', '', $name ) );
+		if ( false === strpos( ' ' . $flat . ' ', ' ' . $name . ' ' ) && false === strpos( str_replace( ' ', '', $flat ), str_replace( ' ', '', $name ) ) ) {
+			return false;
+		}
+		$stem = preg_replace( '/\\.[a-z]{2,}$/', '', ADM_Shots::host( $site ) );
+		if ( '' !== $stem && strlen( $stem ) >= 4 && false !== strpos( $text, $stem ) ) {
+			return true;
+		}
+		return (bool) preg_match( '/appsumo|lifetime ?deal|\\bltd\\b/', $text );
 	}
 
 	/** YouTube-ID aus einer Einbettungs- oder Seitenadresse. */

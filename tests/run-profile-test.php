@@ -471,8 +471,8 @@ adm_check( ADM_Shortcodes::best_score( $many ) > ADM_Shortcodes::best_score( $fe
 wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );
 
 // Videos: allgemeine Namen brauchen den ganzen Namen
-adm_check( ! ADM_Sources::mentions( 'Surfer SEO Tutorial (2026): bestes SEO KI Tool', 'SEO Generator' ) && ADM_Sources::mentions( 'SEO Generator Review: 1000 Seiten', 'SEO Generator' ) && ADM_Sources::mentions( 'seogenerator.io walkthrough', 'SEO Generator' ), 'Videosuche: SEO Generator nur mit vollem Namen' );
-adm_check( ADM_Sources::mentions( 'Nuwtonic Review 2026', 'Nuwtonic SEO' ) && ! ADM_Sources::mentions( 'Flow state music', 'Flow AI' ) && ADM_Sources::mentions( 'The Link Chest review', 'The Link Chest' ), 'Videosuche: unverwechselbares erstes Wort reicht' );
+adm_check( ! ADM_Sources::mentions( 'Surfer SEO Tutorial (2026): bestes SEO KI Tool AppSumo', 'SEO Generator' ) && ADM_Sources::mentions( 'SEO Generator Review: AppSumo Lifetime Deal', 'SEO Generator' ) && ADM_Sources::mentions( 'walkthrough of seogenerator.io', 'SEO Generator', 'https://seogenerator.io/' ), 'Videosuche: SEO Generator nur mit vollem Namen und Bezug zum Deal' );
+adm_check( ADM_Sources::mentions( 'Nuwtonic Review 2026', 'Nuwtonic SEO' ) && ! ADM_Sources::mentions( 'Google Flow AI 2026: Das neue Update', 'Flow AI', 'https://www.flowai.com/' ) && ADM_Sources::mentions( 'Flow AI lifetime deal review', 'Flow AI' ) && ADM_Sources::mentions( 'The Link Chest review, appsumo', 'The Link Chest' ), 'Videosuche: unverwechselbares erstes Wort reicht, Google Flow passt nicht zu Flow AI' );
 
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );

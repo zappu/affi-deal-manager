@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.2 (07.11.2026)
+
+- Videosuche bei allgemeinen Namen: Neben dem ganzen Namen muss das Video die Domain des Herstellers, AppSumo oder „Lifetime Deal“ nennen. „Google Flow AI“ passte sonst zu Flow AI, einem ganz anderen Tool
+
 ## 0.9.1 (07.11.2026)
 
 - Videosuche: Beginnt der Name mit einem allgemeinen Wort (etwa „SEO Generator“, „Flow AI“, „The Link Chest“), muss der ganze Name im Titel oder in der Beschreibung des Videos stehen, auch zusammengeschrieben. Vorher reichte „SEO“, und es kamen Videos über ganz andere Tools ins Profil

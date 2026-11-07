@@ -294,10 +294,11 @@ class ADM_Admin {
 				<h2>Affiliate-Links (Impact)</h2>
 				<table class="form-table" role="presentation">
 					<?php
-					self::field( 'partner_id', 'Partner-ID', $s, 'Deine Impact-ID (Konto „Thoka“).' );
+					self::field( 'partner_id', 'Partner-ID', $s, 'Deine Account-ID bei Impact (steht in jedem Tracking-Link nach /c/).' );
 					self::field( 'ad_id', 'Werbemittel-ID', $s, 'Textlink, über den alle Deep-Links laufen. Die Zuordnung zur Seite erfolgt über subId1.' );
 					self::field( 'program_id', 'Programm-ID', $s, 'AppSumo-Programm bei Impact.' );
 					self::field( 'tracking_host', 'Tracking-Domain', $s, '' );
+					ADM_Impact::settings_row();
 					?>
 					<tr><th scope="row">Beispiel</th><td><code style="word-break:break-all"><?php echo esc_html( $example ); ?></code></td></tr>
 				</table>

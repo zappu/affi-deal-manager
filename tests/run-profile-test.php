@@ -505,6 +505,42 @@ wp_delete_post( $pg9, true );
 wp_update_post( array( 'ID' => $p9, 'post_status' => 'draft' ) );
 ADM_Cache::flush();
 
+// Impact-API (Verbindungstest, nur lesend)
+adm_check( ! ADM_Impact::configured() || defined( 'THOKA_IMPACT_ACCOUNT_SID' ), 'Impact: ohne Zugangsdaten nicht eingerichtet' );
+if ( ! defined( 'THOKA_IMPACT_ACCOUNT_SID' ) ) {
+	define( 'THOKA_IMPACT_ACCOUNT_SID', 'IRtestSID123' );
+	define( 'THOKA_IMPACT_AUTH_TOKEN', 'geheimTOKEN456' );
+}
+$imp_auth = '';
+$imp_mock = function ( $pre, $args, $url ) use ( &$imp_auth ) {
+	if ( 0 !== strpos( $url, 'https://api.impact.com/' ) ) {
+		return $pre;
+	}
+	$imp_auth = isset( $args['headers']['Authorization'] ) ? $args['headers']['Authorization'] : '';
+	$path     = (string) wp_parse_url( $url, PHP_URL_PATH );
+	if ( false !== strpos( $path, '/Campaigns' ) ) {
+		$body = array( '@total' => 1, 'Campaigns' => array( array( 'CampaignId' => '7443', 'CampaignName' => 'AppSumo' ) ) );
+	} elseif ( preg_match( '#/Catalogs/ItemSearch#', $path ) || preg_match( '#/Catalogs/\d+/Items#', $path ) ) {
+		$body = array( 'Items' => array( array( 'Name' => 'DocPro', 'CurrentPrice' => '179.00', 'StockAvailability' => 'InStock', 'Url' => 'https://appsumo.8odi.net/c/x', 'Labels' => array() ) ) );
+	} elseif ( false !== strpos( $path, '/Catalogs' ) ) {
+		$body = array( 'Catalogs' => array( array( 'Id' => '9001', 'Name' => 'AppSumo Product Feed', 'CampaignId' => '7443', 'NumberOfItems' => '1096' ) ) );
+	} else {
+		return array( 'response' => array( 'code' => 404, 'message' => 'Not Found' ), 'body' => '{"Message":"Not found for IRtestSID123"}', 'headers' => array(), 'cookies' => array() );
+	}
+	return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( $body ), 'headers' => array(), 'cookies' => array() );
+};
+add_filter( 'pre_http_request', $imp_mock, 5, 3 );
+$imp = ADM_Impact::test();
+remove_filter( 'pre_http_request', $imp_mock, 5 );
+$imp_json = wp_json_encode( $imp );
+adm_check( 'AppSumo' === $imp['Campaigns']['appsumo']['CampaignName'] && '9001' === $imp['Catalogs']['kataloge'][0]['Id'] && '179.00' === $imp['ItemSearch']['beispiel']['CurrentPrice'] && '[array]' === $imp['CatalogItems']['beispiel']['Labels'], 'Impact: Programme, Kataloge und Einträge im Test sichtbar' );
+adm_check( 'Basic ' . base64_encode( 'IRtestSID123:geheimTOKEN456' ) === $imp_auth && false === strpos( $imp_json, 'geheimTOKEN456' ) && false === strpos( $imp_json, 'IRtestSID123' ) && 404 === $imp['Pfad Products']['http'], 'Impact: Basic-Auth, Zugangsdaten nie in der Ausgabe' );
+ob_start();
+ADM_Impact::settings_row();
+$imp_row = ob_get_clean();
+adm_check( false !== strpos( $imp_row, 'gesetzt' ) && false === strpos( $imp_row, 'geheimTOKEN456' ) && false !== strpos( $imp_row, 'Verbindung testen' ), 'Impact: Einstellungen zeigen Status, nie den Token' );
+delete_option( ADM_Impact::TEST_OPTION );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

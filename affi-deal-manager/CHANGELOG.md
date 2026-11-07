@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.8 (07.11.2026)
+
+- Impact-API (nur lesend): Zugang über `THOKA_IMPACT_ACCOUNT_SID` und `THOKA_IMPACT_AUTH_TOKEN` in der wp-config.php. In den Einstellungen unter „Affiliate-Links“ Status und Knopf „Verbindung testen“: zeigt das AppSumo-Programm, die Kataloge, Felder und Werte eines Beispielprodukts und prüft mögliche Pfade für Marktplatz-Produkte (EPC, Conversion-Rate). Zugangsdaten erscheinen nie in der Ausgabe. Neue Klasse `ADM_Impact`
+- Hinweis unter „Partner-ID“ ohne Kontonamen
+
 ## 0.9.7 (07.11.2026)
 
 - Seiten-Cache: Ändert der Abgleich bei einem Deal mit Profil Preis, Status oder Stufe, leert das Plugin bei FlyingPress gezielt das Profil, /tools/, die Rubrik-Seiten des Profils, die Startseite und alle Seiten mit Bausteinen des Plugins (Bestenlisten, Plus-Seite). Ebenso, wenn ein Profil veröffentlicht oder zurückgezogen wird oder ein neuer Screenshot da ist. Neue Klasse `ADM_Cache`, Filter `adm_purge_urls`, Aktion `adm_purged_urls` für andere Caches

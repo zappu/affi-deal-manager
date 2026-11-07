@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.7.4 (07.11.2026)
+
+- Bausteine für die Startseite: `[adm_rubrics]` zeigt alle Rubriken als Kacheln mit Bild und Zahl der Profile (auf dem Handy als kompakte Liste), `[adm_tools limit="6" heading="…"]` die veröffentlichten Tool-Profile als Karten, kaufbare und meistbewertete zuerst; ohne veröffentlichte Profile bleibt der Abschnitt leer
+- Gestaltung für Seiten mit einer Block-Gruppe der Klasse `adm-home` (Startseite): Kopfbereich `adm-hero`, Kacheln, Teaser `adm-teasers`, Hinweis `adm-note`, grauer Grund
+- Stylesheet lädt im Kopf der Seite, sobald der Inhalt Bausteine des Plugins enthält
+
 ## 0.7.3 (07.11.2026)
 
 - Werbelinks, die nicht aus dem Plugin kommen (Elementor-Widgets in Kopf- und Fußzeile, Links im Editor), bekommen automatisch `rel="sponsored nofollow"`, wenn sie zu AppSumo oder zum Tracking-Host führen. Vorhandene rel-Werte bleiben, weitere Hosts per Filter `adm_ad_hosts`

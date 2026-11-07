@@ -19,6 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage,
  *                     desc="0" ohne die englische Kurzbeschreibung von AppSumo);
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
+ * [adm_rubrics]       alle Rubriken als Kacheln mit Bild und Zahl der veröffentlichten Profile (Startseite)
+ * [adm_tools]         veröffentlichte Tool-Profile als Karten, kaufbare und meistbewertete zuerst;
+ *                     limit, rubrik="<slug>", heading="…" setzt Abschnitt mit Überschrift und Link zu /tools/;
+ *                     ohne veröffentlichte Profile bleibt alles leer
  *
  * Alle Bausteine nehmen optional deal="<slug>"; ohne Angabe gilt der Deal des aktuellen Profils.
  */
@@ -48,6 +52,8 @@ class ADM_Shortcodes {
 		add_shortcode( 'adm_video', array( __CLASS__, 'video' ) );
 		add_shortcode( 'adm_alternatives', array( __CLASS__, 'alternatives' ) );
 		add_shortcode( 'adm_deals', array( __CLASS__, 'deals' ) );
+		add_shortcode( 'adm_rubrics', array( __CLASS__, 'rubrics' ) );
+		add_shortcode( 'adm_tools', array( __CLASS__, 'tools' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'the_content', array( __CLASS__, 'layout' ), 20 );
@@ -83,7 +89,9 @@ class ADM_Shortcodes {
 		wp_register_style( 'adm-frontend', ADM_URL . 'assets/adm-frontend.css', array(), ADM_VERSION );
 		wp_register_script( 'adm-video', '', array(), ADM_VERSION, true );
 		wp_add_inline_script( 'adm-video', 'document.addEventListener("click",function(e){var b=e.target.closest(".adm-video__btn");if(!b)return;var v=b.closest(".adm-video");if(!v||!/^[A-Za-z0-9_-]{11}$/.test(v.dataset.id||""))return;var f=document.createElement("iframe");f.src="https://www.youtube-nocookie.com/embed/"+v.dataset.id+"?autoplay=1&rel=0";f.title=v.dataset.title||"Video";f.allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture";f.allowFullscreen=true;f.referrerPolicy="strict-origin-when-cross-origin";v.innerHTML="";v.appendChild(f);});' );
-		if ( is_singular( ADM_Profiles::CPT ) ) {
+		// Im Kopf laden, wenn die Seite Bausteine des Plugins enthält; sonst landet das Stylesheet erst im Fuß.
+		$content = is_singular() ? (string) get_post_field( 'post_content', get_queried_object_id() ) : '';
+		if ( is_singular( ADM_Profiles::CPT ) || false !== strpos( $content, '[adm_' ) || false !== strpos( $content, 'adm-home' ) ) {
 			wp_enqueue_style( 'adm-frontend' );
 		}
 	}
@@ -92,6 +100,11 @@ class ADM_Shortcodes {
 	public static function body_class( $classes ) {
 		if ( self::layout_active() ) {
 			$classes[] = 'adm-layout';
+		}
+		// Seiten im Stil der Startseite (Block-Gruppe mit der Klasse adm-home): grauer Grund und Stylesheet.
+		if ( is_singular( 'page' ) && false !== strpos( (string) get_post_field( 'post_content', get_queried_object_id() ), 'adm-home' ) ) {
+			$classes[] = 'adm-layout';
+			$classes[] = 'adm-homepage';
 		}
 		return $classes;
 	}
@@ -471,6 +484,57 @@ class ADM_Shortcodes {
 			return self::assets() . '<p class="adm-empty-note">Gerade gibt es hier keine kaufbaren Angebote.</p>';
 		}
 		return self::assets() . '<div class="adm adm-cards adm-cards--deals">' . $out . '</div>';
+	}
+
+	/* ---------------- Startseite: Rubriken und Tool-Profile ---------------- */
+
+	public static function rubrics( $atts ) {
+		$atts  = shortcode_atts( array( 'hide_empty' => '0' ), $atts, 'adm_rubrics' );
+		$terms = get_terms( array(
+			'taxonomy'   => ADM_Rubrics::TAX,
+			'hide_empty' => '1' === (string) $atts['hide_empty'],
+			'orderby'    => 'name',
+		) );
+		if ( is_wp_error( $terms ) || ! $terms ) {
+			return '';
+		}
+		$out = '';
+		foreach ( $terms as $t ) {
+			$img  = ADM_Rubrics::image_id( $t->term_id );
+			$out .= '<a class="adm-rub" href="' . esc_url( get_term_link( $t ) ) . '">';
+			$out .= $img ? '<span class="adm-rub__img">' . wp_get_attachment_image( $img, 'medium', false, array( 'alt' => '', 'loading' => 'lazy' ) ) . '</span>' : '';
+			$out .= '<span class="adm-rub__name">' . esc_html( $t->name ) . '</span>';
+			$out .= '<span class="adm-rub__count">' . esc_html( $t->count ? ( 1 === (int) $t->count ? '1 Tool-Profil' : number_format_i18n( $t->count ) . ' Tool-Profile' ) : 'Profile folgen' ) . '</span>';
+			$out .= '</a>';
+		}
+		return self::assets() . '<div class="adm adm-rubgrid">' . $out . '</div>';
+	}
+
+	public static function tools( $atts ) {
+		$atts = shortcode_atts( array( 'limit' => 6, 'rubrik' => '', 'heading' => '' ), $atts, 'adm_tools' );
+		$args = array(
+			'post_type'      => ADM_Profiles::CPT,
+			'post_status'    => 'publish',
+			'posts_per_page' => max( 1, min( 24, (int) $atts['limit'] ) ),
+			'no_found_rows'  => true,
+			'adm_sort'       => 1,
+		);
+		if ( '' !== $atts['rubrik'] ) {
+			$args['tax_query'] = array( array( 'taxonomy' => ADM_Rubrics::TAX, 'field' => 'slug', 'terms' => sanitize_title( $atts['rubrik'] ) ) ); // phpcs:ignore WordPress.DB.SlowDBQuery
+		}
+		$q = new WP_Query( $args );
+		if ( ! $q->posts ) {
+			return '';
+		}
+		$cards = '';
+		foreach ( $q->posts as $p ) {
+			$cards .= ADM_Archive::card( $p, '' === $atts['rubrik'] );
+		}
+		$grid = '<div class="adm adm-cards">' . $cards . '</div>';
+		if ( '' === trim( (string) $atts['heading'] ) ) {
+			return self::assets() . $grid;
+		}
+		return self::assets() . '<section class="adm-home-sec"><div class="adm-home-sec__head"><h2>' . esc_html( $atts['heading'] ) . '</h2><a href="' . esc_url( get_post_type_archive_link( ADM_Profiles::CPT ) ) . '">Alle Tools</a></div>' . $grid . '</section>';
 	}
 
 }

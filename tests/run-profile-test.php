@@ -374,6 +374,23 @@ $mk = ADM_Links::mark_links( '<p><a href="https://appsumo.8odi.net/c/1/2/3?u=x" 
 adm_check( false !== strpos( $mk, '<a rel="sponsored nofollow" href="https://appsumo.8odi.net' ) && false !== strpos( $mk, 'rel="noopener sponsored nofollow"' ) && false !== strpos( $mk, '<a href="https://example.com/">' ), 'Werbelinks: rel ergänzt, fremde Links unverändert' );
 adm_check( false !== strpos( apply_filters( 'elementor/frontend/the_content', '<a href="https://appsumo.com/products/plus-2019/">P</a>' ), 'sponsored nofollow' ), 'Werbelinks auch in Elementor-Inhalten' );
 
+// Startseite: Rubriken-Kacheln und Tool-Karten
+$rg = do_shortcode( '[adm_rubrics]' );
+adm_check( substr_count( $rg, 'class="adm-rub"' ) >= 13 && false !== strpos( $rg, '/rubrik/seo/' ), 'Startseite: Kacheln aller Rubriken' );
+$pub = get_posts( array( 'post_type' => 'adm_tool', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
+foreach ( $pub as $pid ) {
+	wp_update_post( array( 'ID' => $pid, 'post_status' => 'draft' ) );
+}
+adm_check( '' === do_shortcode( '[adm_tools heading="Beliebte Tool-Profile"]' ), 'Startseite: ohne veröffentlichte Profile kein Abschnitt' );
+$lo4 = adm_get_deal( 'leadocean' );
+wp_update_post( array( 'ID' => (int) $lo4['post_id'], 'post_status' => 'publish' ) );
+$tl = do_shortcode( '[adm_tools heading="Beliebte Tool-Profile"]' );
+adm_check( false !== strpos( $tl, '<h2>Beliebte Tool-Profile</h2>' ) && 1 === substr_count( $tl, 'class="adm-card"' ), 'Startseite: Abschnitt mit veröffentlichtem Profil' );
+wp_update_post( array( 'ID' => (int) $lo4['post_id'], 'post_status' => 'draft' ) );
+foreach ( $pub as $pid ) {
+	wp_update_post( array( 'ID' => $pid, 'post_status' => 'publish' ) );
+}
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

@@ -314,8 +314,16 @@ class ADM_Sources {
 	}
 
 	/** Video gehört zum Tool, wenn das erste Wort des Namens (ab 3 Zeichen) vorkommt. */
-	private static function mentions( $text, $name ) {
+	/** Allgemeine Wörter, die als erstes Wort eines Namens nicht reichen (sonst passt „SEO Generator“ auf jedes SEO-Video). */
+	const GENERIC_WORDS = array( 'the', 'seo', 'app', 'apps', 'web', 'site', 'page', 'pages', 'link', 'links', 'lead', 'leads', 'flow', 'email', 'mail', 'video', 'videos', 'chat', 'bot', 'smart', 'social', 'content', 'writer', 'write', 'book', 'books', 'form', 'forms', 'data', 'cloud', 'auto', 'quick', 'easy', 'get', 'pro', 'super', 'one', 'all', 'best', 'free', 'meta', 'blog', 'shop', 'sales', 'ads', 'image', 'photo', 'design', 'task', 'tasks', 'team', 'office', 'docs', 'note', 'notes', 'code', 'api', 'generator', 'review', 'reviews', 'tool', 'tools', 'my', 'go', 'ai' );
+
+	/**
+	 * Erwähnt der Text das Tool? Ein unverwechselbares erstes Wort reicht („Nuwtonic“),
+	 * bei allgemeinen Wörtern muss der ganze Name vorkommen, auch zusammengeschrieben („SEO Generator“, „seogenerator“).
+	 */
+	public static function mentions( $text, $name ) {
 		$words = preg_split( '/[^\\p{L}\\p{N}]+/u', strtolower( $name ), -1, PREG_SPLIT_NO_EMPTY );
+		$text  = strtolower( (string) $text );
 		$first = '';
 		foreach ( $words as $w ) {
 			if ( strlen( $w ) >= 3 ) {
@@ -323,7 +331,15 @@ class ADM_Sources {
 				break;
 			}
 		}
-		return '' === $first || false !== strpos( strtolower( $text ), $first );
+		if ( '' === $first ) {
+			return true;
+		}
+		if ( ! in_array( $first, self::GENERIC_WORDS, true ) ) {
+			return false !== strpos( $text, $first );
+		}
+		$flat = implode( ' ', preg_split( '/[^\\p{L}\\p{N}]+/u', $text, -1, PREG_SPLIT_NO_EMPTY ) );
+		$name = implode( ' ', $words );
+		return false !== strpos( ' ' . $flat . ' ', ' ' . $name . ' ' ) || false !== strpos( str_replace( ' ', '', $flat ), str_replace( ' ', '', $name ) );
 	}
 
 	/** YouTube-ID aus einer Einbettungs- oder Seitenadresse. */

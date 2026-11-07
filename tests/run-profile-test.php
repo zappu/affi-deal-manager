@@ -470,6 +470,10 @@ $many = array( 'dist' => array( 1 => 2, 2 => 1, 3 => 2, 4 => 20, 5 => 175 ), 'li
 adm_check( ADM_Shortcodes::best_score( $many ) > ADM_Shortcodes::best_score( $few ) && ADM_Shortcodes::best_score( array_merge( $many, array( 'listing_type' => 'select' ) ) ) > ADM_Shortcodes::best_score( $many ) && 0.0 === ADM_Shortcodes::best_score( array( 'dist' => array() ) ), 'Bestenliste: wenige Bewertungen zählen weniger, Select bekommt Vorsprung' );
 wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );
 
+// Videos: allgemeine Namen brauchen den ganzen Namen
+adm_check( ! ADM_Sources::mentions( 'Surfer SEO Tutorial (2026): bestes SEO KI Tool', 'SEO Generator' ) && ADM_Sources::mentions( 'SEO Generator Review: 1000 Seiten', 'SEO Generator' ) && ADM_Sources::mentions( 'seogenerator.io walkthrough', 'SEO Generator' ), 'Videosuche: SEO Generator nur mit vollem Namen' );
+adm_check( ADM_Sources::mentions( 'Nuwtonic Review 2026', 'Nuwtonic SEO' ) && ! ADM_Sources::mentions( 'Flow state music', 'Flow AI' ) && ADM_Sources::mentions( 'The Link Chest review', 'The Link Chest' ), 'Videosuche: unverwechselbares erstes Wort reicht' );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

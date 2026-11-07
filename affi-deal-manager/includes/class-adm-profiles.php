@@ -433,7 +433,8 @@ class ADM_Profiles {
 			@set_time_limit( 600 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors -- KI und Videoauswertung brauchen Zeit
 		}
 		// Frische Produktdaten (auch die Deal-Nummer für die Bewertungen).
-		if ( ! (int) $deal['appsumo_id'] || ! $deal['last_checked'] || strtotime( $deal['last_checked'] . ' UTC' ) < time() - DAY_IN_SECONDS ) {
+		// Auch ohne Verteilung der Tacos (Deals, die vor 0.8.1 zuletzt gelesen wurden).
+		if ( ! (int) $deal['appsumo_id'] || ! $deal['last_checked'] || '' === (string) $deal['rating_dist'] || strtotime( $deal['last_checked'] . ' UTC' ) < time() - DAY_IN_SECONDS ) {
 			ADM_Sync::check_row( $deal );
 			$deal = ADM_DB::get( (int) $deal_id );
 		}
@@ -640,14 +641,15 @@ class ADM_Profiles {
 		}
 
 		if ( $stats['used'] > 0 ) {
-			$intro = sprintf(
-				'Auswertung von %d der %s Bewertungen bei AppSumo (die %d neuesten und die %d kritischsten), Stand %s. Die Bewertungen stammen von AppSumo.',
-				$stats['used'],
-				number_format_i18n( max( $stats['total'], $stats['used'] ) ),
-				$stats['newest'],
-				$stats['critical'],
-				$date
-			);
+			$total = max( $stats['total'], $stats['used'] );
+			if ( $stats['critical'] > 0 ) {
+				$intro = sprintf( 'Auswertung von %d der %s Bewertungen bei AppSumo (die %d neuesten und die %d kritischsten), Stand %s.', $stats['used'], number_format_i18n( $total ), $stats['newest'], $stats['critical'], $date );
+			} elseif ( $stats['used'] >= $total ) {
+				$intro = sprintf( 'Auswertung aller %s Bewertungen bei AppSumo, Stand %s.', number_format_i18n( $total ), $date );
+			} else {
+				$intro = sprintf( 'Auswertung der %d neuesten von %s Bewertungen bei AppSumo, Stand %s.', $stats['used'], number_format_i18n( $total ), $date );
+			}
+			$intro .= ' Die Bewertungen stammen von AppSumo.';
 			$h[] = '<section class="adm-sec" id="kaeufer"><h2>Was Käufer sagen</h2><p class="adm-source">' . esc_html( $intro ) . '</p>' . self::html( isset( $j['kaeufer_text'] ) ? $j['kaeufer_text'] : '' ) . '</section>';
 		}
 

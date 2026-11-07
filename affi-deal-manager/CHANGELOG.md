@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.1 (07.11.2026)
+
+- Videosuche: Beginnt der Name mit einem allgemeinen Wort (etwa „SEO Generator“, „Flow AI“, „The Link Chest“), muss der ganze Name im Titel oder in der Beschreibung des Videos stehen, auch zusammengeschrieben. Vorher reichte „SEO“, und es kamen Videos über ganz andere Tools ins Profil
+- Profile: Fehlt einem Deal die Verteilung der Tacos (zuletzt vor 0.8.1 gelesen), werden die Daten von AppSumo vor dem Schreiben neu gelesen
+- „Was Käufer sagen“: ohne kritische Auswahl heißt es „Auswertung aller N Bewertungen“ bzw. „der N neuesten“ statt „und die 0 kritischsten“
+- Rubriken: „Finance & Accounting“ hat Vorrang vor GEO (Invoiless landete unter SEO), Rubrik „SEO“ heißt bei neuen Installationen „SEO und Analyse“
+
 ## 0.9.0 (07.11.2026)
 
 - Bestenlisten: Shortcode `[adm_bestenliste rubrik="seo"]` oder `[adm_bestenliste tools="slug,slug"]` (dazu `exclude` und `limit`) stellt veröffentlichte Tool-Profile als Rangliste dar. Reihenfolge nachvollziehbar: kaufbare zuerst, dann Anteil der Bewertungen mit 4 oder 5 Tacos (untere Grenze des Wilson-Intervalls, damit wenige Bewertungen nicht vorn landen), kleiner Vorsprung für Select, bei Gleichstand die Käufe. Jeder Eintrag mit Screenshot, Kurzbeschreibung, je einem Punkt aus Lob und Kritik des Profils, Preis, Käufen und Stufe live, Link aufs Profil und Werbelink. Erklärung der Reihenfolge unter der Liste, strukturierte Daten (ItemList)

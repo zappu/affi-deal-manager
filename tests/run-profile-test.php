@@ -473,6 +473,7 @@ $kid8 = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish'
 wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_parent' => $par8, 'post_title' => 'Ohne Liste', 'post_content' => '<p>Nichts</p>' ) );
 $ov8 = do_shortcode( '[adm_bestenlisten parent="' . $par8 . '"]' );
 adm_check( false !== strpos( $ov8, 'Beste Lead-Tools</a></h2>' ) && false !== strpos( $ov8, 'Erster Absatz der Liste.' ) && false !== strpos( $ov8, '>Top-Empfehlung</span>' ) && false !== strpos( $ov8, 'Alle 1 Tools der Liste ansehen' ) && false === strpos( $ov8, 'Ohne Liste' ) && false !== strpos( $ov8, get_permalink( $kid8 ) ), 'Übersicht der Bestenlisten mit Top-Empfehlung' );
+adm_check( false === strpos( $ov8, 'Kritisiert:' ) && false === strpos( $ov8, 'adm-chip--price' ) && false !== strpos( $ov8, 'Gelobt:' ) && false !== strpos( $bl, 'Kritisiert:' ), 'Top-Empfehlung ohne Kritik und Preis, die Liste behält beides' );
 wp_delete_post( $kid8, true );
 wp_delete_post( $par8, true );
 wp_update_post( array( 'ID' => $p8, 'post_status' => 'draft' ) );

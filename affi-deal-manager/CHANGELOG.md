@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.9.4 (07.11.2026)
+
+- Übersicht der Bestenlisten: Die Top-Empfehlung zeigt nur das Lob, ohne Kritik und ohne Preis. Beides bleibt in der vollständigen Liste und im Tool-Profil
+
 ## 0.9.3 (07.11.2026)
 
 - Übersicht der Bestenlisten: `[adm_bestenlisten]` (oder mit `parent="ID"`) zeigt für jede Unterseite mit `[adm_bestenliste]` die Überschrift, den ersten Absatz, Platz 1 als „Top-Empfehlung“, Links zu Platz 2 und 3 und „Alle N Tools der Liste ansehen“. Die Auswahl der Tools steht nur auf der Unterseite

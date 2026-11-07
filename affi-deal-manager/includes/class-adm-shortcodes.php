@@ -778,8 +778,11 @@ class ADM_Shortcodes {
 		return $items;
 	}
 
-	/** Ein Eintrag der Bestenliste; $badge ersetzt die Platzzahl (Top-Empfehlung). */
-	private static function best_item_html( array $it, $rank, $badge = '' ) {
+	/**
+	 * Ein Eintrag der Bestenliste; $badge ersetzt die Platzzahl (Top-Empfehlung).
+	 * $teaser: kurze, positive Fassung für die Übersicht, ohne Kritik und ohne Preis (beides steht in der Liste und im Profil).
+	 */
+	private static function best_item_html( array $it, $rank, $badge = '', $teaser = false ) {
 		$p    = $it['post'];
 		$deal = $it['deal'];
 		$st   = self::dist_stats( $deal );
@@ -791,11 +794,11 @@ class ADM_Shortcodes {
 		list( $img_id, $is_shot ) = ADM_Shots::display_image_id( $p->ID, $term );
 		$lead = has_excerpt( $p ) ? get_the_excerpt( $p ) : $deal['description'];
 		$pro  = self::glance_point( $p->post_content, 'pro' );
-		$con  = self::glance_point( $p->post_content, 'con' );
+		$con  = $teaser ? '' : self::glance_point( $p->post_content, 'con' );
 
 		$chips = array();
 		$price = self::price( $deal );
-		if ( 'kaufbar' === $deal['status'] && '' !== $price ) {
+		if ( 'kaufbar' === $deal['status'] && '' !== $price && ! $teaser ) {
 			$chips[] = '<span class="adm-chip adm-chip--price">' . esc_html( $price ) . '</span>';
 		} elseif ( 'kaufbar' !== $deal['status'] ) {
 			$chips[] = '<span class="adm-chip adm-chip--off">Ausgelaufen</span>';
@@ -851,7 +854,7 @@ class ADM_Shortcodes {
 	/**
 	 * [adm_bestenlisten parent="123"]
 	 * Übersicht aller Bestenlisten: jede Unterseite mit [adm_bestenliste] bekommt Überschrift, ersten Absatz,
-	 * ihre Top-Empfehlung (Platz 1) und Links zu den Plätzen 2 und 3. Die Auswahl steht nur auf der Unterseite.
+	 * ihre Top-Empfehlung (Platz 1, ohne Kritik und Preis) und Links zu den Plätzen 2 und 3. Die Auswahl steht nur auf der Unterseite.
 	 */
 	public static function bestenlisten( $atts ) {
 		$atts   = shortcode_atts( array( 'parent' => 0 ), $atts, 'adm_bestenlisten' );
@@ -873,7 +876,7 @@ class ADM_Shortcodes {
 			$intro = preg_match( '#<p>(.*?)</p>#s', $page->post_content, $pm ) ? trim( wp_strip_all_tags( $pm[1] ) ) : '';
 			$out  .= '<section class="adm-bests__sec"><h2><a href="' . esc_url( $url ) . '">' . esc_html( get_the_title( $page ) ) . '</a></h2>';
 			$out  .= '' !== $intro ? '<p>' . esc_html( $intro ) . '</p>' : '';
-			$out  .= '<ol class="adm adm-best adm-best--top">' . self::best_item_html( $items[0], 1, 'Top-Empfehlung' ) . '</ol>';
+			$out  .= '<ol class="adm adm-best adm-best--top">' . self::best_item_html( $items[0], 1, 'Top-Empfehlung', true ) . '</ol>';
 			$more  = array();
 			foreach ( array_slice( $items, 1, 2 ) as $i => $it ) {
 				$more[] = 'Platz ' . ( $i + 2 ) . ': <a href="' . esc_url( get_permalink( $it['post'] ) ) . '">' . esc_html( $it['deal']['title'] ) . '</a>';

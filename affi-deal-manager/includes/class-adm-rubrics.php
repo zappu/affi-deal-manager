@@ -33,6 +33,8 @@ class ADM_Rubrics {
 
 	/** Teil des AppSumo-Kategoriepfads => Rubrik. Groß- und Kleinschreibung egal. */
 	const RULES = array(
+		// AppSumo hängt GEO manchmal unter andere Bereiche (Invoiless: Operations > Finance & Accounting > GEO …), der Bereich hat dann Vorrang.
+		'Finance & Accounting'                => 'produktivitaet-und-organisation',
 		'GEO & AI Search Optimization'        => 'seo',
 		'Website Builders & WordPress > SEO'  => 'seo',
 		'SEO & Analytics'                     => 'seo',

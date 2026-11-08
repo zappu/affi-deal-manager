@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.13.2 (08.11.2026)
+
+- Newsletter: Das Skript schickte die Anmeldung an eine falsche Adresse (das versteckte Feld „action“ überdeckte die Formularadresse) und meldete deshalb immer einen Fehler. Klappt die Anfrage per Skript nicht, wird das Formular jetzt normal abgeschickt
+
 ## 0.13.1 (08.11.2026)
 
 - Eigene Aktion: Banner tragen den Hinweis „Anzeige“, Textfeld im Formular breiter (zweizeilig)

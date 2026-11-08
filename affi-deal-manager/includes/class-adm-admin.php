@@ -442,6 +442,21 @@ class ADM_Admin {
 					</tr>
 				</table>
 
+				<h2 id="adm-newsletter">Newsletter (SendFox)</h2>
+				<table class="form-table" role="presentation">
+					<?php
+					ADM_Newsletter::settings_rows( $s );
+					self::field( 'newsletter_list', 'Listen-ID', $s, 'ID der Liste in SendFox (steht in der Adresse der Liste, z. B. /lists/684361/).', 'number' );
+					self::field( 'newsletter_title', 'Überschrift', $s, '' );
+					self::field( 'newsletter_text', 'Text', $s, 'Ein Satz, was kommt und wie oft.' );
+					?>
+					<tr>
+						<th scope="row">Platzierung</th>
+						<td><label><input type="checkbox" name="adm[newsletter_auto]" value="1" <?php checked( $s['newsletter_auto'] ); ?>> Anmeldekasten automatisch am Ende der Tool-Profile und unter den Bestenlisten</label>
+						<p class="description">Für andere Seiten: Shortcode <code>[adm_newsletter]</code>. Die Bestätigungsmail (Double Opt-in) verschickt SendFox, wenn dort unter Settings → List defaults „Require double opt-in“ eingeschaltet ist.</p></td>
+					</tr>
+				</table>
+
 				<h2>Updates</h2>
 				<table class="form-table" role="presentation">
 					<?php self::field( 'update_token', 'Update-Token (optional)', $s, '' ); ?>

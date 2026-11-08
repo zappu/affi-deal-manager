@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.13.0 (08.11.2026)
+
+- Newsletter-Anmeldung über SendFox: Shortcode `[adm_newsletter]` mit eigenem Formular ohne fremdes Skript. WordPress trägt die Adresse über die SendFox-API in die eingestellte Liste ein, die Bestätigungsmail (Double Opt-in) verschickt SendFox. Schlüssel nur in der wp-config.php (`THOKA_SENDFOX_API_KEY`), Liste, Überschrift und Text in den Einstellungen, optional automatisch am Ende der Tool-Profile und unter den Bestenlisten. Schutz gegen Bots über verstecktes Feld, Mindestzeit und höchstens fünf Anmeldungen pro Stunde und IP; Fehler von SendFox stehen in den Einstellungen (Klasse `ADM_Newsletter`)
+
 ## 0.12.0 (08.11.2026)
 
 - Eigene Aktion im Reiter „Einnahmen“: bis zu vier Tools mit Enddatum, je mit Alternative („statt Calendly“), einer Zeile Text, Code, Ratgeber-Link und optional einem Banner aus Impact (Banner-ID). Erscheint oben auf der Startseite ([adm_promos] oder [adm_spotlight]), in der Übersicht der Rubrik des Tools und im Deal-Kasten anderer Profile derselben Rubrik; im eigenen Profil zeigt der Deal-Kasten den Code. Preis und Zufriedenheit live, Werbelinks mit subId1 `tipp-<deal>`, nach dem Ende verschwindet der Kasten und der Cache wird geleert (Klasse `ADM_Spotlight`)

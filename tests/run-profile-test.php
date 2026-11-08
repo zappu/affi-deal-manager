@@ -721,6 +721,60 @@ remove_filter( 'pre_http_request', $spot_mock, 5 );
 delete_option( ADM_Spotlight::OPTION );
 wp_update_post( array( 'ID' => (int) $lo12['post_id'], 'post_status' => 'draft' ) );
 
+// Newsletter (SendFox)
+adm_check( '' === do_shortcode( '[adm_newsletter]' ), 'Newsletter: ohne Schlüssel und Liste kein Kasten' );
+if ( ! defined( 'THOKA_SENDFOX_API_KEY' ) ) {
+	define( 'THOKA_SENDFOX_API_KEY', 'sf-test-key' );
+}
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'newsletter_list' => '684361', 'newsletter_auto' => 0 ) ) );
+$nl_calls = array();
+$nl_fail  = false;
+$nl_mock  = function ( $pre, $args, $url ) use ( &$nl_calls, &$nl_fail ) {
+	if ( 0 !== strpos( $url, 'https://api.sendfox.com/' ) ) {
+		return $pre;
+	}
+	$nl_calls[] = array( 'url' => $url, 'args' => $args );
+	if ( false !== strpos( $url, '/lists/' ) ) {
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( array( 'id' => 684361, 'name' => 'Software ohne Abo' ) ), 'headers' => array(), 'cookies' => array() );
+	}
+	if ( $nl_fail ) {
+		return array( 'response' => array( 'code' => 422, 'message' => 'x' ), 'body' => wp_json_encode( array( 'message' => 'The email field is invalid.' ) ), 'headers' => array(), 'cookies' => array() );
+	}
+	return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( array( 'id' => 1, 'created' => true ) ), 'headers' => array(), 'cookies' => array() );
+};
+add_filter( 'pre_http_request', $nl_mock, 5, 3 );
+$nlh = do_shortcode( '[adm_newsletter]' );
+adm_check( false !== strpos( $nlh, 'adm-nl__form' ) && false !== strpos( $nlh, 'name="website"' ) && false !== strpos( $nlh, 'SendFox (USA)' ) && false !== strpos( $nlh, 'admin-post.php' ) && false === strpos( $nlh, 'sendfox.com/js' ), 'Newsletter: eigenes Formular ohne fremdes Skript, mit Hinweis' );
+$sign = new ReflectionMethod( 'ADM_Newsletter', 'sign' );
+$sign->setAccessible( true );
+$old  = time() - 30;
+$good = array( 'email' => 'leser@example.org', 'ts' => $old, 'sig' => $sign->invoke( null, $old ), 'website' => '' );
+$r1 = ADM_Newsletter::subscribe( array_merge( $good, array( 'email' => 'kaputt' ) ), '203.0.113.5' );
+$r2 = ADM_Newsletter::subscribe( array_merge( $good, array( 'website' => 'spam' ) ), '203.0.113.5' );
+$r3 = ADM_Newsletter::subscribe( array_merge( $good, array( 'ts' => time(), 'sig' => $sign->invoke( null, time() ) ) ), '203.0.113.5' );
+adm_check( ! $r1['ok'] && $r2['ok'] && $r3['ok'] && 0 === count( $nl_calls ), 'Newsletter: ungültige Adresse abgelehnt, Bots und zu schnelle Absender ohne Abruf' );
+$r4   = ADM_Newsletter::subscribe( $good, '203.0.113.5' );
+$sent = $nl_calls ? json_decode( $nl_calls[0]['args']['body'], true ) : array();
+adm_check( $r4['ok'] && 1 === count( $nl_calls ) && 'https://api.sendfox.com/contacts' === $nl_calls[0]['url'] && 'Bearer sf-test-key' === $nl_calls[0]['args']['headers']['Authorization'] && array( 684361 ) === $sent['lists'] && 'leser@example.org' === $sent['email'] && '203.0.113.5' === $sent['ip_address'] && false !== strpos( $r4['msg'], 'bestätige' ), 'Newsletter: Anmeldung über die API in die Liste, mit IP für die Einwilligung' );
+$nl_fail = true;
+$r5 = ADM_Newsletter::subscribe( $good, '203.0.113.6' );
+$nl_fail = false;
+adm_check( ! $r5['ok'] && 'The email field is invalid.' === get_option( 'adm_newsletter_error' )['error'], 'Newsletter: Fehler von SendFox wird vermerkt' );
+for ( $i = 0; $i < 6; $i++ ) {
+	$r6 = ADM_Newsletter::subscribe( $good, '203.0.113.7' );
+}
+adm_check( ! $r6['ok'] && false !== strpos( $r6['msg'], 'Zu viele' ), 'Newsletter: höchstens fünf Anmeldungen pro Stunde und IP' );
+adm_check( '' === ADM_Newsletter::auto_html(), 'Newsletter: automatische Platzierung aus' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'newsletter_auto' => 1 ) ) );
+adm_check( false !== strpos( ADM_Newsletter::auto_html(), 'adm-nl' ), 'Newsletter: automatische Platzierung an' );
+ob_start();
+ADM_Newsletter::settings_rows( ADM_Settings::all() );
+$nlrow = ob_get_clean();
+adm_check( false !== strpos( $nlrow, 'gesetzt' ) && false !== strpos( $nlrow, 'Software ohne Abo' ) && false === strpos( $nlrow, 'sf-test-key' ), 'Newsletter: Verbindung in den Einstellungen, Schlüssel nicht sichtbar' );
+remove_filter( 'pre_http_request', $nl_mock, 5 );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'newsletter_list' => '', 'newsletter_auto' => 0 ) ) );
+delete_option( 'adm_newsletter_error' );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

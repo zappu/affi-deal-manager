@@ -110,6 +110,10 @@ class ADM_Settings {
 			'screenshots'           => 1,
 			'gemini_model'          => 'gemini-3.6-flash',
 			'banners'               => 0,
+			'newsletter_list'       => '',
+			'newsletter_title'      => 'Neue Tools ohne Abo per E-Mail',
+			'newsletter_text'       => 'Etwa einmal im Monat: neue Tool-Profile, Bestenlisten und laufende Lifetime-Deals von AppSumo.',
+			'newsletter_auto'       => 0,
 		);
 	}
 
@@ -191,6 +195,10 @@ class ADM_Settings {
 			'screenshots'           => empty( $in['screenshots'] ) ? 0 : 1,
 			'box_placement'         => isset( $in['box_placement'] ) && in_array( $in['box_placement'], array( 'content', 'sidebar' ), true ) ? $in['box_placement'] : $cur['box_placement'],
 			'video_summaries'       => array_key_exists( 'mode', $in ) ? ( empty( $in['video_summaries'] ) ? 0 : 1 ) : (int) $cur['video_summaries'],
+			'newsletter_list'       => isset( $in['newsletter_list'] ) ? substr( preg_replace( '/\D/', '', (string) $in['newsletter_list'] ), 0, 12 ) : (string) $cur['newsletter_list'],
+			'newsletter_title'      => isset( $in['newsletter_title'] ) && '' !== trim( (string) $in['newsletter_title'] ) ? substr( sanitize_text_field( (string) $in['newsletter_title'] ), 0, 120 ) : (string) $cur['newsletter_title'],
+			'newsletter_text'       => isset( $in['newsletter_text'] ) ? substr( sanitize_text_field( (string) $in['newsletter_text'] ), 0, 300 ) : (string) $cur['newsletter_text'],
+			'newsletter_auto'       => array_key_exists( 'mode', $in ) ? ( empty( $in['newsletter_auto'] ) ? 0 : 1 ) : (int) $cur['newsletter_auto'],
 			'banners'               => array_key_exists( 'mode', $in ) ? ( empty( $in['banners'] ) ? 0 : 1 ) : (int) $cur['banners'],
 			'gemini_model'          => isset( $in['gemini_model'] ) && '' !== trim( (string) $in['gemini_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._\-]/', '', (string) $in['gemini_model'] ), 0, 80 ) : $cur['gemini_model'],
 		);

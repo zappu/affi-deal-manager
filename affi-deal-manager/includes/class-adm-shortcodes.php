@@ -85,7 +85,7 @@ class ADM_Shortcodes {
 		}
 		$head = false === strpos( $content, 'adm-head' ) ? do_shortcode( '[adm_deal_header]' ) : '';
 		$side = do_shortcode( '[adm_deal_box placement="sidebar"]' );
-		return '<div class="adm adm-page">' . $head . '<div class="adm-page__cols"><div class="adm-page__main">' . $content . '</div>'
+		return '<div class="adm adm-page">' . $head . '<div class="adm-page__cols"><div class="adm-page__main">' . $content . ADM_Newsletter::auto_html() . '</div>'
 			. ( '' !== $side ? '<div class="adm-page__side">' . $side . '</div>' : '' ) . '</div></div>' . self::sticky_bar();
 	}
 
@@ -100,6 +100,8 @@ class ADM_Shortcodes {
 		wp_add_inline_script( 'adm-sticky', '(function(){var bar=document.querySelector(".adm-sticky"),box=document.querySelector(".adm-box--inline");if(!bar||!box)return;var foot=document.querySelector("[data-elementor-type=footer]")||document.querySelector("body>footer,#site-footer"),t=0;function up(){t=0;var gone=box.getBoundingClientRect().bottom<0,end=foot&&foot.getBoundingClientRect().top<window.innerHeight;bar.hidden=!(gone&&!end);}function on(){if(!t)t=requestAnimationFrame(up);}window.addEventListener("scroll",on,{passive:true});window.addEventListener("resize",on);up();})();' );
 		wp_register_script( 'adm-video', '', array(), ADM_VERSION, true );
 		wp_add_inline_script( 'adm-video', 'document.addEventListener("click",function(e){var b=e.target.closest(".adm-video__btn");if(!b)return;var v=b.closest(".adm-video");if(!v||!/^[A-Za-z0-9_-]{11}$/.test(v.dataset.id||""))return;var f=document.createElement("iframe");f.src="https://www.youtube-nocookie.com/embed/"+v.dataset.id+"?autoplay=1&rel=0";f.title=v.dataset.title||"Video";f.allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture";f.allowFullscreen=true;f.referrerPolicy="strict-origin-when-cross-origin";v.innerHTML="";v.appendChild(f);});' );
+		wp_register_script( 'adm-newsletter', '', array(), ADM_VERSION, true );
+		wp_add_inline_script( 'adm-newsletter', '(function(){var T={ok:"Fast geschafft: Bitte bestätige deine Anmeldung über den Link in der E-Mail, die wir dir gerade geschickt haben.",fehler:"Die Anmeldung hat nicht geklappt. Bitte versuche es später noch einmal."};var q=new URLSearchParams(location.search).get("newsletter");document.querySelectorAll(".adm-nl").forEach(function(box){var f=box.querySelector("form"),m=box.querySelector(".adm-nl__msg");if(q&&T[q]&&m){m.textContent=T[q];box.classList.add(q==="ok"?"is-ok":"is-err");}if(!f||!window.fetch)return;f.addEventListener("submit",function(e){e.preventDefault();var b=f.querySelector("button");b.disabled=true;fetch(f.action,{method:"POST",body:new FormData(f),headers:{Accept:"application/json"},credentials:"same-origin"}).then(function(r){return r.json();}).then(function(d){m.textContent=d.msg||T.fehler;box.classList.toggle("is-ok",!!d.ok);box.classList.toggle("is-err",!d.ok);if(d.ok){f.hidden=true;}else{b.disabled=false;}}).catch(function(){m.textContent=T.fehler;box.classList.add("is-err");b.disabled=false;});});});})();' );
 		// Im Kopf laden, wenn die Seite Bausteine des Plugins enthält; sonst landet das Stylesheet erst im Fuß.
 		$content = is_singular() ? (string) get_post_field( 'post_content', get_queried_object_id() ) : '';
 		if ( is_singular( ADM_Profiles::CPT ) || false !== strpos( $content, '[adm_' ) || false !== strpos( $content, 'adm-home' ) ) {
@@ -873,7 +875,7 @@ class ADM_Shortcodes {
 		}
 		$note = '<p class="adm-source">Reihenfolge: kaufbare Angebote zuerst, dann nach dem Anteil der Bewertungen mit 4 oder 5 Tacos bei AppSumo. Bei wenigen Bewertungen ist dieser Anteil unsicherer, solche Tools rutschen etwas nach hinten. Tools mit der Stufe Select bekommen einen kleinen Vorsprung. Bei Gleichstand entscheidet die Zahl der Käufe. Stand ' . esc_html( wp_date( 'd.m.Y' ) ) . ', die Liste aktualisiert sich mit den Daten von AppSumo.</p>';
 		$schema = '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@type' => 'ItemList', 'itemListOrder' => 'https://schema.org/ItemListOrderDescending', 'numberOfItems' => count( $ld ), 'itemListElement' => $ld ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG ) . '</script>';
-		return self::assets() . ADM_Banners::html( 'list' ) . '<ol class="adm adm-best">' . $out . '</ol>' . $note . $schema;
+		return self::assets() . ADM_Banners::html( 'list' ) . '<ol class="adm adm-best">' . $out . '</ol>' . $note . ADM_Newsletter::auto_html() . $schema;
 	}
 
 	/** Einträge der Bestenliste, die auf einer Seite steht (erster [adm_bestenliste] im Inhalt). */

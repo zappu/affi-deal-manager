@@ -87,7 +87,7 @@ class ADM_Spotlight {
 		$more = '' !== $it['guide'] ? array( $it['guide'], 'Vergleich lesen' ) : ( $post ? array( get_permalink( $post ), 'Zum Tool-Profil' ) : null );
 
 		$out  = '<article class="adm-spot__item' . ( '' !== $img ? ' adm-spot__item--img' : '' ) . '">';
-		$out .= '' !== $img && '' !== $link ? '<a class="adm-spot__banner" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">' . $img . '</a>' : '';
+		$out .= '' !== $img && '' !== $link ? '<a class="adm-spot__banner" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">' . $img . '<span class="adm-banner__ad">Anzeige<span class="adm-mark" aria-hidden="true">*</span></span></a>' : '';
 		$out .= '<p class="adm-spot__title">' . $name . ( '' !== $it['instead'] ? ' <span>statt ' . esc_html( $it['instead'] ) . '</span>' : '' ) . '</p>';
 		$out .= '' !== $it['text'] ? '<p class="adm-spot__text">' . esc_html( $it['text'] ) . '</p>' : '';
 		$out .= $fact ? '<p class="adm-spot__facts">' . esc_html( implode( ' · ', $fact ) ) . '</p>' : '';
@@ -249,18 +249,18 @@ class ADM_Spotlight {
 		}
 		$state = self::running( $d ) ? 'Läuft bis ' . wp_date( 'd.m.Y', (int) $d['until'] ) . '.' : 'Nicht aktiv.';
 		echo '<h2 id="eigene-aktion" style="margin-top:28px">Eigene Aktion</h2>';
-		echo '<p>' . esc_html( $state ) . ' Bis zu vier Tools, die bis zum Enddatum oben auf der Startseite ([adm_promos]), in der Übersicht ihrer Rubrik und im Deal-Kasten anderer Profile derselben Rubrik erscheinen. Ohne Bilder, Preis und Bewertungen kommen live von AppSumo. Kennung in den Einnahmen: <code>tipp-&lt;deal&gt;</code>. Banner-ID: ein Banner des AppSumo-Programms aus Impact (Assets → Banner, Suche nach dem Tool); das Bild wird einmal in die Mediathek kopiert, der Klick läuft über den Tracking-Link dieses Banners.</p>';
+		echo '<p>' . esc_html( $state ) . ' Bis zu vier Tools, die bis zum Enddatum oben auf der Startseite ([adm_promos]), in der Übersicht ihrer Rubrik und im Deal-Kasten anderer Profile derselben Rubrik erscheinen. Preis und Zufriedenheit kommen live von AppSumo. Kennung in den Einnahmen: <code>tipp-&lt;deal&gt;</code>. Banner-ID: ein Banner des AppSumo-Programms aus Impact (Assets → Banner, Suche nach dem Tool); das Bild wird einmal in die Mediathek kopiert, der Klick läuft über den Tracking-Link dieses Banners.</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'adm_spotlight' );
 		echo '<input type="hidden" name="action" value="adm_spotlight">';
 		echo '<p><label>Beschriftung <input type="text" name="spot[label]" value="' . esc_attr( $d['label'] ) . '" placeholder="Tipp" style="width:160px"></label> ';
 		echo '<label style="margin-left:16px">Ende <input type="date" name="spot[until]" value="' . esc_attr( $d['until'] ? wp_date( 'Y-m-d', (int) $d['until'] ) : '' ) . '"></label></p>';
-		echo '<table class="widefat striped"><thead><tr><th>Deal (Slug)</th><th>statt</th><th>Text (eine Zeile)</th><th>Code</th><th>Ratgeber-Link (optional)</th><th>Banner-ID (optional)</th></tr></thead><tbody>';
+		echo '<table class="widefat striped"><thead><tr><th>Deal (Slug)</th><th>statt</th><th>Text (ein Satz)</th><th>Code</th><th>Ratgeber-Link (optional)</th><th>Banner-ID (optional)</th></tr></thead><tbody>';
 		foreach ( $rows as $i => $r ) {
 			$n = 'spot[items][' . (int) $i . ']';
 			echo '<tr><td><input type="text" name="' . esc_attr( $n ) . '[deal]" value="' . esc_attr( $r['deal'] ) . '" placeholder="tidycal" style="width:120px"></td>';
 			echo '<td><input type="text" name="' . esc_attr( $n ) . '[instead]" value="' . esc_attr( $r['instead'] ) . '" placeholder="Calendly" style="width:110px"></td>';
-			echo '<td><input type="text" name="' . esc_attr( $n ) . '[text]" value="' . esc_attr( $r['text'] ) . '" maxlength="160" style="width:100%"></td>';
+			echo '<td style="min-width:320px"><textarea name="' . esc_attr( $n ) . '[text]" maxlength="160" rows="2" style="width:100%">' . esc_textarea( $r['text'] ) . '</textarea></td>';
 			echo '<td><input type="text" name="' . esc_attr( $n ) . '[code]" value="' . esc_attr( $r['code'] ) . '" style="width:110px"></td>';
 			echo '<td><input type="url" name="' . esc_attr( $n ) . '[guide]" value="' . esc_attr( $r['guide'] ) . '" style="width:100%"></td>';
 			$thumb = ! empty( $r['att'] ) ? wp_get_attachment_image( (int) $r['att'], array( 60, 50 ), false, array( 'style' => 'vertical-align:middle;margin-left:6px;height:auto' ) ) : '';

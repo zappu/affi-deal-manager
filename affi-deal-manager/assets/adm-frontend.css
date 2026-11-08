@@ -257,7 +257,7 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-spot__grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .adm-spot__item{display:flex;flex-direction:column;gap:6px;background:var(--adm-soft);border-radius:14px;padding:16px}
 .adm-spot__item p{margin:0!important}
-.adm-spot__banner{display:block;line-height:0;margin:0 0 6px;align-self:center;max-width:300px;width:100%}
+.adm-spot__banner{position:relative;display:block;line-height:0;margin:0 0 6px;align-self:center;max-width:300px;width:100%}
 .adm-spot__img{display:block;width:100%;height:auto;border-radius:10px}
 .adm-spot__title{font-family:var(--adm-head-font);font-size:1.25em;font-weight:700;line-height:1.25}.adm-spot__title a{text-decoration:none}.adm-spot__title span{font-weight:500;color:var(--adm-muted)}
 .adm-spot__text{line-height:1.5}

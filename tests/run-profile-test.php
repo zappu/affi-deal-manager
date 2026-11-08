@@ -706,7 +706,7 @@ adm_check( false !== strpos( ADM_Spotlight::html( 'side', $rub12, (int) $nw12['i
 adm_check( 0 === strpos( ADM_Stats::label( 'tipp-leadocean' )[0], 'Eigene Aktion: LeadOcean' ), 'Eigene Aktion: eigene Zeile in den Einnahmen' );
 $sp12b = ADM_Spotlight::save( array( 'until' => wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ), 'items' => array( array( 'deal' => 'leadocean', 'banner' => '555' ), array( 'deal' => 'neuronwriter', 'banner' => '556' ) ) ) );
 $h12b = ADM_Spotlight::html( 'home' );
-adm_check( $sp12b['items'][0]['att'] > 0 && '' === $sp12b['items'][0]['berr'] && false !== strpos( $h12b, 'adm-spot__img' ) && false !== strpos( $h12b, '/555/7443?u=' ) && false !== strpos( $h12b, 'subId1=tipp-leadocean' ) && false === strpos( $h12b, 'impactradius' ), 'Eigene Aktion: Banner aus Impact, Bild lokal, Klick über den Banner' );
+adm_check( $sp12b['items'][0]['att'] > 0 && '' === $sp12b['items'][0]['berr'] && false !== strpos( $h12b, 'adm-spot__img' ) && false !== strpos( $h12b, 'Anzeige' ) && false !== strpos( $h12b, '/555/7443?u=' ) && false !== strpos( $h12b, 'subId1=tipp-leadocean' ) && false === strpos( $h12b, 'impactradius' ), 'Eigene Aktion: Banner aus Impact, Bild lokal, Klick über den Banner' );
 adm_check( 0 === (int) $sp12b['items'][1]['att'] && false !== strpos( $sp12b['items'][1]['berr'], 'kein Banner des AppSumo-Programms' ), 'Eigene Aktion: fremder Banner abgelehnt' );
 $att12 = $sp12b['items'][0]['att'];
 $sp12c = ADM_Spotlight::save( array( 'until' => wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ), 'items' => array( array( 'deal' => 'leadocean', 'banner' => '555' ) ) ) );

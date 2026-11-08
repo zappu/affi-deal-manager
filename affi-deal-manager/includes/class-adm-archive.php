@@ -82,8 +82,23 @@ class ADM_Archive {
 		if ( is_admin() || ! self::is_overview() ) {
 			return $desc;
 		}
-		$lead = self::heading( self::current_term() )[1];
-		return function_exists( 'mb_substr' ) && mb_strlen( $lead ) > 160 ? rtrim( mb_substr( $lead, 0, 157 ) ) . '…' : $lead;
+		$lead  = self::heading( self::current_term() )[1];
+		$paged = (int) get_query_var( 'paged' );
+		if ( $paged > 1 ) {
+			$lead = 'Seite ' . $paged . ': ' . $lead; // sonst gleiche Beschreibung wie Seite 1
+		}
+		return self::cut( $lead, 160 );
+	}
+
+	/** Auf höchstens $max Zeichen kürzen, am Wortende. */
+	public static function cut( $s, $max ) {
+		$s = trim( (string) $s );
+		if ( ! function_exists( 'mb_substr' ) || mb_strlen( $s ) <= $max ) {
+			return $s;
+		}
+		$s = mb_substr( $s, 0, $max - 1 );
+		$s = preg_replace( '/\s+\S*$/u', '', $s );
+		return rtrim( $s, " ,;:-" ) . '…';
 	}
 
 	/** Eine Übersicht der Tool-Profile (ohne Prüfung der Einstellung). */

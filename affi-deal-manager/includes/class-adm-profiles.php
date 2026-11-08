@@ -21,6 +21,7 @@ class ADM_Profiles {
 	const PAUSED     = 'adm_profile_paused';
 	const CURRENT    = 'adm_profile_current';
 	const VQUEUE     = 'adm_video_queue';
+	const TITLE_MAX  = 60;
 
 	/** Stilhinweise der letzten Erzeugung (für das Protokoll). */
 	private static $last_hints = array();
@@ -35,6 +36,7 @@ class ADM_Profiles {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'meta_box' ) );
 		add_action( 'save_post_' . self::CPT, array( __CLASS__, 'save_meta_box' ), 10, 2 );
 		add_action( 'init', array( __CLASS__, 'maybe_flush' ), 99 );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_fit_titles' ) );
 	}
 
 	public static function register() {
@@ -77,6 +79,78 @@ class ADM_Profiles {
 			flush_rewrite_rules();
 			update_option( 'adm_rewrite_version', ADM_VERSION, false );
 		}
+	}
+
+	/**
+	 * SEO-Titel für Rank Math, höchstens TITLE_MAX Zeichen.
+	 * Erst die Vorlage aus den Einstellungen, ist sie zu lang, kürzere Fassungen.
+	 */
+	public static function seo_title( $name ) {
+		$cands = array(
+			(string) ADM_Settings::get( 'seo_title_template' ),
+			'{tool} ohne Abo: Funktionen und Alternativen',
+			'{tool} ohne Abo: Lifetime Deal im Profil',
+			'{tool} ohne Abo (Lifetime Deal)',
+			'{tool} ohne Abo',
+		);
+		$title = '';
+		foreach ( $cands as $tpl ) {
+			if ( false === strpos( $tpl, '{tool}' ) ) {
+				continue;
+			}
+			$title = str_replace( '{tool}', $name, $tpl );
+			if ( self::len( $title ) <= self::TITLE_MAX ) {
+				break;
+			}
+		}
+		return $title;
+	}
+
+	private static function len( $s ) {
+		return function_exists( 'mb_strlen' ) ? mb_strlen( $s ) : strlen( $s );
+	}
+
+	/**
+	 * Einmalig: zu lange SEO-Titel bestehender Profile kürzen.
+	 * Nur Titel, die noch genau der Vorlage entsprechen; von Hand geänderte bleiben.
+	 */
+	public static function maybe_fit_titles() {
+		if ( '1' === get_option( 'adm_seo_titles_fit' ) ) {
+			return;
+		}
+		update_option( 'adm_seo_titles_fit', '1', false );
+		$changed = self::fit_titles();
+		if ( $changed ) {
+			ADM_Cache::purge_all();
+		}
+	}
+
+	/** @return int Anzahl geänderter Titel. */
+	public static function fit_titles() {
+		$tpls = array_unique( array( (string) ADM_Settings::get( 'seo_title_template' ), '{tool} ohne Abo (Lifetime Deal): Funktionen und Alternativen' ) );
+		$ids  = get_posts( array( 'post_type' => self::CPT, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids', 'no_found_rows' => true ) );
+		$n    = 0;
+		foreach ( $ids as $id ) {
+			$cur = (string) get_post_meta( $id, 'rank_math_title', true );
+			if ( '' === $cur || self::len( $cur ) <= self::TITLE_MAX ) {
+				continue;
+			}
+			foreach ( $tpls as $tpl ) {
+				$parts = explode( '{tool}', $tpl );
+				if ( 2 !== count( $parts ) ) {
+					continue;
+				}
+				if ( preg_match( '/^' . preg_quote( $parts[0], '/' ) . '(.+)' . preg_quote( $parts[1], '/' ) . '$/u', $cur, $m ) ) {
+					$new = self::seo_title( $m[1] );
+					if ( $new !== $cur ) {
+						update_post_meta( $id, 'rank_math_title', $new );
+						++$n;
+					}
+					break;
+				}
+			}
+		}
+		return $n;
 	}
 
 	public static function menu_tab() {
@@ -477,7 +551,7 @@ class ADM_Profiles {
 		);
 		$content = self::build_content( $deal, $json, $videos, $stats );
 		$title   = str_replace( '{tool}', $name, (string) ADM_Settings::get( 'title_template' ) );
-		$seo     = str_replace( '{tool}', $name, (string) ADM_Settings::get( 'seo_title_template' ) );
+		$seo     = self::seo_title( $name );
 
 		$existing = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
 		$postarr  = array(

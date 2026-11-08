@@ -67,7 +67,7 @@ $lo   = adm_get_deal( 'leadocean' );
 $post = $lo['post_id'] ? get_post( (int) $lo['post_id'] ) : null;
 adm_check( $post && 'adm_tool' === $post->post_type && 'draft' === $post->post_status && 'leadocean' === $post->post_name, 'Profil als Entwurf angelegt, Slug leadocean' );
 adm_check( $post && 'LeadOcean ohne Abo: Funktionen, Käuferstimmen und Alternativen' === $post->post_title, 'Seitentitel nach Vorlage' );
-adm_check( 'LeadOcean ohne Abo (Lifetime Deal): Funktionen und Alternativen' === get_post_meta( $post->ID, 'rank_math_title', true ), 'SEO-Titel für Rank Math' );
+adm_check( 'LeadOcean ohne Abo: Funktionen und Alternativen' === get_post_meta( $post->ID, 'rank_math_title', true ), 'SEO-Titel für Rank Math, auf 60 Zeichen gekürzt' );
 adm_check( 0 === strpos( get_post_meta( $post->ID, 'rank_math_description', true ), 'LeadOcean ohne Abo:' ) && false !== strpos( get_post_meta( $post->ID, 'rank_math_focus_keyword', true ), 'leadocean ohne abo' ), 'Meta-Beschreibung und Fokus-Keyword' );
 adm_check( 'Firmen- und Kontaktdaten als API ohne Abo.' === $post->post_excerpt, 'Auszug gesetzt' );
 
@@ -774,6 +774,35 @@ adm_check( false !== strpos( $nlrow, 'gesetzt' ) && false !== strpos( $nlrow, 'S
 remove_filter( 'pre_http_request', $nl_mock, 5 );
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'newsletter_list' => '', 'newsletter_auto' => 0 ) ) );
 delete_option( 'adm_newsletter_error' );
+
+// SEO-Titel höchstens 60 Zeichen, bestehende Titel einmalig kürzen
+adm_check( 'Switchy ohne Abo: Funktionen und Alternativen' === ADM_Profiles::seo_title( 'Switchy' ), 'SEO-Titel: kürzere Fassung, wenn die Vorlage zu lang ist' );
+adm_check( 'The Link Chest by SEO Buddy ohne Abo (Lifetime Deal)' === ADM_Profiles::seo_title( 'The Link Chest by SEO Buddy' ), 'SEO-Titel: langer Name, kurze Fassung' );
+adm_check( mb_strlen( ADM_Profiles::seo_title( str_repeat( 'Sehr langer Name ', 4 ) ) ) > 60, 'SEO-Titel: überlanger Name bleibt vollständig' );
+$keep_id = wp_insert_post( array( 'post_type' => ADM_Profiles::CPT, 'post_status' => 'publish', 'post_title' => 'Keep' ) );
+$fit_id  = wp_insert_post( array( 'post_type' => ADM_Profiles::CPT, 'post_status' => 'publish', 'post_title' => 'Fit' ) );
+update_post_meta( $fit_id, 'rank_math_title', 'Visitor Tracking ohne Abo (Lifetime Deal): Funktionen und Alternativen' );
+update_post_meta( $keep_id, 'rank_math_title', 'Mein eigener, sehr langer SEO-Titel für dieses Tool, von Hand gesetzt' );
+delete_option( 'adm_seo_titles_fit' );
+ADM_Profiles::maybe_fit_titles();
+adm_check( 'Visitor Tracking ohne Abo: Funktionen und Alternativen' === get_post_meta( $fit_id, 'rank_math_title', true ), 'SEO-Titel: bestehender Vorlagen-Titel gekürzt' );
+adm_check( 0 === strpos( get_post_meta( $keep_id, 'rank_math_title', true ), 'Mein eigener' ), 'SEO-Titel: von Hand gesetzter Titel bleibt' );
+adm_check( '1' === get_option( 'adm_seo_titles_fit' ), 'SEO-Titel: Kürzung läuft nur einmal' );
+wp_delete_post( $keep_id, true );
+wp_delete_post( $fit_id, true );
+
+// Beschreibung der Übersicht: am Wortende gekürzt, ab Seite 2 mit Seitenzahl
+$cut = ADM_Archive::cut( str_repeat( 'Wort ', 50 ), 160 );
+adm_check( mb_strlen( $cut ) <= 160 && '…' === mb_substr( $cut, -1 ) && 'Wort…' === mb_substr( $cut, -5 ), 'Beschreibung: Kürzung am Wortende' );
+adm_check( 'kurz' === ADM_Archive::cut( 'kurz', 160 ), 'Beschreibung: kurze Texte bleiben' );
+$GLOBALS['wp_query']->is_post_type_archive = true;
+$GLOBALS['wp_query']->query_vars['post_type'] = ADM_Profiles::CPT;
+set_query_var( 'paged', 2 );
+$d2 = ADM_Archive::meta_description( '' );
+set_query_var( 'paged', 0 );
+$d1 = ADM_Archive::meta_description( '' );
+adm_check( 0 === strpos( $d2, 'Seite 2: ' ) && $d1 !== $d2 && '' !== $d1, 'Beschreibung: Seite 2 unterscheidet sich von Seite 1' );
+$GLOBALS['wp_query']->is_post_type_archive = false;
 
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );

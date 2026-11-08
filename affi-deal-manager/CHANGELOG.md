@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.13.4 (08.11.2026)
+
+- SEO-Titel der Tool-Profile höchstens 60 Zeichen: Ist die Vorlage zu lang, nimmt das Plugin eine kürzere Fassung. Bestehende Profile, deren Titel noch der Vorlage entspricht, werden einmalig gekürzt; von Hand gesetzte Titel bleiben
+- Übersichten: Ab Seite 2 beginnt die Meta-Beschreibung mit „Seite 2:“ usw., damit sie sich von Seite 1 unterscheidet. Lange Beschreibungen werden am Wortende gekürzt
+
 ## 0.13.3 (08.11.2026)
 
 - Newsletter: Hinweis unter dem Formular ohne Nennung des Versanddienstes

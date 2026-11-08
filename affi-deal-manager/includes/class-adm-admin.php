@@ -411,7 +411,7 @@ class ADM_Admin {
 					self::model_suggestions();
 					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
 					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
-					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Möglichst unter 60 Zeichen.' );
+					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Ist der Titel länger als 60 Zeichen, nimmt das Plugin eine kürzere Fassung.' );
 					self::field( 'batch_profiles', 'Anzahl beim Sammelknopf', $s, '1 bis 50 kaufbare Software-Deals mit den meisten Bewertungen.', 'number' );
 					self::field( 'reviews_newest', 'Neueste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
 					self::field( 'reviews_critical', 'Kritischste Bewertungen auswerten', $s, '0 bis 100.', 'number' );

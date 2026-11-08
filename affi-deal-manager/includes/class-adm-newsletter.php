@@ -92,7 +92,7 @@ class ADM_Newsletter {
 		$out .= '<input class="adm-nl__email" id="' . esc_attr( $id ) . '-e" type="email" name="email" required autocomplete="email" placeholder="deine@e-mail.de">';
 		$out .= '<button class="adm-btn adm-nl__btn" type="submit">Anmelden</button></form>';
 		$out .= '<p class="adm-nl__msg" role="status" aria-live="polite"></p>';
-		$out .= '<p class="adm-nl__small">Du bekommst zuerst eine E-Mail zur Bestätigung. Versand über SendFox (USA), Abmeldung jederzeit über den Link in jeder E-Mail.' . ( $priv ? ' Mehr dazu in der <a href="' . esc_url( $priv ) . '">Datenschutzerklärung</a>.' : '' ) . '</p>';
+		$out .= '<p class="adm-nl__small">Du bekommst zuerst eine E-Mail zur Bestätigung. Abmelden kannst du dich jederzeit über den Link in jeder E-Mail.' . ( $priv ? ' Mehr dazu in der <a href="' . esc_url( $priv ) . '">Datenschutzerklärung</a>.' : '' ) . '</p>';
 		return $out . '</section>';
 	}
 

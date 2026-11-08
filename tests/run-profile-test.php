@@ -744,7 +744,7 @@ $nl_mock  = function ( $pre, $args, $url ) use ( &$nl_calls, &$nl_fail ) {
 };
 add_filter( 'pre_http_request', $nl_mock, 5, 3 );
 $nlh = do_shortcode( '[adm_newsletter]' );
-adm_check( false !== strpos( $nlh, 'adm-nl__form' ) && false !== strpos( $nlh, 'name="website"' ) && false !== strpos( $nlh, 'SendFox (USA)' ) && false !== strpos( $nlh, 'admin-post.php' ) && false === strpos( $nlh, 'sendfox.com/js' ), 'Newsletter: eigenes Formular ohne fremdes Skript, mit Hinweis' );
+adm_check( false !== strpos( $nlh, 'adm-nl__form' ) && false !== strpos( $nlh, 'name="website"' ) && false !== strpos( $nlh, 'zur Bestätigung' ) && false === strpos( $nlh, 'SendFox' ) && false !== strpos( $nlh, 'admin-post.php' ) && false === strpos( $nlh, 'sendfox.com/js' ), 'Newsletter: eigenes Formular ohne fremdes Skript, mit Hinweis' );
 $sign = new ReflectionMethod( 'ADM_Newsletter', 'sign' );
 $sign->setAccessible( true );
 $old  = time() - 30;

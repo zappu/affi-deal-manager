@@ -615,6 +615,7 @@ delete_option( ADM_Stats::OPTION );
 wp_update_post( array( 'ID' => (int) $lo10['post_id'], 'post_status' => 'draft' ) );
 
 // Aktionsbanner (Impact Ads), nur nach Freigabe
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'banners' => 1 ) ) );
 $png = ( function () {
 	$im = imagecreatetruecolor( 1216, 381 );
 	imagefill( $im, 0, 0, imagecolorallocate( $im, 20, 20, 20 ) );
@@ -669,6 +670,56 @@ adm_check( '' === ADM_Banners::html( 'home' ), 'Banner: beendet verschwindet' );
 remove_filter( 'pre_http_request', $ban_mock, 5 );
 remove_filter( 'pre_wp_mail', $bmail_cb, 10 );
 delete_option( ADM_Banners::OPTION );
+
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'banners' => 0 ) ) );
+adm_check( ! ADM_Banners::enabled() && '' === ADM_Banners::html( 'home' ), 'Banner: Schalter aus, nichts auf der Seite' );
+
+// Eigene Aktion (Tipp-Kasten)
+$lo12 = adm_get_deal( 'leadocean' );
+$nw12 = adm_get_deal( 'neuronwriter' );
+wp_update_post( array( 'ID' => (int) $lo12['post_id'], 'post_status' => 'publish' ) );
+$rub12 = ADM_Rubrics::for_deal( $lo12 );
+$spot_mock = function ( $pre, $args, $url ) use ( $png ) {
+	if ( 0 === strpos( $url, 'https://a.impactradius-go.com/' ) ) {
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $png, 'headers' => array( 'content-type' => 'image/png' ), 'cookies' => array() );
+	}
+	if ( 0 !== strpos( $url, 'https://api.impact.com/' ) ) {
+		return $pre;
+	}
+	$camp = false !== strpos( $url, '/Ads/556' ) ? '9999' : '7443';
+	$body = array( 'Id' => false !== strpos( $url, '/Ads/556' ) ? '556' : '555', 'Name' => 'LeadOcean', 'CampaignId' => $camp, 'Type' => 'BANNER', 'Width' => '300', 'Height' => '250', 'LandingPageUrl' => 'https://appsumo.com/leadocean/', 'CreativeUrl' => '//a.impactradius-go.com/display-ad/7443-555' );
+	return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( $body ), 'headers' => array(), 'cookies' => array() );
+};
+add_filter( 'pre_http_request', $spot_mock, 5, 3 );
+adm_check( '' === ADM_Spotlight::html( 'home' ) && '' === do_shortcode( '[adm_spotlight]' ), 'Eigene Aktion: ohne Einträge nichts' );
+$sp12 = ADM_Spotlight::save( array( 'label' => 'Tipp', 'until' => wp_date( 'Y-m-d', time() + 5 * DAY_IN_SECONDS ), 'items' => array(
+	array( 'deal' => 'leadocean', 'instead' => 'Apollo', 'text' => 'Leads finden ohne Monatsabo.', 'code' => 'TEST1', 'guide' => '' ),
+	array( 'deal' => 'gibt-es-nicht', 'instead' => 'X' ),
+) ) );
+$h12 = ADM_Spotlight::html( 'home' );
+adm_check( 1 === count( $sp12['items'] ) && false !== strpos( $h12, 'adm-spot' ) && false !== strpos( $h12, 'statt Apollo' ) && false !== strpos( $h12, 'subId1=tipp-leadocean' ) && false !== strpos( $h12, 'TEST1' ) && false !== strpos( $h12, 'sponsored nofollow' ) && false !== strpos( $h12, 'zufrieden' ) && false === strpos( $h12, 'adm-spot__img' ), 'Eigene Aktion: Karte mit Alternative, Code, Werbelink, ohne Bild' );
+adm_check( false !== strpos( do_shortcode( '[adm_promos]' ), 'adm-spot' ), 'Eigene Aktion: oben auf der Startseite über [adm_promos]' );
+$bx12 = do_shortcode( '[adm_deal_box deal="leadocean"]' );
+adm_check( false !== strpos( $bx12, 'TEST1' ) && false === strpos( $bx12, 'adm-spot--side' ), 'Eigene Aktion: im eigenen Profil nur der Code' );
+adm_check( '' !== $rub12 && false !== strpos( ADM_Spotlight::html( 'rubric', $rub12 ), 'adm-spot--rubric' ) && '' === ADM_Spotlight::html( 'rubric', 'gibt-es-nicht' ), 'Eigene Aktion: in der Übersicht der eigenen Rubrik' );
+adm_check( false !== strpos( ADM_Spotlight::html( 'side', $rub12, (int) $nw12['id'] ), 'adm-spot--side' ) && '' === ADM_Spotlight::html( 'side', $rub12, (int) $lo12['id'] ), 'Eigene Aktion: im Deal-Kasten anderer Profile der Rubrik' );
+adm_check( 0 === strpos( ADM_Stats::label( 'tipp-leadocean' )[0], 'Eigene Aktion: LeadOcean' ), 'Eigene Aktion: eigene Zeile in den Einnahmen' );
+$sp12b = ADM_Spotlight::save( array( 'until' => wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ), 'items' => array( array( 'deal' => 'leadocean', 'banner' => '555' ), array( 'deal' => 'neuronwriter', 'banner' => '556' ) ) ) );
+$h12b = ADM_Spotlight::html( 'home' );
+adm_check( $sp12b['items'][0]['att'] > 0 && '' === $sp12b['items'][0]['berr'] && false !== strpos( $h12b, 'adm-spot__img' ) && false !== strpos( $h12b, '/555/7443?u=' ) && false !== strpos( $h12b, 'subId1=tipp-leadocean' ) && false === strpos( $h12b, 'impactradius' ), 'Eigene Aktion: Banner aus Impact, Bild lokal, Klick über den Banner' );
+adm_check( 0 === (int) $sp12b['items'][1]['att'] && false !== strpos( $sp12b['items'][1]['berr'], 'kein Banner des AppSumo-Programms' ), 'Eigene Aktion: fremder Banner abgelehnt' );
+$att12 = $sp12b['items'][0]['att'];
+$sp12c = ADM_Spotlight::save( array( 'until' => wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ), 'items' => array( array( 'deal' => 'leadocean', 'banner' => '555' ) ) ) );
+adm_check( $att12 === $sp12c['items'][0]['att'], 'Eigene Aktion: gleicher Banner wird nicht erneut geladen' );
+ob_start();
+ADM_Stats::page();
+$sp12p = ob_get_clean();
+adm_check( false !== strpos( $sp12p, 'Eigene Aktion' ) && false !== strpos( $sp12p, 'name="spot[items][0][banner]"' ) && false !== strpos( $sp12p, 'Ausgeschaltet' ), 'Eigene Aktion: Formular im Reiter Einnahmen, Banner aus' );
+ADM_Spotlight::save( array( 'until' => wp_date( 'Y-m-d', time() - 2 * DAY_IN_SECONDS ), 'items' => array( array( 'deal' => 'leadocean' ) ) ) );
+adm_check( '' === ADM_Spotlight::html( 'home' ) && '' === ADM_Spotlight::code_html( $lo12 ), 'Eigene Aktion: nach dem Ende verschwunden' );
+remove_filter( 'pre_http_request', $spot_mock, 5 );
+delete_option( ADM_Spotlight::OPTION );
+wp_update_post( array( 'ID' => (int) $lo12['post_id'], 'post_status' => 'draft' ) );
 
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );

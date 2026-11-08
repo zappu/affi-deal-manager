@@ -264,7 +264,7 @@ class ADM_Shortcodes {
 		if ( '' !== $amount ) {
 			$out .= '<p class="adm-box__price">' . esc_html( $amount ) . ( '' !== $unit ? ' <small>' . esc_html( $unit ) . '</small>' : '' ) . '</p>';
 		}
-		$out .= ADM_Promos::box_html( $deal );
+		$out .= ADM_Promos::box_html( $deal ) . ADM_Spotlight::code_html( $deal );
 		$facts = array_filter( array(
 			'' !== self::rating( $deal ) ? '★ ' . number_format_i18n( (float) $deal['rating'], 1 ) . ' von 5 bei ' . number_format_i18n( (int) $deal['review_count'] ) . ' Bewertungen auf AppSumo' : '',
 			$deal['return_days'] ? (int) $deal['return_days'] . ' Tage Rückgabe bei AppSumo' : '',
@@ -291,7 +291,7 @@ class ADM_Shortcodes {
 		// Der Werbehinweis steht zentral im Footer; der Kasten zeigt nur den Stand. Per Filter wieder einschaltbar.
 		$note = (string) apply_filters( 'adm_box_note', '' );
 		$out .= '<p class="adm-box__small">' . esc_html( trim( self::checked( $deal ) . '.' . ( '' !== $note ? ' ' . $note : '' ) ) ) . '</p>';
-		return $out . ADM_Banners::html( 'side' ) . '</aside>';
+		return $out . ADM_Spotlight::html( 'side', ADM_Rubrics::for_deal( $deal ), (int) $deal['id'] ) . ADM_Banners::html( 'side' ) . '</aside>';
 	}
 
 	/* ---------------- Sprungmenü ---------------- */

@@ -10,7 +10,7 @@ global $wpdb;
 $wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'adm_deals' ); // phpcs:ignore WordPress.DB
 
 // Tool-Profile (Beiträge) bleiben erhalten, sie sind redaktionelle Inhalte.
-foreach ( array( 'adm_settings', 'adm_db_version', 'adm_health', 'adm_sitemap_read', 'adm_sitemap_retry', 'adm_last_tick', 'adm_profile_queue', 'adm_profile_log', 'adm_profile_paused', 'adm_rewrite_version', 'adm_rubrics_version', 'adm_last_servercron', 'adm_profile_current', 'adm_video_queue', 'adm_profile_force', 'adm_shots_retry_v', 'adm_last_purge', 'adm_impact_test', 'adm_impact_query', 'adm_impact_stats', 'adm_impact_promos', 'adm_impact_promos_seen', 'adm_impact_banners' ) as $opt ) {
+foreach ( array( 'adm_settings', 'adm_db_version', 'adm_health', 'adm_sitemap_read', 'adm_sitemap_retry', 'adm_last_tick', 'adm_profile_queue', 'adm_profile_log', 'adm_profile_paused', 'adm_rewrite_version', 'adm_rubrics_version', 'adm_last_servercron', 'adm_profile_current', 'adm_video_queue', 'adm_profile_force', 'adm_shots_retry_v', 'adm_last_purge', 'adm_impact_test', 'adm_impact_query', 'adm_impact_stats', 'adm_impact_promos', 'adm_impact_promos_seen', 'adm_impact_banners', 'adm_spotlight' ) as $opt ) {
 	delete_option( $opt );
 }
 delete_transient( 'adm_sync_lock' );

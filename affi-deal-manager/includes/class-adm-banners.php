@@ -33,9 +33,14 @@ class ADM_Banners {
 		update_option( self::OPTION, $d, false );
 	}
 
+	/** Schalter in den Einstellungen (Standard: aus). */
+	public static function enabled() {
+		return (bool) ADM_Settings::get( 'banners' );
+	}
+
 	public static function maybe_refresh() {
 		$d = self::data();
-		if ( ADM_Impact::configured() && time() - (int) $d['time'] > self::EVERY ) {
+		if ( self::enabled() && ADM_Impact::configured() && time() - (int) $d['time'] > self::EVERY ) {
 			self::refresh();
 		}
 	}
@@ -167,7 +172,7 @@ class ADM_Banners {
 	}
 
 	/** Bild einmal in die Mediathek kopieren. @return int|WP_Error */
-	private static function import( array $b ) {
+	public static function import( array $b ) {
 		if ( '' === $b['creative'] ) {
 			return new WP_Error( 'adm_banner', 'Keine Bildadresse.' );
 		}
@@ -264,7 +269,7 @@ class ADM_Banners {
 	}
 
 	public static function html( $slot ) {
-		$b = self::current( $slot );
+		$b = self::enabled() ? self::current( $slot ) : null;
 		if ( ! $b ) {
 			return '';
 		}
@@ -279,6 +284,10 @@ class ADM_Banners {
 	public static function admin_table() {
 		$d = self::data();
 		echo '<h2 id="banner" style="margin-top:28px">Aktionsbanner von AppSumo</h2>';
+		if ( ! self::enabled() ) {
+			echo '<p>Ausgeschaltet (Einstellungen, Abschnitt Affiliate-Links). Kein Abruf, keine E-Mails, keine Banner auf der Seite.</p>';
+			return;
+		}
 		echo '<p>' . esc_html( $d['time'] ? 'Stand ' . wp_date( 'd.m.Y H:i', (int) $d['time'] ) . '. Neue Banner kommen per E-Mail, erscheinen aber erst nach Freigabe. Ende laut Impact, sonst nach ' . self::DAYS . ' Tagen.' : 'Noch nicht abgerufen.' ) . '</p>';
 		if ( '' !== $d['error'] ) {
 			echo '<div class="notice notice-warning inline"><p>' . esc_html( 'Impact meldet: ' . $d['error'] ) . '</p></div>';

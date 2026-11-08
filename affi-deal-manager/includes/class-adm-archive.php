@@ -175,6 +175,7 @@ class ADM_Archive {
 		$out .= '</div></div></header>';
 
 		$out .= self::rubric_nav( $term );
+		$out .= $term ? ADM_Spotlight::html( 'rubric', $term->slug ) : '';
 
 		if ( have_posts() ) {
 			$out .= '<div class="adm-cards">';

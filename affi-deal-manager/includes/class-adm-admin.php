@@ -308,6 +308,11 @@ class ADM_Admin {
 					self::field( 'tracking_host', 'Tracking-Domain', $s, '' );
 					ADM_Impact::settings_row();
 					?>
+					<tr>
+						<th scope="row">Aktionsbanner</th>
+						<td><label><input type="checkbox" name="adm[banners]" value="1" <?php checked( $s['banners'] ); ?>> Aktionsbanner von AppSumo bei Impact abrufen, per E-Mail melden und nach Freigabe anzeigen</label>
+						<p class="description">Aus: kein Abruf, keine E-Mails, freigegebene Banner verschwinden von der Seite. Eigene Hinweise ohne Bilder pflegst du im Reiter „Einnahmen“ unter „Eigene Aktion“.</p></td>
+					</tr>
 					<tr><th scope="row">Beispiel</th><td><code style="word-break:break-all"><?php echo esc_html( $example ); ?></code></td></tr>
 				</table>
 

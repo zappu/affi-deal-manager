@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.12.0 (08.11.2026)
+
+- Eigene Aktion im Reiter „Einnahmen“: bis zu vier Tools mit Enddatum, je mit Alternative („statt Calendly“), einer Zeile Text, Code, Ratgeber-Link und optional einem Banner aus Impact (Banner-ID). Erscheint oben auf der Startseite ([adm_promos] oder [adm_spotlight]), in der Übersicht der Rubrik des Tools und im Deal-Kasten anderer Profile derselben Rubrik; im eigenen Profil zeigt der Deal-Kasten den Code. Preis und Zufriedenheit live, Werbelinks mit subId1 `tipp-<deal>`, nach dem Ende verschwindet der Kasten und der Cache wird geleert (Klasse `ADM_Spotlight`)
+- Banner zur eigenen Aktion: Das Plugin prüft die ID über `Ads/<ID>` (nur Banner des AppSumo-Programms), holt das Bild einmal in die Mediathek und leitet den Klick über den Tracking-Link dieses Banners auf die aktuelle Produktseite
+- Aktionsbanner von Impact abschaltbar (Einstellungen, Affiliate-Links), Standard aus: kein Abruf, keine E-Mails, keine Anzeige
+
 ## 0.11.1 (07.11.2026)
 
 - Aktionsbanner nach Format verteilt: breite Banner (ab 700 px, mindestens 2,2 : 1) oben auf die Startseite, schmale Streifen (z. B. 420 × 116) über jede Bestenliste und die Übersicht der Bestenlisten, etwa 16 : 9 bis 1,2 : 1 (z. B. 500 × 285, 300 × 250) unter den Deal-Kasten. Hochformate wie 390 × 570 bekommen keinen Platz

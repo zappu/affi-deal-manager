@@ -225,7 +225,7 @@ class ADM_Promos {
 		$list = array_filter( self::active(), function ( $p ) use ( $atts ) {
 			return '' !== $atts['all'] || ! $p['products'];
 		} );
-		$banner = class_exists( 'ADM_Banners' ) ? ADM_Banners::html( 'home' ) : '';
+		$banner = ( class_exists( 'ADM_Spotlight' ) ? ADM_Spotlight::html( 'home' ) : '' ) . ( class_exists( 'ADM_Banners' ) ? ADM_Banners::html( 'home' ) : '' );
 		if ( ! $list && '' === $banner ) {
 			return '';
 		}

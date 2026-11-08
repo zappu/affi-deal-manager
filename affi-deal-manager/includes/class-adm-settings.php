@@ -109,6 +109,7 @@ class ADM_Settings {
 			'box_placement'         => 'content',
 			'screenshots'           => 1,
 			'gemini_model'          => 'gemini-3.6-flash',
+			'banners'               => 0,
 		);
 	}
 
@@ -190,6 +191,7 @@ class ADM_Settings {
 			'screenshots'           => empty( $in['screenshots'] ) ? 0 : 1,
 			'box_placement'         => isset( $in['box_placement'] ) && in_array( $in['box_placement'], array( 'content', 'sidebar' ), true ) ? $in['box_placement'] : $cur['box_placement'],
 			'video_summaries'       => array_key_exists( 'mode', $in ) ? ( empty( $in['video_summaries'] ) ? 0 : 1 ) : (int) $cur['video_summaries'],
+			'banners'               => array_key_exists( 'mode', $in ) ? ( empty( $in['banners'] ) ? 0 : 1 ) : (int) $cur['banners'],
 			'gemini_model'          => isset( $in['gemini_model'] ) && '' !== trim( (string) $in['gemini_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._\-]/', '', (string) $in['gemini_model'] ), 0, 80 ) : $cur['gemini_model'],
 		);
 		update_option( self::OPTION, $out, false );

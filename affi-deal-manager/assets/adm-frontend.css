@@ -251,3 +251,21 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-banner__ad{position:absolute;top:6px;right:8px;font-size:11px;line-height:1.4;background:rgba(23,33,43,.72);color:#fff;border-radius:6px;padding:1px 6px}
 .adm-banner--home{margin:0 0 4px}
 .adm-banner--list{margin:0 0 18px;max-width:440px}.adm-banner--list .adm-banner__img{border-radius:8px}.adm-banner--list .adm-banner__ad{top:4px;right:6px;font-size:10px}
+/* Eigene Aktion (Tipp-Kasten) */
+.adm-spot{background:var(--adm-card);border:1px solid var(--adm-line);border-radius:var(--adm-radius);padding:18px 20px;margin:0 0 20px;color:var(--adm-ink)}
+.adm-spot__label{margin:0 0 10px!important;font-size:.78em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--adm-accent)}
+.adm-spot__grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.adm-spot__item{display:flex;flex-direction:column;gap:6px;background:var(--adm-soft);border-radius:14px;padding:16px}
+.adm-spot__item p{margin:0!important}
+.adm-spot__banner{display:block;line-height:0;margin:0 0 6px;align-self:center;max-width:300px;width:100%}
+.adm-spot__img{display:block;width:100%;height:auto;border-radius:10px}
+.adm-spot__title{font-family:var(--adm-head-font);font-size:1.25em;font-weight:700;line-height:1.25}.adm-spot__title a{text-decoration:none}.adm-spot__title span{font-weight:500;color:var(--adm-muted)}
+.adm-spot__text{line-height:1.5}
+.adm-spot__facts{font-size:.88em;color:var(--adm-muted)}
+.adm-spot__code{font-size:.92em}
+.adm-spot__cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}.adm-spot__cta .adm-btn{flex:1 1 auto;margin:0}
+.adm-spot__more{align-self:center;font-size:.88em}
+.adm-spot--side{margin:16px 0 0;padding:14px 0 0;border:0;border-top:1px solid var(--adm-line);border-radius:0;background:none}
+.adm-spot--side .adm-spot__grid{grid-template-columns:1fr}.adm-spot--side .adm-spot__item{padding:12px}.adm-spot--side .adm-spot__title{font-size:1.05em}
+@media (max-width:600px){.adm-spot{padding:14px}}
+.adm-spot__item .adm-btn--quiet{background:var(--adm-card)}.adm-spot__item .adm-btn--quiet:hover{background:var(--adm-line)}

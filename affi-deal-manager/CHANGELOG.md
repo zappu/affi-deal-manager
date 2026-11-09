@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.15.2 (09.11.2026)
+
+- Vorschaubild beim Teilen: Ist das Beitragsbild ein WebP (Rubrikbilder), gibt Rank Math jetzt eine JPG-Kopie aus (einmal erzeugt, höchstens 1200 px breit, Datei `…-og.jpg` neben dem Original). LinkedIn zeigt WebP in der Link-Vorschau oft nicht an
+- Feed `/tools/feed/`: Ein neues Profil mit Hersteller-Website erscheint erst, wenn sein Screenshot da ist oder endgültig fehlschlägt, höchstens 24 Stunden später. So übernehmen Dienste wie Missinglettr gleich das richtige Bild (Filter `adm_feed_wait`)
+
 ## 0.15.1 (09.11.2026)
 
 - Neue Einstellung „Veröffentlichen“ im Reiter Tool-Profile: Neue Profile gehen sofort online statt als Entwurf, auch vorhandene Entwürfe beim Neuschreiben. Veröffentlichte Profile überschreibt das Plugin weiterhin nie von selbst. Standard aus

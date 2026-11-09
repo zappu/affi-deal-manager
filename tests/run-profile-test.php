@@ -897,6 +897,41 @@ update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'sitemap
 adm_check( true === apply_filters( 'rank_math/sitemap/enable_caching', true ), 'Sitemap: abschaltbar über die Einstellung' );
 update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'sitemap_live' => 1 ) ) );
 
+// Vorschaubild: WebP wird als JPG ausgegeben
+$up   = wp_upload_dir();
+$webp = $up['path'] . '/adm-test-rubrik.webp';
+$im   = imagecreatetruecolor( 1600, 900 );
+imagefill( $im, 0, 0, imagecolorallocate( $im, 11, 95, 103 ) );
+imagewebp( $im, $webp );
+imagedestroy( $im );
+$att = wp_insert_attachment( array( 'post_mime_type' => 'image/webp', 'post_title' => 'Rubrik Test', 'post_status' => 'inherit' ), $webp );
+$og  = ADM_Social::og_jpg( array( 'id' => $att, 'url' => $up['url'] . '/adm-test-rubrik.webp', 'width' => 1600, 'height' => 900, 'type' => 'image/webp' ) );
+adm_check( '.jpg' === substr( $og['url'], -4 ) && 'image/jpeg' === $og['type'] && 1200 === (int) $og['width'] && file_exists( preg_replace( '/\.webp$/', '-og.jpg', $webp ) ), 'Vorschaubild: WebP als JPG-Kopie, höchstens 1200 px breit' );
+$og2 = ADM_Social::og_jpg( array( 'url' => 'https://example.com/bild.jpg', 'type' => 'image/jpeg' ) );
+adm_check( 'https://example.com/bild.jpg' === $og2['url'], 'Vorschaubild: JPG bleibt unverändert' );
+
+// Feed wartet auf den Screenshot
+$fp  = wp_insert_post( array( 'post_type' => 'adm_tool', 'post_status' => 'publish', 'post_title' => 'Feedtest ohne Abo', 'post_name' => 'feedtest' ) );
+update_post_meta( $fp, ADM_Shots::META_SITE, 'https://feedtest.example' );
+update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'screenshots' => 1 ) ) );
+$feed_ids = function () {
+	$q = new WP_Query();
+	$GLOBALS['wp_the_query'] = $q;
+	$GLOBALS['wp_query']     = $q;
+	$q->query( array( 'post_type' => 'adm_tool', 'feed' => 'rss2', 'posts_per_page' => 50, 'fields' => 'ids' ) );
+	return array_map( 'intval', $q->posts );
+};
+adm_check( ! in_array( (int) $fp, $feed_ids(), true ), 'Feed: neues Profil ohne Screenshot wartet' );
+update_post_meta( $fp, ADM_Shots::META, $att );
+adm_check( in_array( (int) $fp, $feed_ids(), true ), 'Feed: mit Screenshot sofort im Feed' );
+delete_post_meta( $fp, ADM_Shots::META );
+wp_update_post( array( 'ID' => $fp, 'post_date' => gmdate( 'Y-m-d H:i:s', time() - 2 * DAY_IN_SECONDS ), 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() - 2 * DAY_IN_SECONDS ) ) );
+adm_check( in_array( (int) $fp, $feed_ids(), true ), 'Feed: nach 24 Stunden auch ohne Screenshot' );
+wp_update_post( array( 'ID' => $fp, 'post_date' => current_time( 'mysql' ), 'post_date_gmt' => current_time( 'mysql', true ) ) );
+delete_post_meta( $fp, ADM_Shots::META_SITE );
+adm_check( in_array( (int) $fp, $feed_ids(), true ), 'Feed: ohne Hersteller-Website kein Warten' );
+wp_delete_post( $fp, true );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

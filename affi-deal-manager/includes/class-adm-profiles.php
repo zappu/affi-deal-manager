@@ -25,6 +25,7 @@ class ADM_Profiles {
 	const AUTO_DAY   = 'adm_profile_auto_day';
 	const OWN_MONTH  = '_adm_owned';    // Monat des eigenen Kaufs, JJJJ-MM
 	const OWN_NOTE   = '_adm_own_note'; // eigene Erfahrung, ein, zwei Sätze
+	const OWN_USE    = '_adm_own_use';  // '1' = setzen wir selbst ein
 
 	/** Stilhinweise der letzten Erzeugung (für das Protokoll). */
 	private static $last_hints = array();
@@ -45,12 +46,13 @@ class ADM_Profiles {
 	}
 
 	public static function register() {
-		foreach ( array( self::OWN_MONTH => 'month', self::OWN_NOTE => 'note' ) as $key => $kind ) {
+		$clean = array( 'month' => 'clean_month', 'note' => 'clean_note', 'use' => 'clean_flag' );
+		foreach ( array( self::OWN_MONTH => 'month', self::OWN_NOTE => 'note', self::OWN_USE => 'use' ) as $key => $kind ) {
 			register_post_meta( self::CPT, $key, array(
 				'type'              => 'string',
 				'single'            => true,
 				'show_in_rest'      => true,
-				'sanitize_callback' => 'month' === $kind ? array( __CLASS__, 'clean_month' ) : array( __CLASS__, 'clean_note' ),
+				'sanitize_callback' => array( __CLASS__, $clean[ $kind ] ),
 				'auth_callback'     => function ( $allowed, $meta_key, $post_id ) {
 					return current_user_can( 'edit_post', (int) $post_id );
 				},
@@ -217,7 +219,7 @@ class ADM_Profiles {
 
 	public static function meta_box() {
 		add_meta_box( 'adm-deal', 'Deal bei AppSumo', array( __CLASS__, 'render_meta_box' ), self::CPT, 'side', 'high' );
-		add_meta_box( 'adm-own', 'Selbst gekauft', array( __CLASS__, 'render_own_box' ), self::CPT, 'side', 'default' );
+		add_meta_box( 'adm-own', 'Selbst gekauft / im Einsatz', array( __CLASS__, 'render_own_box' ), self::CPT, 'side', 'default' );
 	}
 
 	/* ---------------- Selbst gekauft ---------------- */
@@ -232,6 +234,11 @@ class ADM_Profiles {
 	public static function clean_note( $v ) {
 		$v = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $v ) ) );
 		return function_exists( 'mb_substr' ) ? mb_substr( $v, 0, 600 ) : substr( $v, 0, 600 );
+	}
+
+	/** '1' oder leer. */
+	public static function clean_flag( $v ) {
+		return in_array( $v, array( 1, '1', true, 'true', 'on', 'yes' ), true ) ? '1' : '';
 	}
 
 	/** „September 2023“ aus „2023-09“. */
@@ -249,15 +256,39 @@ class ADM_Profiles {
 		return self::clean_month( get_post_meta( (int) $post_id, self::OWN_MONTH, true ) );
 	}
 
+	/** Setzen wir das Tool selbst ein? */
+	public static function in_use( $post_id ) {
+		return '1' === self::clean_flag( get_post_meta( (int) $post_id, self::OWN_USE, true ) );
+	}
+
+	/** Gibt es überhaupt eine eigene Angabe (Einsatz oder Kaufmonat)? */
+	public static function has_own( $post_id ) {
+		return self::in_use( $post_id ) || '' !== self::owned( $post_id );
+	}
+
+	/**
+	 * Überschrift und Zusatz des Hinweises.
+	 * Einsatz: „Setzen wir selbst ein“ + „Gekauft im September 2023“; nur Kauf: „Selbst gekauft“ + „im September 2023“.
+	 *
+	 * @return array{0:string,1:string} Leer, wenn es keine Angabe gibt.
+	 */
+	public static function own_label( $post_id ) {
+		$month = self::month_label( self::owned( $post_id ) );
+		if ( self::in_use( $post_id ) ) {
+			return array( 'Setzen wir selbst ein', '' !== $month ? 'Gekauft im ' . $month : '' );
+		}
+		return '' !== $month ? array( 'Selbst gekauft', 'im ' . $month ) : array( '', '' );
+	}
+
 	/** Hinweiskasten für das Profil. */
 	public static function owned_html( $post_id ) {
-		$month = self::owned( $post_id );
-		if ( '' === $month ) {
+		list( $title, $sub ) = self::own_label( $post_id );
+		if ( '' === $title ) {
 			return '';
 		}
 		$note = self::clean_note( get_post_meta( (int) $post_id, self::OWN_NOTE, true ) );
-		$out  = '<aside class="adm adm-own" aria-label="Selbst gekauft">';
-		$out .= '<p class="adm-own__title"><strong>Selbst gekauft</strong> im ' . esc_html( self::month_label( $month ) ) . '</p>';
+		$out  = '<aside class="adm adm-own' . ( self::in_use( $post_id ) ? ' adm-own--use' : '' ) . '" aria-label="' . esc_attr( $title ) . '">';
+		$out .= '<p class="adm-own__title"><span class="adm-own__check" aria-hidden="true">✓</span><strong>' . esc_html( $title ) . '</strong>' . ( '' !== $sub ? ' <span class="adm-own__sub">' . esc_html( $sub ) . '</span>' : '' ) . '</p>';
 		$out .= '' !== $note ? '<p class="adm-own__note">' . esc_html( $note ) . '</p>' : '';
 		$out .= '<p class="adm-own__small">Die Einschätzungen unten beruhen trotzdem auf Käuferbewertungen bei AppSumo und Videos, nicht auf einem eigenen Test.</p>';
 		return $out . '</aside>';
@@ -267,11 +298,12 @@ class ADM_Profiles {
 		wp_nonce_field( 'adm_own', 'adm_own_nonce' );
 		$month = self::owned( $post->ID );
 		$note  = (string) get_post_meta( $post->ID, self::OWN_NOTE, true );
+		echo '<p><label><input type="checkbox" name="adm_own_use" value="1"' . checked( self::in_use( $post->ID ), true, false ) . '> <strong>Setzen wir selbst ein</strong></label></p>';
 		echo '<p><label for="adm-own-month"><strong>Gekauft im</strong></label><br>';
 		echo '<input type="month" id="adm-own-month" name="adm_own_month" value="' . esc_attr( $month ) . '" style="width:100%"></p>';
 		echo '<p><label for="adm-own-note"><strong>Eigene Erfahrung (optional)</strong></label><br>';
 		echo '<textarea id="adm-own-note" name="adm_own_note" rows="4" class="widefat" maxlength="600">' . esc_textarea( $note ) . '</textarea></p>';
-		echo '<p class="description">Nur ausfüllen, wenn du das Tool wirklich gekauft hast. Das Profil zeigt dann „Selbst gekauft im …“ und deinen Text. Wird beim Neuschreiben des Profils nicht überschrieben.</p>';
+		echo '<p class="description">Nur ausfüllen, wenn es stimmt. Mit Haken zeigt das Profil „Setzen wir selbst ein“ im Kopf, über dem Text und im Kauf-Kasten, sonst mit Monat „Selbst gekauft im …“. Wird beim Neuschreiben des Profils nicht überschrieben.</p>';
 	}
 
 	public static function save_own_box( $post_id, $post ) {
@@ -283,10 +315,12 @@ class ADM_Profiles {
 		}
 		$month = self::clean_month( isset( $_POST['adm_own_month'] ) ? sanitize_text_field( wp_unslash( $_POST['adm_own_month'] ) ) : '' );
 		$note  = self::clean_note( isset( $_POST['adm_own_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['adm_own_note'] ) ) : '' );
-		$old   = self::owned( $post_id ) . '|' . get_post_meta( $post_id, self::OWN_NOTE, true );
+		$use   = empty( $_POST['adm_own_use'] ) ? '' : '1';
+		$old   = self::owned( $post_id ) . '|' . get_post_meta( $post_id, self::OWN_NOTE, true ) . '|' . ( self::in_use( $post_id ) ? '1' : '' );
 		'' !== $month ? update_post_meta( $post_id, self::OWN_MONTH, $month ) : delete_post_meta( $post_id, self::OWN_MONTH );
 		'' !== $note ? update_post_meta( $post_id, self::OWN_NOTE, $note ) : delete_post_meta( $post_id, self::OWN_NOTE );
-		if ( $old !== $month . '|' . $note && 'publish' === $post->post_status && class_exists( 'ADM_Cache' ) ) {
+		'' !== $use ? update_post_meta( $post_id, self::OWN_USE, '1' ) : delete_post_meta( $post_id, self::OWN_USE );
+		if ( $old !== $month . '|' . $note . '|' . $use && 'publish' === $post->post_status && class_exists( 'ADM_Cache' ) ) {
 			ADM_Cache::mark( $post_id );
 		}
 	}

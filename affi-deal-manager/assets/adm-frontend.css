@@ -286,6 +286,10 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-layout .adm-page__main .adm-nl{border:0}
 
 /* Selbst gekauft */
-.adm-chip--own{background:var(--adm-ink);color:#fff}
-.adm-own{background:var(--adm-card);border:1px solid var(--adm-line);border-left:5px solid var(--adm-lime);border-radius:var(--adm-radius);padding:14px 18px;margin:0 0 22px}
-.adm-own p{margin:0}.adm-own__note{margin-top:6px!important}.adm-own__small{margin-top:8px!important;font-size:.85em;color:var(--adm-muted)}
+.adm-chip--own{background:var(--adm-ink);color:#fff}.adm-chip--use{color:var(--adm-lime)}
+.adm-own{background:var(--adm-ink);color:#fff;border-radius:var(--adm-radius);padding:18px 22px;margin:0 0 22px}
+.adm-own p{margin:0;color:inherit}.adm-own__title{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:1.15em}.adm-own__title strong{font-family:var(--adm-head-font)}
+.adm-own__check,.adm-box__own-check{flex:none;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--adm-lime);color:var(--adm-ink);font-weight:700;font-size:.9em;line-height:1}
+.adm-own__sub{font-size:.8em;color:#c9d2d9}.adm-own__note{margin-top:10px!important;color:#e8edf0!important}.adm-own__small{margin-top:10px!important;font-size:.82em;color:#b8c3cc!important}
+.adm-box__own{display:flex;align-items:center;gap:10px;background:var(--adm-lime);color:var(--adm-ink);border-radius:12px;padding:10px 12px;margin:0 0 14px;line-height:1.3}
+.adm-box__own-check{background:var(--adm-ink);color:var(--adm-lime);width:26px;height:26px}.adm-box__own small{display:block;font-size:.8em;font-weight:500}

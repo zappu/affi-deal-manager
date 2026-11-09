@@ -102,6 +102,23 @@ class ADM_Shortcodes {
 		return $box . $content;
 	}
 
+	/** Zeile „Setzen wir selbst ein“ bzw. „Selbst gekauft im …“ im Deal-Kasten (nur wenn das Profil eine Angabe hat). */
+	private static function own_line( $deal ) {
+		$post_id = (int) $deal['post_id'];
+		if ( ! $post_id ) {
+			return '';
+		}
+		list( $title, $sub ) = ADM_Profiles::own_label( $post_id );
+		if ( '' === $title ) {
+			return '';
+		}
+		if ( ! ADM_Profiles::in_use( $post_id ) ) {
+			$title .= ' ' . $sub;
+			$sub    = '';
+		}
+		return '<p class="adm-box__own"><span class="adm-box__own-check" aria-hidden="true">✓</span><span><strong>' . esc_html( $title ) . '</strong>' . ( '' !== $sub ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</span></p>';
+	}
+
 	/** Hello Elementor: eigenen Seitentitel weglassen, der Kopfbereich bringt die H1 mit. */
 	public static function hide_theme_title( $show ) {
 		return self::layout_active() ? false : $show;
@@ -223,6 +240,12 @@ class ADM_Shortcodes {
 		if ( 'kaufbar' !== $deal['status'] ) {
 			$chips[] = '<span class="adm-chip adm-chip--off">' . esc_html( 'ausgelaufen' === $deal['status'] ? 'Ausgelaufen' : 'Nicht verfügbar' ) . '</span>';
 		}
+		// Eigene Angabe direkt hinter dem Preis, damit sie auffällt.
+		if ( ADM_Profiles::in_use( $post->ID ) ) {
+			$chips[] = '<span class="adm-chip adm-chip--own adm-chip--use"><span aria-hidden="true">✓ </span>Setzen wir selbst ein</span>';
+		} elseif ( '' !== ADM_Profiles::owned( $post->ID ) ) {
+			$chips[] = '<span class="adm-chip adm-chip--own">' . esc_html( 'Selbst gekauft ' . ADM_Profiles::month_label( ADM_Profiles::owned( $post->ID ) ) ) . '</span>';
+		}
 		if ( '' !== self::rating( $deal ) ) {
 			$chips[] = '<span class="adm-chip"><span aria-hidden="true">★ </span>' . esc_html( number_format_i18n( (float) $deal['rating'], 1 ) . ' / 5 bei ' . number_format_i18n( (int) $deal['review_count'] ) . ' Bewertungen' ) . '</span>';
 		}
@@ -231,9 +254,6 @@ class ADM_Shortcodes {
 		}
 		if ( $deal['return_days'] ) {
 			$chips[] = '<span class="adm-chip">' . esc_html( (int) $deal['return_days'] . ' Tage Rückgabe' ) . '</span>';
-		}
-		if ( '' !== ADM_Profiles::owned( $post->ID ) ) {
-			$chips[] = '<span class="adm-chip adm-chip--own">' . esc_html( 'Selbst gekauft ' . ADM_Profiles::month_label( ADM_Profiles::owned( $post->ID ) ) ) . '</span>';
 		}
 		if ( $term ) {
 			$chips[] = $term->count ? '<a class="adm-chip adm-chip--rubric" href="' . esc_url( get_term_link( $term ) ) . '">' . esc_html( $term->name ) . '</a>' : '<span class="adm-chip adm-chip--rubric">' . esc_html( $term->name ) . '</span>';
@@ -282,7 +302,7 @@ class ADM_Shortcodes {
 		if ( '' !== $amount ) {
 			$out .= '<p class="adm-box__price">' . esc_html( $amount ) . ( '' !== $unit ? ' <small>' . esc_html( $unit ) . '</small>' : '' ) . '</p>';
 		}
-		$out .= ADM_Promos::box_html( $deal ) . ADM_Spotlight::code_html( $deal );
+		$out .= self::own_line( $deal ) . ADM_Promos::box_html( $deal ) . ADM_Spotlight::code_html( $deal );
 		$facts = array_filter( array(
 			'' !== self::rating( $deal ) ? '★ ' . number_format_i18n( (float) $deal['rating'], 1 ) . ' von 5 bei ' . number_format_i18n( (int) $deal['review_count'] ) . ' Bewertungen auf AppSumo' : '',
 			$deal['return_days'] ? (int) $deal['return_days'] . ' Tage Rückgabe bei AppSumo' : '',

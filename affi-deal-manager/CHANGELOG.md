@@ -1,5 +1,11 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.15.3 (09.11.2026)
+
+- Artikel mit Deal (Seiten und Beiträge mit `[adm_deal_box deal="…"]` oder `[adm_link deal="…"]`): Läuft der Deal aus, steht über dem Artikel automatisch ein Hinweis „Angebot ausgelaufen“ mit dem Datum und einem Link zu kaufbaren Alternativen. Ist der Deal wieder kaufbar, verschwindet der Hinweis
+- E-Mail an die Störungsadresse, sobald ein Deal ausläuft, der in einem veröffentlichten Artikel steckt, mit Links zum Artikel und zum Bearbeiten
+- Deal-Kasten: „Kaufbare Alternativen ansehen“ führt außerhalb des eigenen Profils zum Abschnitt Alternativen im Profil (sonst zur Rubrik) statt zu einem Anker, den es auf der Seite nicht gibt
+
 ## 0.15.2 (09.11.2026)
 
 - Vorschaubild beim Teilen: Ist das Beitragsbild ein WebP (Rubrikbilder), gibt Rank Math jetzt eine JPG-Kopie aus (einmal erzeugt, höchstens 1200 px breit, Datei `…-og.jpg` neben dem Original). LinkedIn zeigt WebP in der Link-Vorschau oft nicht an

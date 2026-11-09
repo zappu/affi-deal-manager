@@ -932,6 +932,36 @@ delete_post_meta( $fp, ADM_Shots::META_SITE );
 adm_check( in_array( (int) $fp, $feed_ids(), true ), 'Feed: ohne Hersteller-Website kein Warten' );
 wp_delete_post( $fp, true );
 
+// Artikel mit Deal: Hinweis und E-Mail beim Auslaufen
+$lod  = ADM_DB::get( (int) $lo['id'] );
+$art  = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'LeadOcean statt Apollo', 'post_name' => 'leadocean-statt-apollo', 'post_content' => "<p>LeadOcean kostet einmal 49 $.</p>\n[adm_deal_box deal=\"leadocean\"]\n[adm_link deal=\"leadocean\"]LeadOcean ansehen[/adm_link]" ) );
+adm_check( array( 'leadocean' ) === ADM_Articles::deal_slugs( get_post_field( 'post_content', $art ) ), 'Artikel: Deal-Slug aus den Shortcodes erkannt' );
+adm_check( array( (int) $art ) === ADM_Articles::articles_for( 'leadocean' ), 'Artikel: Seite mit dem Deal gefunden' );
+$mails = array();
+add_filter( 'pre_wp_mail', function ( $r, $a ) use ( &$mails ) { $mails[] = $a; return true; }, 10, 2 );
+ADM_DB::update( (int) $lod['id'], array( 'status' => 'ausgelaufen' ) );
+do_action( 'adm_deal_status_changed', (int) $lod['id'], 'kaufbar', 'ausgelaufen' );
+adm_check( ADM_Articles::ended_at( (int) $lod['id'] ) > time() - 60, 'Artikel: Datum des Auslaufens gespeichert' );
+adm_check( 1 === count( $mails ) && false !== strpos( $mails[0]['subject'], 'Deal ausgelaufen' ) && false !== strpos( $mails[0]['message'], 'LeadOcean statt Apollo' ), 'Artikel: E-Mail mit dem betroffenen Artikel' );
+$aq = new WP_Query( array( 'page_id' => $art ) );
+$GLOBALS['wp_the_query'] = $aq;
+$GLOBALS['wp_query']     = $aq;
+$aq->the_post();
+$html = apply_filters( 'the_content', get_post_field( 'post_content', $art ) );
+adm_check( false !== strpos( $html, 'adm-ended' ) && false !== strpos( $html, 'nicht mehr als Lifetime-Deal erhältlich' ) && false !== strpos( $html, 'galten bis' ), 'Artikel: Hinweis über dem Text mit Datum' );
+adm_check( false === strpos( $html, 'href="#alternativen"' ), 'Artikel: kein Sprung zu einem Abschnitt, den es hier nicht gibt' );
+wp_reset_postdata();
+ADM_DB::update( (int) $lod['id'], array( 'status' => 'kaufbar' ) );
+do_action( 'adm_deal_status_changed', (int) $lod['id'], 'ausgelaufen', 'kaufbar' );
+adm_check( 0 === ADM_Articles::ended_at( (int) $lod['id'] ) && 1 === count( $mails ), 'Artikel: wieder kaufbar, Datum entfernt, keine weitere E-Mail' );
+$aq = new WP_Query( array( 'page_id' => $art ) );
+$GLOBALS['wp_the_query'] = $aq;
+$GLOBALS['wp_query']     = $aq;
+$aq->the_post();
+adm_check( false === strpos( apply_filters( 'the_content', get_post_field( 'post_content', $art ) ), 'adm-ended' ), 'Artikel: kaufbarer Deal ohne Hinweis' );
+wp_reset_postdata();
+wp_delete_post( $art, true );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

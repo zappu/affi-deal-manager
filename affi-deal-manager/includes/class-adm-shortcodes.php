@@ -149,6 +149,11 @@ class ADM_Shortcodes {
 		return $classes;
 	}
 
+	/** Stylesheet für andere Klassen des Plugins einbinden. */
+	public static function enqueue_assets() {
+		self::assets();
+	}
+
 	/** Stylesheet auch außerhalb der Profile, sobald ein Baustein benutzt wird. */
 	private static function assets() {
 		if ( ! wp_style_is( 'adm-frontend', 'registered' ) ) {
@@ -313,8 +318,8 @@ class ADM_Shortcodes {
 		}
 		if ( 'kaufbar' === $deal['status'] ) {
 			$out .= '<a class="adm-btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zum Angebot bei AppSumo' . $mark . '</a>';
-		} elseif ( self::find_alternatives( $deal, 1 ) ) {
-			$out .= '<a class="adm-btn" href="#alternativen">Kaufbare Alternativen ansehen</a>';
+		} elseif ( self::find_alternatives( $deal, 1 ) && '' !== ( $alt = ADM_Articles::alternatives_url( $deal ) ) ) {
+			$out .= '<a class="adm-btn" href="' . esc_url( $alt ) . '">Kaufbare Alternativen ansehen</a>';
 			$out .= '<a class="adm-btn adm-btn--quiet" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a>';
 		} else {
 			$out .= '<a class="adm-btn" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Zur Warteliste bei AppSumo' . $mark . '</a>';

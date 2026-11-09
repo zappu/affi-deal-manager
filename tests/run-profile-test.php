@@ -860,7 +860,6 @@ adm_check( false !== strpos( $own, '<strong>Selbst gekauft und genutzt</strong> 
 $GLOBALS['post'] = $post;
 setup_postdata( $post );
 $hd2 = do_shortcode( '[adm_deal_header]' );
-adm_check( false !== strpos( $hd2, 'Text mit KI erstellt' ), 'Kopfbereich: Hinweis „Text mit KI erstellt“' );
 adm_check( false !== strpos( $hd2, 'adm-chip--own' ) && false !== strpos( $hd2, 'Selbst gekauft und genutzt' ), 'Selbst gekauft: Hinweis im Kopfbereich' );
 $box1 = do_shortcode( '[adm_deal_box placement="sidebar"]' );
 adm_check( false !== strpos( $box1, 'adm-box__own' ) && false !== strpos( $box1, '<strong>Selbst gekauft und genutzt</strong><small>Im September 2023</small>' ) && false === strpos( $box1, 'Setzen wir selbst ein' ), 'Selbst gekauft: Zeile im Deal-Kasten' );

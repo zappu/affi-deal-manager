@@ -1,9 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
-## 0.15.0 (09.11.2026)
+## 0.15.1 (09.11.2026)
 
 - Neue Einstellung „Veröffentlichen“ im Reiter Tool-Profile: Neue Profile gehen sofort online statt als Entwurf, auch vorhandene Entwürfe beim Neuschreiben. Veröffentlichte Profile überschreibt das Plugin weiterhin nie von selbst. Standard aus
-- Kopfbereich jedes Profils: „Stand … · Text mit KI erstellt“, verlinkt auf die Seite „So arbeiten wir“ (Filter `adm_ai_note`)
+- (0.15.0 wurde nicht veröffentlicht)
 
 ## 0.14.3 (09.11.2026)
 

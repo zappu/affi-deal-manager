@@ -316,7 +316,7 @@ class ADM_Admin {
 					<tr>
 						<th scope="row">Veröffentlichen</th>
 						<td><label><input type="checkbox" name="adm[auto_publish]" value="1" <?php checked( $s['auto_publish'] ); ?>> Neue Profile sofort veröffentlichen statt als Entwurf anlegen</label>
-						<p class="description">Gilt auch für vorhandene Entwürfe, die neu geschrieben werden. Bereits veröffentlichte Profile überschreibt das Plugin weiterhin nie von selbst. Jedes Profil zeigt oben „Text mit KI erstellt“.</p></td>
+						<p class="description">Gilt auch für vorhandene Entwürfe, die neu geschrieben werden. Bereits veröffentlichte Profile überschreibt das Plugin weiterhin nie von selbst.</p></td>
 					</tr>
 					<?php
 					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );

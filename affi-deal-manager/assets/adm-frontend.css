@@ -21,7 +21,7 @@ body:not(.adm-layout) .adm-sec,body:not(.adm-layout) .adm-glance{border:1px soli
 .adm-head__body{flex:999 1 420px;min-width:0}
 .adm-head h1{font-family:var(--adm-head-font);font-size:2.3em;line-height:1.12;font-weight:700;letter-spacing:-.02em;margin:0 0 8px;color:var(--adm-ink)}
 .adm-head__lead{font-size:1.1em;line-height:1.5;color:#3b4651;margin:0 0 16px}
-.adm-head__meta{font-size:.82em;color:var(--adm-muted);margin:12px 4px 20px}.adm-head__meta a{color:inherit!important;text-decoration:underline}
+.adm-head__meta{font-size:.82em;color:var(--adm-muted);margin:12px 4px 20px}
 .adm-chips{display:flex;flex-wrap:wrap;gap:8px;font-size:.88em;font-weight:600}
 .adm-chip{padding:6px 12px;border-radius:999px;background:var(--adm-bg);color:var(--adm-ink);text-decoration:none}
 .adm-chip--price{background:var(--adm-lime)}.adm-chip--rubric{background:#e3f0f1;color:var(--adm-accent)!important}.adm-chip--off{background:#f4dcd3;color:var(--adm-con)}

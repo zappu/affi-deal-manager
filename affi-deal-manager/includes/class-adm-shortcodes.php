@@ -102,14 +102,6 @@ class ADM_Shortcodes {
 		return $box . $content;
 	}
 
-	/** Hinweis „Text mit KI erstellt“, verlinkt auf die Seite „So arbeiten wir“, falls es sie gibt (Filter adm_ai_note). */
-	private static function ai_note() {
-		$page = get_page_by_path( 'so-arbeiten-wir' );
-		$text = 'Text mit KI erstellt';
-		$html = $page && 'publish' === $page->post_status ? '<a href="' . esc_url( get_permalink( $page ) ) . '">' . esc_html( $text ) . '</a>' : esc_html( $text );
-		return (string) apply_filters( 'adm_ai_note', $html );
-	}
-
 	/** Zeile „Setzen wir selbst ein“ bzw. „Selbst gekauft und genutzt“ im Deal-Kasten (nur wenn das Profil eine Angabe hat). */
 	private static function own_line( $deal ) {
 		$post_id = (int) $deal['post_id'];
@@ -266,7 +258,6 @@ class ADM_Shortcodes {
 		$gen    = (int) get_post_meta( $post->ID, '_adm_generated', true );
 		$meta   = array_filter( array(
 			$gen ? esc_html( 'Stand ' . wp_date( 'd.m.Y', $gen ) ) : '',
-			$gen ? self::ai_note() : '',
 		) );
 		$lead = has_excerpt( $post ) ? get_the_excerpt( $post ) : $deal['description'];
 

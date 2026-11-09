@@ -268,7 +268,7 @@ class ADM_Profiles {
 
 	/**
 	 * Überschrift und Zusatz des Hinweises.
-	 * Einsatz: „Setzen wir selbst ein“ + „Gekauft im September 2023“; nur Kauf: „Selbst gekauft“ + „im September 2023“.
+	 * Einsatz: „Setzen wir selbst ein“ + „Gekauft im September 2023“; nur Kauf: „Selbst gekauft und genutzt“ + „im September 2023“.
 	 *
 	 * @return array{0:string,1:string} Leer, wenn es keine Angabe gibt.
 	 */
@@ -277,7 +277,7 @@ class ADM_Profiles {
 		if ( self::in_use( $post_id ) ) {
 			return array( 'Setzen wir selbst ein', '' !== $month ? 'Gekauft im ' . $month : '' );
 		}
-		return '' !== $month ? array( 'Selbst gekauft', 'im ' . $month ) : array( '', '' );
+		return '' !== $month ? array( 'Selbst gekauft und genutzt', 'im ' . $month ) : array( '', '' );
 	}
 
 	/** Hinweiskasten für das Profil. */
@@ -303,7 +303,7 @@ class ADM_Profiles {
 		echo '<input type="month" id="adm-own-month" name="adm_own_month" value="' . esc_attr( $month ) . '" style="width:100%"></p>';
 		echo '<p><label for="adm-own-note"><strong>Eigene Erfahrung (optional)</strong></label><br>';
 		echo '<textarea id="adm-own-note" name="adm_own_note" rows="4" class="widefat" maxlength="600">' . esc_textarea( $note ) . '</textarea></p>';
-		echo '<p class="description">Nur ausfüllen, wenn es stimmt. Mit Haken zeigt das Profil „Setzen wir selbst ein“ im Kopf, über dem Text und im Kauf-Kasten, sonst mit Monat „Selbst gekauft im …“. Wird beim Neuschreiben des Profils nicht überschrieben.</p>';
+		echo '<p class="description">Nur ausfüllen, wenn es stimmt. Mit Haken zeigt das Profil „Setzen wir selbst ein“ im Kopf, über dem Text und im Kauf-Kasten, sonst mit Monat „Selbst gekauft und genutzt im …“. Wird beim Neuschreiben des Profils nicht überschrieben.</p>';
 	}
 
 	public static function save_own_box( $post_id, $post ) {

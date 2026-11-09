@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.14.2 (09.11.2026)
+
+- Ohne Haken „Setzen wir selbst ein“, nur mit Kaufmonat, heißt der Hinweis jetzt „Selbst gekauft und genutzt“ und ist genauso auffällig: Chip mit Haken hinter dem Preis, dunkler Kasten über dem Text, grüne Zeile im Deal-Kasten mit „Im September 2023“ darunter
+
 ## 0.14.1 (09.11.2026)
 
 - Neuer Haken „Setzen wir selbst ein“ im Kasten „Selbst gekauft / im Einsatz“ (Meta `_adm_own_use`, auch über die REST-API). Ist er gesetzt, zeigt das Profil den Hinweis gut sichtbar an drei Stellen: als Chip direkt hinter dem Preis im Kopfbereich, als dunkler Kasten mit Haken oben im Text (mit Kaufmonat, falls angegeben) und als grüne Zeile im Deal-Kasten rechts bzw. auf dem Handy. Der Kaufmonat ist dafür nicht nötig

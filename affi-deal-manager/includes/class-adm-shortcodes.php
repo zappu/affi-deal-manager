@@ -102,7 +102,7 @@ class ADM_Shortcodes {
 		return $box . $content;
 	}
 
-	/** Zeile „Setzen wir selbst ein“ bzw. „Selbst gekauft im …“ im Deal-Kasten (nur wenn das Profil eine Angabe hat). */
+	/** Zeile „Setzen wir selbst ein“ bzw. „Selbst gekauft und genutzt“ im Deal-Kasten (nur wenn das Profil eine Angabe hat). */
 	private static function own_line( $deal ) {
 		$post_id = (int) $deal['post_id'];
 		if ( ! $post_id ) {
@@ -112,10 +112,7 @@ class ADM_Shortcodes {
 		if ( '' === $title ) {
 			return '';
 		}
-		if ( ! ADM_Profiles::in_use( $post_id ) ) {
-			$title .= ' ' . $sub;
-			$sub    = '';
-		}
+		$sub = '' !== $sub ? ucfirst( $sub ) : '';
 		return '<p class="adm-box__own"><span class="adm-box__own-check" aria-hidden="true">✓</span><span><strong>' . esc_html( $title ) . '</strong>' . ( '' !== $sub ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</span></p>';
 	}
 
@@ -244,7 +241,7 @@ class ADM_Shortcodes {
 		if ( ADM_Profiles::in_use( $post->ID ) ) {
 			$chips[] = '<span class="adm-chip adm-chip--own adm-chip--use"><span aria-hidden="true">✓ </span>Setzen wir selbst ein</span>';
 		} elseif ( '' !== ADM_Profiles::owned( $post->ID ) ) {
-			$chips[] = '<span class="adm-chip adm-chip--own">' . esc_html( 'Selbst gekauft ' . ADM_Profiles::month_label( ADM_Profiles::owned( $post->ID ) ) ) . '</span>';
+			$chips[] = '<span class="adm-chip adm-chip--own adm-chip--use"><span aria-hidden="true">✓ </span>Selbst gekauft und genutzt</span>';
 		}
 		if ( '' !== self::rating( $deal ) ) {
 			$chips[] = '<span class="adm-chip"><span aria-hidden="true">★ </span>' . esc_html( number_format_i18n( (float) $deal['rating'], 1 ) . ' / 5 bei ' . number_format_i18n( (int) $deal['review_count'] ) . ' Bewertungen' ) . '</span>';

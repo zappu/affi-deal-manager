@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.14.3 (09.11.2026)
+
+- Rank Math erzeugt die Sitemaps jetzt bei jedem Abruf frisch, statt sie als Dateien zwischenzuspeichern (Filter `rank_math/sitemap/enable_caching`). Der Datei-Cache von Rank Math wurde nicht mehr erneuert, neue Profile und Seiten fehlten in der Sitemap. Schalter „Sitemap“ im Reiter Tool-Profile, Standard an
+
 ## 0.14.2 (09.11.2026)
 
 - Ohne Haken „Setzen wir selbst ein“, nur mit Kaufmonat, heißt der Hinweis jetzt „Selbst gekauft und genutzt“ und ist genauso auffällig: Chip mit Haken hinter dem Preis, dunkler Kasten über dem Text, grüne Zeile im Deal-Kasten mit „Im September 2023“ darunter

@@ -333,6 +333,11 @@ class ADM_Admin {
 						<td><label><input type="checkbox" name="adm[screenshots]" value="1" <?php checked( $s['screenshots'] ); ?>> Startseite des Herstellers als Produktbild aufnehmen</label>
 						<p class="description">Der Screenshot entsteht beim Dienst mShots von WordPress.com und wird in der Mediathek gespeichert; Besucher laden nur das eigene Bild. Pro Abgleichschritt höchstens drei. Noch offen: <?php echo (int) count( ADM_Shots::pending( 200 ) ); ?>.</p></td>
 					</tr>
+					<tr>
+						<th scope="row">Sitemap</th>
+						<td><label><input type="checkbox" name="adm[sitemap_live]" value="1" <?php checked( $s['sitemap_live'] ); ?>> Sitemap von Rank Math bei jedem Abruf frisch erzeugen</label>
+						<p class="description">Rank Math speichert die Sitemaps sonst als Dateien zwischen und erneuert sie manchmal nicht mehr, dann fehlen neue Profile. Frisch erzeugt kostet bei ein paar hundert Einträgen kaum Zeit.</p></td>
+					</tr>
 					</table>
 				</div>
 

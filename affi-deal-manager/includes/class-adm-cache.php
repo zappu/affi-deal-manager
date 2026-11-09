@@ -25,6 +25,16 @@ class ADM_Cache {
 
 	public static function init() {
 		add_action( 'transition_post_status', array( __CLASS__, 'on_transition' ), 10, 3 );
+		add_filter( 'rank_math/sitemap/enable_caching', array( __CLASS__, 'rank_math_sitemap_caching' ), 20 );
+	}
+
+	/**
+	 * Rank Math: Sitemap ohne Datei-Cache erzeugen (Einstellung „Sitemap“, Standard an).
+	 * Der Datei-Cache von Rank Math wird nur für Dateien geleert, die in einer Liste in der Datenbank stehen.
+	 * Gehen dort Einträge verloren, bleibt die Sitemap auf altem Stand und neue Profile fehlen.
+	 */
+	public static function rank_math_sitemap_caching( $enabled ) {
+		return ADM_Settings::get( 'sitemap_live' ) ? false : $enabled;
 	}
 
 	/** Liefert der Abgleich neue Werte, die man auf den Seiten sieht? */

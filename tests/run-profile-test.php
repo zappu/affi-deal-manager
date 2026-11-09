@@ -883,6 +883,12 @@ adm_check( ! ADM_Profiles::in_use( $post->ID ), 'Im Einsatz: Haken entfernen lö
 unset( $_POST['adm_own_nonce'], $_POST['adm_own_month'], $_POST['adm_own_note'] );
 wp_reset_postdata();
 
+// Rank Math: Sitemap ohne Datei-Cache
+adm_check( false === apply_filters( 'rank_math/sitemap/enable_caching', true ), 'Sitemap: Rank-Math-Cache standardmäßig aus' );
+update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'sitemap_live' => 0 ) ) );
+adm_check( true === apply_filters( 'rank_math/sitemap/enable_caching', true ), 'Sitemap: abschaltbar über die Einstellung' );
+update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'sitemap_live' => 1 ) ) );
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

@@ -115,6 +115,7 @@ class ADM_Settings {
 			'newsletter_title'      => 'Neue Tools ohne Abo per E-Mail',
 			'newsletter_text'       => 'Etwa einmal im Monat: neue Tool-Profile, Bestenlisten und laufende Lifetime-Deals von AppSumo.',
 			'newsletter_auto'       => 0,
+			'sitemap_live'          => 1,
 		);
 	}
 
@@ -202,6 +203,7 @@ class ADM_Settings {
 			'newsletter_text'       => isset( $in['newsletter_text'] ) ? substr( sanitize_text_field( (string) $in['newsletter_text'] ), 0, 300 ) : (string) $cur['newsletter_text'],
 			'newsletter_auto'       => array_key_exists( 'mode', $in ) ? ( empty( $in['newsletter_auto'] ) ? 0 : 1 ) : (int) $cur['newsletter_auto'],
 			'banners'               => array_key_exists( 'mode', $in ) ? ( empty( $in['banners'] ) ? 0 : 1 ) : (int) $cur['banners'],
+			'sitemap_live'          => array_key_exists( 'mode', $in ) ? ( empty( $in['sitemap_live'] ) ? 0 : 1 ) : (int) $cur['sitemap_live'],
 			'gemini_model'          => isset( $in['gemini_model'] ) && '' !== trim( (string) $in['gemini_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._\-]/', '', (string) $in['gemini_model'] ), 0, 80 ) : $cur['gemini_model'],
 		);
 		update_option( self::OPTION, $out, false );

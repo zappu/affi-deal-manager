@@ -718,7 +718,7 @@ class ADM_Profiles {
 		$existing = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
 		$postarr  = array(
 			'post_type'    => self::CPT,
-			'post_status'  => $existing && 'publish' === $existing->post_status ? 'publish' : 'draft',
+			'post_status'  => ( $existing && 'publish' === $existing->post_status ) || ADM_Settings::get( 'auto_publish' ) ? 'publish' : 'draft',
 			'post_title'   => $title,
 			'post_name'    => sanitize_title( $deal['slug'] ),
 			'post_content' => $content,

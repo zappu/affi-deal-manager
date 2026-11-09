@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.15.0 (09.11.2026)
+
+- Neue Einstellung „Veröffentlichen“ im Reiter Tool-Profile: Neue Profile gehen sofort online statt als Entwurf, auch vorhandene Entwürfe beim Neuschreiben. Veröffentlichte Profile überschreibt das Plugin weiterhin nie von selbst. Standard aus
+- Kopfbereich jedes Profils: „Stand … · Text mit KI erstellt“, verlinkt auf die Seite „So arbeiten wir“ (Filter `adm_ai_note`)
+
 ## 0.14.3 (09.11.2026)
 
 - Rank Math erzeugt die Sitemaps jetzt bei jedem Abruf frisch, statt sie als Dateien zwischenzuspeichern (Filter `rank_math/sitemap/enable_caching`). Der Datei-Cache von Rank Math wurde nicht mehr erneuert, neue Profile und Seiten fehlten in der Sitemap. Schalter „Sitemap“ im Reiter Tool-Profile, Standard an

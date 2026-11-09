@@ -102,6 +102,14 @@ class ADM_Shortcodes {
 		return $box . $content;
 	}
 
+	/** Hinweis „Text mit KI erstellt“, verlinkt auf die Seite „So arbeiten wir“, falls es sie gibt (Filter adm_ai_note). */
+	private static function ai_note() {
+		$page = get_page_by_path( 'so-arbeiten-wir' );
+		$text = 'Text mit KI erstellt';
+		$html = $page && 'publish' === $page->post_status ? '<a href="' . esc_url( get_permalink( $page ) ) . '">' . esc_html( $text ) . '</a>' : esc_html( $text );
+		return (string) apply_filters( 'adm_ai_note', $html );
+	}
+
 	/** Zeile „Setzen wir selbst ein“ bzw. „Selbst gekauft und genutzt“ im Deal-Kasten (nur wenn das Profil eine Angabe hat). */
 	private static function own_line( $deal ) {
 		$post_id = (int) $deal['post_id'];
@@ -257,7 +265,8 @@ class ADM_Shortcodes {
 		}
 		$gen    = (int) get_post_meta( $post->ID, '_adm_generated', true );
 		$meta   = array_filter( array(
-			$gen ? 'Stand ' . wp_date( 'd.m.Y', $gen ) : '',
+			$gen ? esc_html( 'Stand ' . wp_date( 'd.m.Y', $gen ) ) : '',
+			$gen ? self::ai_note() : '',
 		) );
 		$lead = has_excerpt( $post ) ? get_the_excerpt( $post ) : $deal['description'];
 
@@ -271,7 +280,7 @@ class ADM_Shortcodes {
 		$out .= '<div class="adm-head__body">' . ( '0' !== (string) $atts['title'] ? '<h1>' . esc_html( get_the_title( $post ) ) . '</h1>' : '' );
 		$out .= '' !== trim( (string) $lead ) ? '<p class="adm-head__lead">' . esc_html( wp_strip_all_tags( $lead ) ) . '</p>' : '';
 		$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
-		$out .= '</div></div>' . ( $meta ? '<p class="adm-head__meta">' . esc_html( implode( ' · ', $meta ) ) . '</p>' : '' ) . '</header>';
+		$out .= '</div></div>' . ( $meta ? '<p class="adm-head__meta">' . implode( ' · ', $meta ) . '</p>' : '' ) . '</header>';
 		return $out;
 	}
 

@@ -168,6 +168,14 @@ $r = ADM_Profiles::generate( (int) $lo['id'] );
 adm_check( array() === $GLOBALS['adm_test_gemini_requests'], 'Videozusammenfassung zwischengespeichert, keine zweite Gemini-Anfrage' );
 adm_check( (int) $r === (int) $post->ID && 1 === count( get_posts( array( 'post_type' => 'adm_tool', 'post_status' => 'draft', 'name' => 'leadocean' ) ) ), 'Neu erzeugen überschreibt den Entwurf, kein Duplikat' );
 
+// Sofort veröffentlichen
+update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'auto_publish' => 1 ) ) );
+$r = ADM_Profiles::generate( (int) $lo['id'] );
+adm_check( (int) $r === (int) $post->ID && 'publish' === get_post_status( $post->ID ), 'Sofort veröffentlichen: Entwurf geht beim Schreiben online' );
+adm_check( is_wp_error( ADM_Profiles::generate( (int) $lo['id'] ) ), 'Sofort veröffentlichen: veröffentlichtes Profil wird trotzdem nicht überschrieben' );
+update_option( 'adm_settings', array_merge( ADM_Settings::all(), array( 'auto_publish' => 0 ) ) );
+wp_update_post( array( 'ID' => $post->ID, 'post_status' => 'draft' ) );
+
 // Anzeigename im Profil-Kasten speichern
 wp_set_current_user( 1 );
 $_POST = array( 'adm_display_name' => 'Lead Ocean', 'adm_display_name_nonce' => wp_create_nonce( 'adm_display_name' ) );
@@ -852,6 +860,7 @@ adm_check( false !== strpos( $own, '<strong>Selbst gekauft und genutzt</strong> 
 $GLOBALS['post'] = $post;
 setup_postdata( $post );
 $hd2 = do_shortcode( '[adm_deal_header]' );
+adm_check( false !== strpos( $hd2, 'Text mit KI erstellt' ), 'Kopfbereich: Hinweis „Text mit KI erstellt“' );
 adm_check( false !== strpos( $hd2, 'adm-chip--own' ) && false !== strpos( $hd2, 'Selbst gekauft und genutzt' ), 'Selbst gekauft: Hinweis im Kopfbereich' );
 $box1 = do_shortcode( '[adm_deal_box placement="sidebar"]' );
 adm_check( false !== strpos( $box1, 'adm-box__own' ) && false !== strpos( $box1, '<strong>Selbst gekauft und genutzt</strong><small>Im September 2023</small>' ) && false === strpos( $box1, 'Setzen wir selbst ein' ), 'Selbst gekauft: Zeile im Deal-Kasten' );

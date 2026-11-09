@@ -305,13 +305,18 @@ class ADM_Admin {
 
 				<div class="adm-tab" data-tab="profile" id="tab-profile">
 					<h2>Tool-Profile</h2>
-					<p class="adm-tab-intro">Wann und wie das Plugin Profil-Entwürfe schreibt. Die Warteschlange und die Knöpfe dazu stehen auf der Seite „Affi Deal Manager“.</p>
+					<p class="adm-tab-intro">Wann und wie das Plugin Tool-Profile schreibt und ob sie gleich online gehen. Die Warteschlange und die Knöpfe dazu stehen auf der Seite „Affi Deal Manager“.</p>
 					<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">Automatik</th>
 						<td><label><input type="checkbox" name="adm[auto_profiles]" value="1" <?php checked( $s['auto_profiles'] ); ?>> Neue kaufbare Software-Deals bekommen automatisch einen Profil-Entwurf</label>
 						<p><label>Außerdem täglich bis zu <input type="number" min="0" max="100" class="small-text" name="adm[auto_profiles_daily]" value="<?php echo (int) $s['auto_profiles_daily']; ?>"> Entwürfe für die besten Software-Deals ohne Profil erzeugen</label></p>
 						<p class="description">Erst einschalten, wenn du die ersten Texte abgenommen hast. 0 heißt: nur neue Deals. Jeder Entwurf kostet einen KI-Aufruf. Zusatzpakete (Add-ons) und Deals für AppSumo Plus bekommen kein Profil.</p></td>
+					</tr>
+					<tr>
+						<th scope="row">Veröffentlichen</th>
+						<td><label><input type="checkbox" name="adm[auto_publish]" value="1" <?php checked( $s['auto_publish'] ); ?>> Neue Profile sofort veröffentlichen statt als Entwurf anlegen</label>
+						<p class="description">Gilt auch für vorhandene Entwürfe, die neu geschrieben werden. Bereits veröffentlichte Profile überschreibt das Plugin weiterhin nie von selbst. Jedes Profil zeigt oben „Text mit KI erstellt“.</p></td>
 					</tr>
 					<?php
 					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
@@ -584,7 +589,7 @@ class ADM_Admin {
 				<button class="button" name="do" value="run" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Nächstes jetzt erzeugen</button>
 				<button class="button" name="do" value="clear" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Warteschlange leeren</button>
 			</form>
-			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?><?php echo ADM_Profiles::video_queue() ? ', Videos nachtragen: ' . count( ADM_Profiles::video_queue() ) : ''; ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird als Entwurf angelegt.<?php echo ADM_Settings::get( 'auto_profiles' ) && (int) ADM_Settings::get( 'auto_profiles_daily' ) > 0 ? ' Automatik: heute ' . (int) ADM_Profiles::auto_today() . ' von ' . (int) ADM_Settings::get( 'auto_profiles_daily' ) . ' vorgemerkt.' : ' Automatik für bestehende Deals ist aus.'; ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#tab-profile">Automatik einstellen</a>
+			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?><?php echo ADM_Profiles::video_queue() ? ', Videos nachtragen: ' . count( ADM_Profiles::video_queue() ) : ''; ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird <?php echo ADM_Settings::get( 'auto_publish' ) ? 'sofort veröffentlicht' : 'als Entwurf angelegt'; ?>.<?php echo ADM_Settings::get( 'auto_profiles' ) && (int) ADM_Settings::get( 'auto_profiles_daily' ) > 0 ? ' Automatik: heute ' . (int) ADM_Profiles::auto_today() . ' von ' . (int) ADM_Settings::get( 'auto_profiles_daily' ) . ' vorgemerkt.' : ' Automatik für bestehende Deals ist aus.'; ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#tab-profile">Automatik einstellen</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . ADM_Profiles::CPT ) ); ?>">Alle Tool-Profile</a></p>
 			<?php if ( is_array( $log ) && $log ) : ?>
 				<details style="margin-top:6px"><summary>Letzte Ergebnisse</summary><ul style="margin:6px 0 0 18px;list-style:disc">

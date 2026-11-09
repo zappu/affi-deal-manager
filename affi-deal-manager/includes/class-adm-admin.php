@@ -75,7 +75,9 @@ class ADM_Admin {
 		}
 		ADM_Sync::reschedule();
 		ADM_Profiles::resume();
-		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG_SETTINGS, 'saved' => 1 ), admin_url( 'admin.php' ) ) );
+		$tab = isset( $_POST['adm_tab'] ) ? sanitize_key( wp_unslash( $_POST['adm_tab'] ) ) : '';
+		$tab = isset( self::TABS[ $tab ] ) ? '#tab-' . $tab : '';
+		wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG_SETTINGS, 'saved' => 1 ), admin_url( 'admin.php' ) ) . $tab );
 		exit;
 	}
 
@@ -295,29 +297,78 @@ class ADM_Admin {
 			<?php if ( isset( $_GET['checked'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
 				<div class="notice notice-success is-dismissible"><p>Nach Updates gesucht.</p></div>
 			<?php endif; ?>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php self::tabs_nav(); ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="adm-settings-form">
 				<?php wp_nonce_field( 'adm_save_settings' ); ?>
 				<input type="hidden" name="action" value="adm_save_settings">
+				<input type="hidden" name="adm_tab" id="adm-tab-field" value="profile">
 
-				<h2>Affiliate-Links (Impact)</h2>
-				<table class="form-table" role="presentation">
+				<div class="adm-tab" data-tab="profile" id="tab-profile">
+					<h2>Tool-Profile</h2>
+					<p class="adm-tab-intro">Wann und wie das Plugin Profil-Entwürfe schreibt. Die Warteschlange und die Knöpfe dazu stehen auf der Seite „Affi Deal Manager“.</p>
+					<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">Automatik</th>
+						<td><label><input type="checkbox" name="adm[auto_profiles]" value="1" <?php checked( $s['auto_profiles'] ); ?>> Neue kaufbare Software-Deals bekommen automatisch einen Profil-Entwurf</label>
+						<p><label>Außerdem täglich bis zu <input type="number" min="0" max="100" class="small-text" name="adm[auto_profiles_daily]" value="<?php echo (int) $s['auto_profiles_daily']; ?>"> Entwürfe für die besten Software-Deals ohne Profil erzeugen</label></p>
+						<p class="description">Erst einschalten, wenn du die ersten Texte abgenommen hast. 0 heißt: nur neue Deals. Jeder Entwurf kostet einen KI-Aufruf. Zusatzpakete (Add-ons) und Deals für AppSumo Plus bekommen kein Profil.</p></td>
+					</tr>
 					<?php
-					self::field( 'partner_id', 'Partner-ID', $s, 'Deine Account-ID bei Impact (steht in jedem Tracking-Link nach /c/).' );
-					self::field( 'ad_id', 'Werbemittel-ID', $s, 'Textlink, über den alle Deep-Links laufen. Die Zuordnung zur Seite erfolgt über subId1.' );
-					self::field( 'program_id', 'Programm-ID', $s, 'AppSumo-Programm bei Impact.' );
-					self::field( 'tracking_host', 'Tracking-Domain', $s, '' );
-					ADM_Impact::settings_row();
+					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
+					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Ist der Titel länger als 60 Zeichen, nimmt das Plugin eine kürzere Fassung.' );
+					self::field( 'batch_profiles', 'Anzahl beim Sammelknopf', $s, '1 bis 50 kaufbare Software-Deals mit den meisten Bewertungen.', 'number' );
+					self::field( 'reviews_newest', 'Neueste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
+					self::field( 'reviews_critical', 'Kritischste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
 					?>
 					<tr>
-						<th scope="row">Aktionsbanner</th>
-						<td><label><input type="checkbox" name="adm[banners]" value="1" <?php checked( $s['banners'] ); ?>> Aktionsbanner von AppSumo bei Impact abrufen, per E-Mail melden und nach Freigabe anzeigen</label>
-						<p class="description">Aus: kein Abruf, keine E-Mails, freigegebene Banner verschwinden von der Seite. Eigene Hinweise ohne Bilder pflegst du im Reiter „Einnahmen“ unter „Eigene Aktion“.</p></td>
+						<th scope="row"><label for="adm-box_placement">Deal-Kasten</label></th>
+						<td><select id="adm-box_placement" name="adm[box_placement]">
+							<option value="content" <?php selected( $s['box_placement'], 'content' ); ?>>Einfach: Kasten oben im Text, Titel vom Theme</option>
+							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>Profil-Layout: Kopfbereich mit Eckdaten, Kasten in der Seitenleiste (auf dem Handy oben im Text), Übersichten /tools/ und /rubrik/ im selben Stil</option>
+						</select>
+						<p class="description">Beim Profil-Layout baut das Plugin Kopfbereich und Seitenleiste um den Beitragsinhalt; das Theme oder Elementor gibt nur den Inhalt aus. Bei Hello Elementor entfällt der Theme-Titel automatisch, andere Themes zeigen ihn eventuell doppelt.</p></td>
 					</tr>
-					<tr><th scope="row">Beispiel</th><td><code style="word-break:break-all"><?php echo esc_html( $example ); ?></code></td></tr>
-				</table>
+					<tr>
+						<th scope="row">Screenshots</th>
+						<td><label><input type="checkbox" name="adm[screenshots]" value="1" <?php checked( $s['screenshots'] ); ?>> Startseite des Herstellers als Produktbild aufnehmen</label>
+						<p class="description">Der Screenshot entsteht beim Dienst mShots von WordPress.com und wird in der Mediathek gespeichert; Besucher laden nur das eigene Bild. Pro Abgleichschritt höchstens drei. Noch offen: <?php echo (int) count( ADM_Shots::pending( 200 ) ); ?>.</p></td>
+					</tr>
+					</table>
+				</div>
 
-				<h2>Zeitplan</h2>
-				<table class="form-table" role="presentation">
+				<div class="adm-tab" data-tab="ki" id="tab-ki">
+					<h2 id="adm-ki">KI-Anbieter</h2>
+					<p class="adm-tab-intro">Wer die Profile schreibt und die Videos zusammenfasst. Schlüssel stehen nur in der wp-config.php.</p>
+					<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="adm-ai_provider">KI-Anbieter</label></th>
+						<td><select id="adm-ai_provider" name="adm[ai_provider]">
+							<?php foreach ( ADM_Settings::AI_PROVIDERS as $key => $p ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['ai_provider'], $key ); ?>><?php echo esc_html( $p['label'] ); ?></option>
+							<?php endforeach; ?>
+						</select></td>
+					</tr>
+					<tr>
+						<th scope="row">API-Schlüssel</th>
+						<td><?php self::key_status(); ?></td>
+					</tr>
+					<?php
+					self::model_suggestions();
+					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
+					?>
+					<tr>
+						<th scope="row">Videos zusammenfassen</th>
+						<td><label><input type="checkbox" name="adm[video_summaries]" value="1" <?php checked( $s['video_summaries'] ); ?>> Gemini sieht sich die ausgewählten YouTube-Videos an und fasst sie zusammen</label>
+						<p class="description">Braucht <code><?php echo esc_html( ADM_Settings::GEMINI_CONSTANT ); ?></code> in der wp-config.php (<?php echo '' !== ADM_Settings::gemini_key() ? 'gesetzt' : 'fehlt'; ?>). Schlüssel bei aistudio.google.com. Ohne Schlüssel zeigt das Profil die Videos ohne Inhaltsangabe.</p></td>
+					</tr>
+					<?php self::field( 'gemini_model', 'Gemini-Modell', $s, 'Standard: gemini-3.6-flash. Ist das Modell überlastet, weicht das Plugin auf gemini-3.5-flash-lite aus.' ); ?>
+					</table>
+				</div>
+
+				<div class="adm-tab" data-tab="sync" id="tab-sync">
+					<h2>Abgleich mit AppSumo: Zeitplan</h2>
+					<p class="adm-tab-intro">Wie oft das Plugin Preise, Status und Bewertungen bei AppSumo prüft. Das hat nichts mit den Profil-Texten zu tun.</p>
+					<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="adm-mode">Abgleich</label></th>
 						<td>
@@ -364,7 +415,7 @@ class ADM_Admin {
 					self::field( 'delay', 'Pause zwischen Abrufen (Sekunden)', $s, '0 bis 10. Hält die Last bei AppSumo gering.', 'number' );
 					?>
 					<tr><th scope="row">Durchsatz</th><td><?php echo esc_html( self::estimate() ); ?></td></tr>
-				</table>
+					</table>
 
 				<?php if ( 'servercron' === $s['mode'] ) : ?>
 					<?php
@@ -381,70 +432,41 @@ class ADM_Admin {
 					<p><label><input type="checkbox" name="adm_regen_secret" value="1"> Beim Speichern einen neuen Schlüssel erzeugen (der alte Befehl funktioniert dann nicht mehr)</label></p>
 				<?php endif; ?>
 
-				<h2>Abgleich mit AppSumo</h2>
-				<table class="form-table" role="presentation">
+					<h2>Abgleich mit AppSumo: Quellen und Prüfabstände</h2>
+					<table class="form-table" role="presentation">
 					<?php
 					self::field( 'sitemap_url', 'Sitemap', $s, '' );
 					self::field( 'recheck_available_hrs', 'Kaufbare Deals prüfen alle (Stunden)', $s, '', 'number' );
 					self::field( 'recheck_other_days', 'Übrige Deals prüfen alle (Tage)', $s, 'Gilt für ausgelaufene und ignorierte Deals. Geänderte Seiten laut Sitemap werden sofort geprüft.', 'number' );
 					self::field( 'notify_email', 'E-Mail bei Störungen', $s, 'Höchstens eine Nachricht am Tag.', 'email' );
 					?>
-				</table>
+					</table>
+				</div>
 
-				<h2 id="adm-ki">Tool-Profile und KI</h2>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row"><label for="adm-ai_provider">KI-Anbieter</label></th>
-						<td><select id="adm-ai_provider" name="adm[ai_provider]">
-							<?php foreach ( ADM_Settings::AI_PROVIDERS as $key => $p ) : ?>
-								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['ai_provider'], $key ); ?>><?php echo esc_html( $p['label'] ); ?></option>
-							<?php endforeach; ?>
-						</select></td>
-					</tr>
+				<div class="adm-tab" data-tab="links" id="tab-links">
+					<h2>Affiliate-Links (Impact)</h2>
+					<p class="adm-tab-intro">Konto bei Impact, aus dem alle Links zu AppSumo entstehen, und die Aktionsbanner.</p>
+					<table class="form-table" role="presentation">
 					<?php
+					self::field( 'partner_id', 'Partner-ID', $s, 'Deine Account-ID bei Impact (steht in jedem Tracking-Link nach /c/).' );
+					self::field( 'ad_id', 'Werbemittel-ID', $s, 'Textlink, über den alle Deep-Links laufen. Die Zuordnung zur Seite erfolgt über subId1.' );
+					self::field( 'program_id', 'Programm-ID', $s, 'AppSumo-Programm bei Impact.' );
+					self::field( 'tracking_host', 'Tracking-Domain', $s, '' );
+					ADM_Impact::settings_row();
 					?>
 					<tr>
-						<th scope="row">API-Schlüssel</th>
-						<td><?php self::key_status(); ?></td>
+						<th scope="row">Aktionsbanner</th>
+						<td><label><input type="checkbox" name="adm[banners]" value="1" <?php checked( $s['banners'] ); ?>> Aktionsbanner von AppSumo bei Impact abrufen, per E-Mail melden und nach Freigabe anzeigen</label>
+						<p class="description">Aus: kein Abruf, keine E-Mails, freigegebene Banner verschwinden von der Seite. Eigene Hinweise ohne Bilder pflegst du im Reiter „Einnahmen“ unter „Eigene Aktion“.</p></td>
 					</tr>
-					<?php
-					self::model_suggestions();
-					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
-					self::field( 'title_template', 'Seitentitel', $s, '{tool} wird durch den Namen ersetzt.' );
-					self::field( 'seo_title_template', 'SEO-Titel (Rank Math)', $s, 'Ist der Titel länger als 60 Zeichen, nimmt das Plugin eine kürzere Fassung.' );
-					self::field( 'batch_profiles', 'Anzahl beim Sammelknopf', $s, '1 bis 50 kaufbare Software-Deals mit den meisten Bewertungen.', 'number' );
-					self::field( 'reviews_newest', 'Neueste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
-					self::field( 'reviews_critical', 'Kritischste Bewertungen auswerten', $s, '0 bis 100.', 'number' );
-					?>
-					<tr>
-						<th scope="row"><label for="adm-box_placement">Deal-Kasten</label></th>
-						<td><select id="adm-box_placement" name="adm[box_placement]">
-							<option value="content" <?php selected( $s['box_placement'], 'content' ); ?>>Einfach: Kasten oben im Text, Titel vom Theme</option>
-							<option value="sidebar" <?php selected( $s['box_placement'], 'sidebar' ); ?>>Profil-Layout: Kopfbereich mit Eckdaten, Kasten in der Seitenleiste (auf dem Handy oben im Text), Übersichten /tools/ und /rubrik/ im selben Stil</option>
-						</select>
-						<p class="description">Beim Profil-Layout baut das Plugin Kopfbereich und Seitenleiste um den Beitragsinhalt; das Theme oder Elementor gibt nur den Inhalt aus. Bei Hello Elementor entfällt der Theme-Titel automatisch, andere Themes zeigen ihn eventuell doppelt.</p></td>
-					</tr>
-					<tr>
-						<th scope="row">Screenshots</th>
-						<td><label><input type="checkbox" name="adm[screenshots]" value="1" <?php checked( $s['screenshots'] ); ?>> Startseite des Herstellers als Produktbild aufnehmen</label>
-						<p class="description">Der Screenshot entsteht beim Dienst mShots von WordPress.com und wird in der Mediathek gespeichert; Besucher laden nur das eigene Bild. Pro Abgleichschritt höchstens drei. Noch offen: <?php echo (int) count( ADM_Shots::pending( 200 ) ); ?>.</p></td>
-					</tr>
-					<tr>
-						<th scope="row">Videos zusammenfassen</th>
-						<td><label><input type="checkbox" name="adm[video_summaries]" value="1" <?php checked( $s['video_summaries'] ); ?>> Gemini sieht sich die ausgewählten YouTube-Videos an und fasst sie zusammen</label>
-						<p class="description">Braucht <code><?php echo esc_html( ADM_Settings::GEMINI_CONSTANT ); ?></code> in der wp-config.php (<?php echo '' !== ADM_Settings::gemini_key() ? 'gesetzt' : 'fehlt'; ?>). Schlüssel bei aistudio.google.com. Ohne Schlüssel zeigt das Profil die Videos ohne Inhaltsangabe.</p></td>
-					</tr>
-					<?php self::field( 'gemini_model', 'Gemini-Modell', $s, 'Standard: gemini-3.6-flash. Ist das Modell überlastet, weicht das Plugin auf gemini-3.5-flash-lite aus.' ); ?>
-					<tr>
-						<th scope="row">Automatik</th>
-						<td><label><input type="checkbox" name="adm[auto_profiles]" value="1" <?php checked( $s['auto_profiles'] ); ?>> Neue kaufbare Software-Deals bekommen automatisch einen Profil-Entwurf</label>
-						<p><label>Außerdem täglich bis zu <input type="number" min="0" max="100" class="small-text" name="adm[auto_profiles_daily]" value="<?php echo (int) $s['auto_profiles_daily']; ?>"> Entwürfe für die besten Software-Deals ohne Profil erzeugen</label></p>
-						<p class="description">Erst einschalten, wenn du die ersten Texte abgenommen hast. 0 heißt: nur neue Deals. Jeder Entwurf kostet einen KI-Aufruf. Zusatzpakete (Add-ons) und Deals für AppSumo Plus bekommen kein Profil.</p></td>
-					</tr>
-				</table>
+					<tr><th scope="row">Beispiel</th><td><code style="word-break:break-all"><?php echo esc_html( $example ); ?></code></td></tr>
+					</table>
+				</div>
 
-				<h2 id="adm-newsletter">Newsletter (SendFox)</h2>
-				<table class="form-table" role="presentation">
+				<div class="adm-tab" data-tab="newsletter" id="tab-newsletter">
+					<h2 id="adm-newsletter">Newsletter (SendFox)</h2>
+					<p class="adm-tab-intro">Anmeldekasten auf der Website, die Adressen landen in deiner SendFox-Liste.</p>
+					<table class="form-table" role="presentation">
 					<?php
 					ADM_Newsletter::settings_rows( $s );
 					self::field( 'newsletter_list', 'Listen-ID', $s, 'ID der Liste in SendFox (steht in der Adresse der Liste, z. B. /lists/684361/).', 'number' );
@@ -456,21 +478,75 @@ class ADM_Admin {
 						<td><label><input type="checkbox" name="adm[newsletter_auto]" value="1" <?php checked( $s['newsletter_auto'] ); ?>> Anmeldekasten automatisch am Ende der Tool-Profile und unter den Bestenlisten</label>
 						<p class="description">Für andere Seiten: Shortcode <code>[adm_newsletter]</code>. Die Bestätigungsmail (Double Opt-in) verschickt SendFox, wenn dort unter Settings → List defaults „Require double opt-in“ eingeschaltet ist.</p></td>
 					</tr>
-				</table>
+					</table>
+				</div>
 
-				<h2>Updates</h2>
-				<table class="form-table" role="presentation">
-					<?php self::field( 'update_token', 'Update-Token (optional)', $s, '' ); ?>
-				</table>
+				<div class="adm-tab" data-tab="updates" id="tab-updates">
+					<h2>Updates</h2>
+					<table class="form-table" role="presentation">
+						<?php self::field( 'update_token', 'Update-Token (optional)', $s, '' ); ?>
+						<tr><th scope="row">Version</th><td><?php echo esc_html( ADM_VERSION ); ?> · <button class="button" form="adm-check-update">Nach Updates suchen</button></td></tr>
+					</table>
+				</div>
+
 				<?php submit_button( 'Einstellungen speichern' ); ?>
 			</form>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="adm-check-update">
 				<?php wp_nonce_field( 'adm_check_update' ); ?>
 				<input type="hidden" name="action" value="adm_check_update">
-				<p>Version <?php echo esc_html( ADM_VERSION ); ?> · <button class="button">Nach Updates suchen</button></p>
 			</form>
-			<?php ADM_Impact::query_box(); ?>
+			<div class="adm-tab" data-tab="links" data-extra="1"><?php ADM_Impact::query_box(); ?></div>
+			<?php self::tabs_script(); ?>
 		</div>
+		<?php
+	}
+
+	/** Reiter der Einstellungsseite. */
+	const TABS = array(
+		'profile'    => 'Tool-Profile',
+		'ki'         => 'KI',
+		'sync'       => 'Abgleich',
+		'links'      => 'Affiliate-Links',
+		'newsletter' => 'Newsletter',
+		'updates'    => 'Updates',
+	);
+
+	private static function tabs_nav() {
+		echo '<nav class="nav-tab-wrapper adm-tabs" aria-label="Bereiche der Einstellungen">';
+		foreach ( self::TABS as $key => $label ) {
+			echo '<a href="#tab-' . esc_attr( $key ) . '" class="nav-tab" data-tab="' . esc_attr( $key ) . '">' . esc_html( $label ) . '</a>';
+		}
+		echo '</nav>';
+	}
+
+	/** Ohne JavaScript bleiben alle Bereiche untereinander sichtbar. */
+	private static function tabs_script() {
+		?>
+		<style>
+			.adm-js .adm-tab{display:none}.adm-js .adm-tab.is-active{display:block}
+			.adm-tabs{margin-bottom:8px}.adm-tab-intro{color:#50575e;margin:0 0 4px;max-width:780px}
+			.adm-tab .form-table th{width:220px}
+			.adm-tab input[type=number]{width:90px}
+			.adm-tab input[name="adm[title_template]"],.adm-tab input[name="adm[seo_title_template]"],.adm-tab input[name="adm[sitemap_url]"],.adm-tab input[name="adm[newsletter_text]"]{width:min(560px,100%)}
+		</style>
+		<script>
+		(function(){
+			var wrap=document.querySelector('.adm-tabs'); if(!wrap){return;}
+			var root=wrap.parentNode, field=document.getElementById('adm-tab-field');
+			var alias={'adm-ki':'ki','adm-newsletter':'newsletter','impact-abfrage':'links'};
+			root.classList.add('adm-js');
+			function show(tab){
+				if(!wrap.querySelector('[data-tab="'+tab+'"]')){tab='profile';}
+				root.querySelectorAll('.adm-tab').forEach(function(el){el.classList.toggle('is-active',el.getAttribute('data-tab')===tab);});
+				wrap.querySelectorAll('.nav-tab').forEach(function(a){var on=a.getAttribute('data-tab')===tab;a.classList.toggle('nav-tab-active',on);a.setAttribute('aria-current',on?'page':'false');});
+				if(field){field.value=tab;}
+			}
+			function fromHash(){var h=location.hash.replace(/^#/,'');return alias[h]||h.replace(/^tab-/,'')||'profile';}
+			wrap.addEventListener('click',function(e){var a=e.target.closest('.nav-tab');if(!a){return;}e.preventDefault();var t=a.getAttribute('data-tab');history.replaceState(null,'','#tab-'+t);show(t);});
+			window.addEventListener('hashchange',function(){show(fromHash());});
+			show(fromHash());
+		})();
+		</script>
 		<?php
 	}
 
@@ -488,7 +564,7 @@ class ADM_Admin {
 				<div class="notice notice-error inline"><p><strong>Warteschlange angehalten:</strong> <?php echo esc_html( ADM_Profiles::paused() ); ?> Nach dem Speichern der Einstellungen oder mit „Nächstes jetzt erzeugen“ geht es weiter.</p></div>
 			<?php endif; ?>
 			<?php if ( ! ADM_AI::configured() ) : ?>
-				<p><?php echo esc_html( ADM_AI::missing_key_message() ); ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#adm-ki">Zu den Einstellungen</a></p>
+				<p><?php echo esc_html( ADM_AI::missing_key_message() ); ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#tab-ki">Zu den Einstellungen</a></p>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( $url ); ?>" style="display:inline">
 				<?php wp_nonce_field( 'adm_profile' ); ?>
@@ -503,7 +579,7 @@ class ADM_Admin {
 				<button class="button" name="do" value="run" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Nächstes jetzt erzeugen</button>
 				<button class="button" name="do" value="clear" <?php disabled( ! $queue && ! ADM_Profiles::video_queue() ); ?>>Warteschlange leeren</button>
 			</form>
-			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?><?php echo ADM_Profiles::video_queue() ? ', Videos nachtragen: ' . count( ADM_Profiles::video_queue() ) : ''; ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird als Entwurf angelegt.<?php echo ADM_Settings::get( 'auto_profiles' ) && (int) ADM_Settings::get( 'auto_profiles_daily' ) > 0 ? ' Automatik: heute ' . (int) ADM_Profiles::auto_today() . ' von ' . (int) ADM_Settings::get( 'auto_profiles_daily' ) . ' vorgemerkt.' : ' Automatik für bestehende Deals ist aus (Einstellungen, Tool-Profile).'; ?>
+			<p style="color:#646970;margin:8px 0 0">In der Warteschlange: <?php echo count( $queue ); ?><?php echo ADM_Profiles::video_queue() ? ', Videos nachtragen: ' . count( ADM_Profiles::video_queue() ) : ''; ?>. Ein Profil dauert etwa eine bis zwei Minuten und wird als Entwurf angelegt.<?php echo ADM_Settings::get( 'auto_profiles' ) && (int) ADM_Settings::get( 'auto_profiles_daily' ) > 0 ? ' Automatik: heute ' . (int) ADM_Profiles::auto_today() . ' von ' . (int) ADM_Settings::get( 'auto_profiles_daily' ) . ' vorgemerkt.' : ' Automatik für bestehende Deals ist aus.'; ?> <a href="<?php echo esc_url( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) ); ?>#tab-profile">Automatik einstellen</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . ADM_Profiles::CPT ) ); ?>">Alle Tool-Profile</a></p>
 			<?php if ( is_array( $log ) && $log ) : ?>
 				<details style="margin-top:6px"><summary>Letzte Ergebnisse</summary><ul style="margin:6px 0 0 18px;list-style:disc">

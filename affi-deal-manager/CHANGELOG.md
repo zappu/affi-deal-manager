@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.13.6 (09.11.2026)
+
+- Einstellungen übersichtlicher: Reiter Tool-Profile, KI, Abgleich, Affiliate-Links, Newsletter und Updates, jeweils mit einem Satz, wofür der Bereich da ist. Die Automatik für Tool-Profile steht ganz oben im ersten Reiter. Nach dem Speichern bleibt der gewählte Reiter offen, ohne JavaScript stehen alle Bereiche untereinander
+- Kasten „Tool-Profile“ auf der Deal-Seite mit Link „Automatik einstellen“
+
 ## 0.13.5 (09.11.2026)
 
 - Automatik für bestehende Deals: Ist die Warteschlange leer, merkt das Plugin bei jedem Abgleich die nächsten besten Software-Deals ohne Profil vor, höchstens so viele pro Tag wie eingestellt (Einstellung „täglich bis zu … Entwürfe“, Standard 10, 0 = nur neue Deals). Gilt für WP-Cron und Server-Cron, der Stand steht im Kasten „Tool-Profile“

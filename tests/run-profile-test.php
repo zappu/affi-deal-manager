@@ -843,6 +843,26 @@ $d1 = ADM_Archive::meta_description( '' );
 adm_check( 0 === strpos( $d2, 'Seite 2: ' ) && $d1 !== $d2 && '' !== $d1, 'Beschreibung: Seite 2 unterscheidet sich von Seite 1' );
 $GLOBALS['wp_query']->is_post_type_archive = false;
 
+// Selbst gekauft
+adm_check( '' === ADM_Profiles::owned_html( $post->ID ), 'Selbst gekauft: ohne Angabe kein Hinweis' );
+update_post_meta( $post->ID, ADM_Profiles::OWN_MONTH, '2023-09' );
+update_post_meta( $post->ID, ADM_Profiles::OWN_NOTE, 'Ich nutze es für <b>Kaltakquise</b>.' );
+$own = ADM_Profiles::owned_html( $post->ID );
+adm_check( false !== strpos( $own, 'Selbst gekauft</strong> im September 2023' ) && false !== strpos( $own, 'Ich nutze es für Kaltakquise.' ) && false === strpos( $own, '<b>' ), 'Selbst gekauft: Monat auf Deutsch, eigener Text ohne HTML' );
+$GLOBALS['post'] = $post;
+setup_postdata( $post );
+$hd2 = do_shortcode( '[adm_deal_header]' );
+adm_check( false !== strpos( $hd2, 'adm-chip--own' ) && false !== strpos( $hd2, 'Selbst gekauft September 2023' ), 'Selbst gekauft: Hinweis im Kopfbereich' );
+adm_check( '' === ADM_Profiles::clean_month( '2023-13' ) && '' === ADM_Profiles::clean_month( 'September' ) && '2024-01' === ADM_Profiles::clean_month( ' 2024-01 ' ), 'Selbst gekauft: nur gültige Monate' );
+$_POST['adm_own_nonce'] = wp_create_nonce( 'adm_own' );
+$_POST['adm_own_month'] = '';
+$_POST['adm_own_note']  = '';
+wp_set_current_user( 1 );
+ADM_Profiles::save_own_box( $post->ID, $post );
+adm_check( '' === ADM_Profiles::owned( $post->ID ) && '' === get_post_meta( $post->ID, ADM_Profiles::OWN_NOTE, true ), 'Selbst gekauft: Leeren im Kasten entfernt die Angabe' );
+unset( $_POST['adm_own_nonce'], $_POST['adm_own_month'], $_POST['adm_own_note'] );
+wp_reset_postdata();
+
 // Deal-Seite des Plugins verträgt fehlende Deals
 adm_check( '' === do_shortcode( '[adm_deal_box deal="gibt-es-nicht"]' ), 'Unbekannter Deal: kein Kasten' );
 

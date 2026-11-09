@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.14.0 (09.11.2026)
+
+- Selbst gekauft: Kasten im Profil-Editor mit Kaufmonat und optional ein, zwei Sätzen eigener Erfahrung (Meta `_adm_owned` im Format JJJJ-MM und `_adm_own_note`, auch über die REST-API). Das Profil zeigt dann im Kopfbereich „Selbst gekauft September 2023“ und oben im Text einen Hinweiskasten mit dem eigenen Text und dem Satz, dass die Einschätzungen trotzdem auf Käuferbewertungen beruhen. Neu erzeugte Texte überschreiben die Angaben nicht; beim Ändern wird der Seiten-Cache geleert
+
 ## 0.13.6 (09.11.2026)
 
 - Einstellungen übersichtlicher: Reiter Tool-Profile, KI, Abgleich, Affiliate-Links, Newsletter und Updates, jeweils mit einem Satz, wofür der Bereich da ist. Die Automatik für Tool-Profile steht ganz oben im ersten Reiter. Nach dem Speichern bleibt der gewählte Reiter offen, ohne JavaScript stehen alle Bereiche untereinander

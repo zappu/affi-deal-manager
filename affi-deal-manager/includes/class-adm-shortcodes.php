@@ -64,6 +64,7 @@ class ADM_Shortcodes {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'the_content', array( __CLASS__, 'glance_live' ), 15 );
+		add_filter( 'the_content', array( __CLASS__, 'own_box' ), 19 );
 		add_filter( 'the_content', array( __CLASS__, 'layout' ), 20 );
 		add_shortcode( 'adm_ratings', array( __CLASS__, 'ratings' ) );
 		add_filter( 'hello_elementor_page_title', array( __CLASS__, 'hide_theme_title' ) );
@@ -87,6 +88,18 @@ class ADM_Shortcodes {
 		$side = do_shortcode( '[adm_deal_box placement="sidebar"]' );
 		return '<div class="adm adm-page">' . $head . '<div class="adm-page__cols"><div class="adm-page__main">' . $content . ADM_Newsletter::auto_html() . '</div>'
 			. ( '' !== $side ? '<div class="adm-page__side">' . $side . '</div>' : '' ) . '</div></div>' . self::sticky_bar();
+	}
+
+	/** Hinweis „Selbst gekauft“ oben im Profiltext, in beiden Layouts. */
+	public static function own_box( $content ) {
+		if ( ! is_singular( ADM_Profiles::CPT ) || doing_action( 'wp_head' ) || (int) get_the_ID() !== (int) get_queried_object_id() || false !== strpos( $content, 'adm-own' ) ) {
+			return $content;
+		}
+		$box = ADM_Profiles::owned_html( get_the_ID() );
+		if ( '' !== $box ) {
+			self::assets();
+		}
+		return $box . $content;
 	}
 
 	/** Hello Elementor: eigenen Seitentitel weglassen, der Kopfbereich bringt die H1 mit. */
@@ -218,6 +231,9 @@ class ADM_Shortcodes {
 		}
 		if ( $deal['return_days'] ) {
 			$chips[] = '<span class="adm-chip">' . esc_html( (int) $deal['return_days'] . ' Tage Rückgabe' ) . '</span>';
+		}
+		if ( '' !== ADM_Profiles::owned( $post->ID ) ) {
+			$chips[] = '<span class="adm-chip adm-chip--own">' . esc_html( 'Selbst gekauft ' . ADM_Profiles::month_label( ADM_Profiles::owned( $post->ID ) ) ) . '</span>';
 		}
 		if ( $term ) {
 			$chips[] = $term->count ? '<a class="adm-chip adm-chip--rubric" href="' . esc_url( get_term_link( $term ) ) . '">' . esc_html( $term->name ) . '</a>' : '<span class="adm-chip adm-chip--rubric">' . esc_html( $term->name ) . '</span>';

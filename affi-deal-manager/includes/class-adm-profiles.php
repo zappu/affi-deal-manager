@@ -23,6 +23,8 @@ class ADM_Profiles {
 	const VQUEUE     = 'adm_video_queue';
 	const TITLE_MAX  = 60;
 	const AUTO_DAY   = 'adm_profile_auto_day';
+	const OWN_MONTH  = '_adm_owned';    // Monat des eigenen Kaufs, JJJJ-MM
+	const OWN_NOTE   = '_adm_own_note'; // eigene Erfahrung, ein, zwei Sätze
 
 	/** Stilhinweise der letzten Erzeugung (für das Protokoll). */
 	private static $last_hints = array();
@@ -36,12 +38,24 @@ class ADM_Profiles {
 		add_filter( 'submenu_file', array( __CLASS__, 'submenu_file' ), 20, 2 );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'meta_box' ) );
 		add_action( 'save_post_' . self::CPT, array( __CLASS__, 'save_meta_box' ), 10, 2 );
+		add_action( 'save_post_' . self::CPT, array( __CLASS__, 'save_own_box' ), 10, 2 );
 		add_action( 'init', array( __CLASS__, 'maybe_flush' ), 99 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_fit_titles' ) );
 		add_action( 'adm_sync_tick', array( __CLASS__, 'cron_refill' ), 20 );
 	}
 
 	public static function register() {
+		foreach ( array( self::OWN_MONTH => 'month', self::OWN_NOTE => 'note' ) as $key => $kind ) {
+			register_post_meta( self::CPT, $key, array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'month' === $kind ? array( __CLASS__, 'clean_month' ) : array( __CLASS__, 'clean_note' ),
+				'auth_callback'     => function ( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', (int) $post_id );
+				},
+			) );
+		}
 		register_post_type( self::CPT, array(
 			'labels'       => array(
 				'name'          => 'Tool-Profile',
@@ -203,6 +217,78 @@ class ADM_Profiles {
 
 	public static function meta_box() {
 		add_meta_box( 'adm-deal', 'Deal bei AppSumo', array( __CLASS__, 'render_meta_box' ), self::CPT, 'side', 'high' );
+		add_meta_box( 'adm-own', 'Selbst gekauft', array( __CLASS__, 'render_own_box' ), self::CPT, 'side', 'default' );
+	}
+
+	/* ---------------- Selbst gekauft ---------------- */
+
+	/** JJJJ-MM oder leer. */
+	public static function clean_month( $v ) {
+		$v = trim( (string) $v );
+		return preg_match( '/^(19|20)\d\d-(0[1-9]|1[0-2])$/', $v ) ? $v : '';
+	}
+
+	/** Reiner Text, höchstens 600 Zeichen. */
+	public static function clean_note( $v ) {
+		$v = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $v ) ) );
+		return function_exists( 'mb_substr' ) ? mb_substr( $v, 0, 600 ) : substr( $v, 0, 600 );
+	}
+
+	/** „September 2023“ aus „2023-09“. */
+	public static function month_label( $ym ) {
+		$ym = self::clean_month( $ym );
+		if ( '' === $ym ) {
+			return '';
+		}
+		$names = array( 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember' );
+		return $names[ (int) substr( $ym, 5, 2 ) - 1 ] . ' ' . substr( $ym, 0, 4 );
+	}
+
+	/** Selbst gekauft? Liefert den Monat (JJJJ-MM) oder leer. */
+	public static function owned( $post_id ) {
+		return self::clean_month( get_post_meta( (int) $post_id, self::OWN_MONTH, true ) );
+	}
+
+	/** Hinweiskasten für das Profil. */
+	public static function owned_html( $post_id ) {
+		$month = self::owned( $post_id );
+		if ( '' === $month ) {
+			return '';
+		}
+		$note = self::clean_note( get_post_meta( (int) $post_id, self::OWN_NOTE, true ) );
+		$out  = '<aside class="adm adm-own" aria-label="Selbst gekauft">';
+		$out .= '<p class="adm-own__title"><strong>Selbst gekauft</strong> im ' . esc_html( self::month_label( $month ) ) . '</p>';
+		$out .= '' !== $note ? '<p class="adm-own__note">' . esc_html( $note ) . '</p>' : '';
+		$out .= '<p class="adm-own__small">Die Einschätzungen unten beruhen trotzdem auf Käuferbewertungen bei AppSumo und Videos, nicht auf einem eigenen Test.</p>';
+		return $out . '</aside>';
+	}
+
+	public static function render_own_box( $post ) {
+		wp_nonce_field( 'adm_own', 'adm_own_nonce' );
+		$month = self::owned( $post->ID );
+		$note  = (string) get_post_meta( $post->ID, self::OWN_NOTE, true );
+		echo '<p><label for="adm-own-month"><strong>Gekauft im</strong></label><br>';
+		echo '<input type="month" id="adm-own-month" name="adm_own_month" value="' . esc_attr( $month ) . '" style="width:100%"></p>';
+		echo '<p><label for="adm-own-note"><strong>Eigene Erfahrung (optional)</strong></label><br>';
+		echo '<textarea id="adm-own-note" name="adm_own_note" rows="4" class="widefat" maxlength="600">' . esc_textarea( $note ) . '</textarea></p>';
+		echo '<p class="description">Nur ausfüllen, wenn du das Tool wirklich gekauft hast. Das Profil zeigt dann „Selbst gekauft im …“ und deinen Text. Wird beim Neuschreiben des Profils nicht überschrieben.</p>';
+	}
+
+	public static function save_own_box( $post_id, $post ) {
+		if ( ! isset( $_POST['adm_own_nonce'] ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['adm_own_nonce'] ) ), 'adm_own' ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$month = self::clean_month( isset( $_POST['adm_own_month'] ) ? sanitize_text_field( wp_unslash( $_POST['adm_own_month'] ) ) : '' );
+		$note  = self::clean_note( isset( $_POST['adm_own_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['adm_own_note'] ) ) : '' );
+		$old   = self::owned( $post_id ) . '|' . get_post_meta( $post_id, self::OWN_NOTE, true );
+		'' !== $month ? update_post_meta( $post_id, self::OWN_MONTH, $month ) : delete_post_meta( $post_id, self::OWN_MONTH );
+		'' !== $note ? update_post_meta( $post_id, self::OWN_NOTE, $note ) : delete_post_meta( $post_id, self::OWN_NOTE );
+		if ( $old !== $month . '|' . $note && 'publish' === $post->post_status && class_exists( 'ADM_Cache' ) ) {
+			ADM_Cache::mark( $post_id );
+		}
 	}
 
 	public static function render_meta_box( $post ) {

@@ -284,3 +284,8 @@ body:not(.adm-layout) .adm-card{border:1px solid var(--adm-line)}
 .adm-nl.is-ok .adm-nl__msg{background:var(--adm-pro-bg);color:var(--adm-pro)}.adm-nl.is-err .adm-nl__msg{background:var(--adm-con-bg);color:var(--adm-con)}
 .adm-nl__small{font-size:.78em;line-height:1.5;color:var(--adm-muted);margin:12px 0 0!important}
 .adm-layout .adm-page__main .adm-nl{border:0}
+
+/* Selbst gekauft */
+.adm-chip--own{background:var(--adm-ink);color:#fff}
+.adm-own{background:var(--adm-card);border:1px solid var(--adm-line);border-left:5px solid var(--adm-lime);border-radius:var(--adm-radius);padding:14px 18px;margin:0 0 22px}
+.adm-own p{margin:0}.adm-own__note{margin-top:6px!important}.adm-own__small{margin-top:8px!important;font-size:.85em;color:var(--adm-muted)}

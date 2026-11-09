@@ -240,13 +240,13 @@ class ADM_DB {
 	/** SQL-Bedingung für Deals nur für Mitglieder von AppSumo Plus (und die Mitgliedschaft selbst). */
 	const PLUS_SQL = "(INSTR(LOWER(name), 'plus exclusive') > 0 OR SUBSTR(slug, 1, 5) = 'plus-' OR SUBSTR(LOWER(name), 1, 12) = 'appsumo plus')"; // ohne %, damit es in $wpdb->prepare() passt
 
-	/** Zusatzpakete eines anderen Deals (AppSumo-Slug enthält -add-on, etwa skillplate-add-on-2). */
-	const ADDON_SQL = "(INSTR(slug, '-add-on') > 0 OR INSTR(slug, '-addon') > 0)"; // ohne %, damit es in $wpdb->prepare() passt
+	/** Zusatzpakete eines anderen Deals (AppSumo-Slug endet auf -add-on oder -add-on-2 usw.). */
+	const ADDON_SQL = "(SUBSTR(slug, -7) = '-add-on' OR SUBSTR(slug, -9, 8) = '-add-on-' OR SUBSTR(slug, -10, 8) = '-add-on-' OR SUBSTR(slug, -6) = '-addon' OR SUBSTR(slug, -8, 7) = '-addon-' OR SUBSTR(slug, -9, 7) = '-addon-')"; // ohne %, damit es in $wpdb->prepare() passt
 
 	/** Zusatzpaket (Add-on) eines anderen Deals: bekommt kein eigenes Tool-Profil. */
 	public static function is_addon( array $row ) {
 		$slug = isset( $row['slug'] ) ? (string) $row['slug'] : '';
-		return false !== strpos( $slug, '-add-on' ) || false !== strpos( $slug, '-addon' );
+		return (bool) preg_match( '/-add-?on(-\d{1,2})?$/', $slug ); // nicht „exclusive-addons“ (Produktname)
 	}
 
 	/**

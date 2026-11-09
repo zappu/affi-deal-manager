@@ -330,7 +330,12 @@ adm_check( 3 === (int) ADM_Settings::get( 'auto_profiles_daily' ), 'Nachziehen: 
 $wpdb->delete( ADM_DB::table(), array( 'slug' => 'leadocean-add-on-2' ) );
 $wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/leadocean-add-on-2/', 'slug' => 'leadocean-add-on-2', 'name' => 'LeadOcean', 'price' => 49, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'review_count' => 77777, 'first_seen' => ADM_DB::now() ) );
 $addon_id = (int) $wpdb->insert_id;
-adm_check( ADM_DB::is_addon( ADM_DB::get( $addon_id ) ) && ! ADM_DB::is_addon( $lo ), 'Add-on am Slug erkannt' );
+adm_check( ADM_DB::is_addon( ADM_DB::get( $addon_id ) ) && ! ADM_DB::is_addon( $lo ) && ! ADM_DB::is_addon( array( 'slug' => 'marketplace-exclusive-addons' ) ) && ADM_DB::is_addon( array( 'slug' => 'headroom-add-on-12' ) ), 'Add-on am Slug erkannt, Produkte mit „addons“ im Namen nicht' );
+$wpdb->delete( ADM_DB::table(), array( 'slug' => 'animation-addons' ) );
+$wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/animation-addons/', 'slug' => 'animation-addons', 'name' => 'Animation Addons', 'price' => 49, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'review_count' => 77776, 'first_seen' => ADM_DB::now() ) );
+$aa_id = (int) $wpdb->insert_id;
+adm_check( in_array( $aa_id, ADM_Profiles::best_candidates( 50 ), true ), 'Produkt mit „addons“ im Slug bleibt beim Sammelknopf' );
+$wpdb->delete( ADM_DB::table(), array( 'id' => $aa_id ) );
 adm_check( ! in_array( $addon_id, ADM_Profiles::best_candidates( 50 ), true ) && 0 === ADM_Profiles::enqueue( array( $addon_id ) ), 'Add-on: nicht beim Sammelknopf, nicht vormerkbar' );
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'auto_profiles' => 1 ) ) );
 do_action( 'adm_deal_status_changed', $addon_id, 'neu', 'kaufbar' );

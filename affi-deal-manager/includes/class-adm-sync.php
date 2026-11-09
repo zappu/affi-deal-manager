@@ -105,6 +105,9 @@ class ADM_Sync {
 		}
 		update_option( 'adm_last_servercron', time(), false );
 		$report = self::tick( false, 'servercron' );
+		if ( class_exists( 'ADM_Profiles' ) ) {
+			$report['profiles_added'] = ADM_Profiles::maybe_refill();
+		}
 		if ( class_exists( 'ADM_Profiles' ) && ( ADM_Profiles::queue() || ADM_Profiles::video_queue() ) && ! ADM_Profiles::paused() ) {
 			ADM_Profiles::process_queue();
 			$report['profiles_left'] = count( ADM_Profiles::queue() );

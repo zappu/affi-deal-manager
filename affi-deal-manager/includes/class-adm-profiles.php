@@ -22,6 +22,7 @@ class ADM_Profiles {
 	const CURRENT    = 'adm_profile_current';
 	const VQUEUE     = 'adm_video_queue';
 	const TITLE_MAX  = 60;
+	const AUTO_DAY   = 'adm_profile_auto_day';
 
 	/** Stilhinweise der letzten Erzeugung (für das Protokoll). */
 	private static $last_hints = array();
@@ -37,6 +38,7 @@ class ADM_Profiles {
 		add_action( 'save_post_' . self::CPT, array( __CLASS__, 'save_meta_box' ), 10, 2 );
 		add_action( 'init', array( __CLASS__, 'maybe_flush' ), 99 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_fit_titles' ) );
+		add_action( 'adm_sync_tick', array( __CLASS__, 'cron_refill' ), 20 );
 	}
 
 	public static function register() {
@@ -151,6 +153,13 @@ class ADM_Profiles {
 			}
 		}
 		return $n;
+	}
+
+	/** WP-Cron: nachziehen und die Warteschlange anstoßen. */
+	public static function cron_refill() {
+		if ( 'wpcron' === ADM_Settings::get( 'mode' ) ) {
+			self::maybe_refill();
+		}
 	}
 
 	public static function menu_tab() {
@@ -310,7 +319,7 @@ class ADM_Profiles {
 
 	/** Ein Profil darf erzeugt werden, wenn es noch keins gibt oder das vorhandene ein Entwurf ist. */
 	public static function can_generate( array $deal ) {
-		if ( '' === (string) $deal['name'] || ADM_DB::is_plus( $deal ) ) {
+		if ( '' === (string) $deal['name'] || ADM_DB::is_plus( $deal ) || ADM_DB::is_addon( $deal ) ) {
 			return false;
 		}
 		$post = (int) $deal['post_id'] ? get_post( (int) $deal['post_id'] ) : null;
@@ -344,7 +353,7 @@ class ADM_Profiles {
 	public static function best_candidates( $limit ) {
 		global $wpdb;
 		$rows = $wpdb->get_col( $wpdb->prepare(
-			'SELECT id FROM ' . ADM_DB::table() . " WHERE status = 'kaufbar' AND deal_type = 'software' AND post_id = 0 AND name <> '' AND NOT " . ADM_DB::PLUS_SQL . ' ORDER BY review_count DESC, rating DESC LIMIT %d',
+			'SELECT id FROM ' . ADM_DB::table() . " WHERE status = 'kaufbar' AND deal_type = 'software' AND post_id = 0 AND name <> '' AND NOT " . ADM_DB::PLUS_SQL . ' AND NOT ' . ADM_DB::ADDON_SQL . ' ORDER BY review_count DESC, rating DESC LIMIT %d',
 			(int) $limit
 		) );
 		return array_map( 'intval', (array) $rows );
@@ -470,6 +479,36 @@ class ADM_Profiles {
 		update_option( self::LOG, array_slice( $log, 0, 30 ), false );
 	}
 
+	/**
+	 * Automatik: Ist die Warteschlange leer, die nächsten besten Software-Deals ohne Profil vormerken,
+	 * höchstens „auto_profiles_daily“ pro Tag. Läuft bei jedem Abgleich (WP-Cron und Server-Cron).
+	 *
+	 * @return int Anzahl neu vorgemerkter Deals.
+	 */
+	public static function maybe_refill() {
+		$limit = (int) ADM_Settings::get( 'auto_profiles_daily' );
+		if ( $limit <= 0 || ! ADM_Settings::get( 'auto_profiles' ) || ! ADM_AI::configured() || self::paused() || self::queue() ) {
+			return 0;
+		}
+		$day   = wp_date( 'Y-m-d' );
+		$count = get_option( self::AUTO_DAY, array() );
+		$done  = is_array( $count ) && isset( $count['day'], $count['n'] ) && $count['day'] === $day ? (int) $count['n'] : 0;
+		if ( $done >= $limit ) {
+			return 0;
+		}
+		$n = self::enqueue( self::best_candidates( $limit - $done ) );
+		if ( $n ) {
+			update_option( self::AUTO_DAY, array( 'day' => $day, 'n' => $done + $n ), false );
+		}
+		return $n;
+	}
+
+	/** Heute automatisch vorgemerkte Profile. */
+	public static function auto_today() {
+		$count = get_option( self::AUTO_DAY, array() );
+		return is_array( $count ) && isset( $count['day'], $count['n'] ) && wp_date( 'Y-m-d' ) === $count['day'] ? (int) $count['n'] : 0;
+	}
+
 	/** Automatik: neue kaufbare Software-Deals bekommen ein Profil, wenn eingeschaltet. */
 	public static function on_status_changed( $id, $old, $new ) {
 		if ( 'kaufbar' !== $new || ! ADM_Settings::get( 'auto_profiles' ) || ! ADM_AI::configured() ) {
@@ -496,6 +535,9 @@ class ADM_Profiles {
 		}
 		if ( ADM_DB::is_plus( $deal ) ) {
 			return new WP_Error( 'adm_profile_plus', 'Deal nur für Mitglieder von AppSumo Plus (Abo), kein Tool-Profil.' );
+		}
+		if ( ADM_DB::is_addon( $deal ) ) {
+			return new WP_Error( 'adm_profile_addon', 'Zusatzpaket (Add-on) eines anderen Deals, kein eigenes Tool-Profil.' );
 		}
 		if ( ! self::can_generate( $deal ) ) {
 			return new WP_Error( 'adm_profile_published', 'Das Profil ist veröffentlicht und wird nicht automatisch überschrieben.' );

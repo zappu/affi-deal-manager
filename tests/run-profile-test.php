@@ -305,6 +305,40 @@ ADM_Profiles::clear_queue();
 $fc = adm_get_deal( 'founder-course' );
 do_action( 'adm_deal_status_changed', (int) $fc['id'], 'neu', 'kaufbar' );
 adm_check( array() === ADM_Profiles::queue(), 'Automatik: Kurse werden nicht automatisch vorgemerkt' );
+
+// Automatik: täglich die besten Deals ohne Profil nachziehen
+ADM_Profiles::clear_queue();
+delete_option( ADM_Profiles::AUTO_DAY );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'auto_profiles' => 1, 'auto_profiles_daily' => 1, 'mode' => 'wpcron' ) ) );
+$cands = ADM_Profiles::best_candidates( 5 );
+$n1    = ADM_Profiles::maybe_refill();
+adm_check( count( $cands ) > 0 && 1 === $n1 && array( $cands[0] ) === ADM_Profiles::queue() && 1 === ADM_Profiles::auto_today(), 'Nachziehen: bester Deal ohne Profil vorgemerkt, Tageszähler' );
+adm_check( 0 === ADM_Profiles::maybe_refill(), 'Nachziehen: nicht, solange die Warteschlange voll ist' );
+ADM_Profiles::clear_queue();
+adm_check( 0 === ADM_Profiles::maybe_refill() && array() === ADM_Profiles::queue(), 'Nachziehen: Tagesgrenze eingehalten' );
+update_option( ADM_Profiles::AUTO_DAY, array( 'day' => '2000-01-01', 'n' => 1 ), false );
+adm_check( 1 === ADM_Profiles::maybe_refill(), 'Nachziehen: neuer Tag, neue Grenze' );
+ADM_Profiles::clear_queue();
+delete_option( ADM_Profiles::AUTO_DAY );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'auto_profiles_daily' => 0 ) ) );
+adm_check( 0 === ADM_Profiles::maybe_refill(), 'Nachziehen: 0 heißt aus' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'auto_profiles' => 0, 'auto_profiles_daily' => 3 ) ) );
+adm_check( 0 === ADM_Profiles::maybe_refill(), 'Nachziehen: nur mit eingeschalteter Automatik' );
+adm_check( 3 === (int) ADM_Settings::get( 'auto_profiles_daily' ), 'Nachziehen: Einstellung gespeichert' );
+
+// Zusatzpakete (Add-ons) bekommen kein Profil
+$wpdb->delete( ADM_DB::table(), array( 'slug' => 'leadocean-add-on-2' ) );
+$wpdb->insert( ADM_DB::table(), array( 'url' => 'https://appsumo.com/products/leadocean-add-on-2/', 'slug' => 'leadocean-add-on-2', 'name' => 'LeadOcean', 'price' => 49, 'currency' => 'USD', 'status' => 'kaufbar', 'deal_type' => 'software', 'review_count' => 77777, 'first_seen' => ADM_DB::now() ) );
+$addon_id = (int) $wpdb->insert_id;
+adm_check( ADM_DB::is_addon( ADM_DB::get( $addon_id ) ) && ! ADM_DB::is_addon( $lo ), 'Add-on am Slug erkannt' );
+adm_check( ! in_array( $addon_id, ADM_Profiles::best_candidates( 50 ), true ) && 0 === ADM_Profiles::enqueue( array( $addon_id ) ), 'Add-on: nicht beim Sammelknopf, nicht vormerkbar' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'auto_profiles' => 1 ) ) );
+do_action( 'adm_deal_status_changed', $addon_id, 'neu', 'kaufbar' );
+adm_check( array() === ADM_Profiles::queue(), 'Add-on: keine Automatik' );
+$r = ADM_Profiles::generate( $addon_id );
+adm_check( is_wp_error( $r ) && 'adm_profile_addon' === $r->get_error_code(), 'Add-on: keine Erzeugung' );
+$wpdb->delete( ADM_DB::table(), array( 'id' => $addon_id ) );
+
 ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'auto_profiles' => 0, 'mode' => 'wpcron' ) ) );
 ADM_DB::update( (int) $lo['id'], array( 'post_id' => (int) $post->ID ) );
 

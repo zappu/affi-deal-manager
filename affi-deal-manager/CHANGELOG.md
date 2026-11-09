@@ -1,5 +1,10 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.13.5 (09.11.2026)
+
+- Automatik für bestehende Deals: Ist die Warteschlange leer, merkt das Plugin bei jedem Abgleich die nächsten besten Software-Deals ohne Profil vor, höchstens so viele pro Tag wie eingestellt (Einstellung „täglich bis zu … Entwürfe“, Standard 10, 0 = nur neue Deals). Gilt für WP-Cron und Server-Cron, der Stand steht im Kasten „Tool-Profile“
+- Zusatzpakete (Add-ons) wie `skillplate-add-on-2` bekommen kein eigenes Profil mehr: nicht beim Sammelknopf, nicht in der Automatik, keine Erzeugung. Bisher entstanden dafür doppelte Entwürfe
+
 ## 0.13.4 (08.11.2026)
 
 - SEO-Titel der Tool-Profile höchstens 60 Zeichen: Ist die Vorlage zu lang, nimmt das Plugin eine kürzere Fassung. Bestehende Profile, deren Titel noch der Vorlage entspricht, werden einmalig gekürzt; von Hand gesetzte Titel bleiben

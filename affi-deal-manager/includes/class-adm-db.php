@@ -240,6 +240,15 @@ class ADM_DB {
 	/** SQL-Bedingung für Deals nur für Mitglieder von AppSumo Plus (und die Mitgliedschaft selbst). */
 	const PLUS_SQL = "(INSTR(LOWER(name), 'plus exclusive') > 0 OR SUBSTR(slug, 1, 5) = 'plus-' OR SUBSTR(LOWER(name), 1, 12) = 'appsumo plus')"; // ohne %, damit es in $wpdb->prepare() passt
 
+	/** Zusatzpakete eines anderen Deals (AppSumo-Slug enthält -add-on, etwa skillplate-add-on-2). */
+	const ADDON_SQL = "(INSTR(slug, '-add-on') > 0 OR INSTR(slug, '-addon') > 0)"; // ohne %, damit es in $wpdb->prepare() passt
+
+	/** Zusatzpaket (Add-on) eines anderen Deals: bekommt kein eigenes Tool-Profil. */
+	public static function is_addon( array $row ) {
+		$slug = isset( $row['slug'] ) ? (string) $row['slug'] : '';
+		return false !== strpos( $slug, '-add-on' ) || false !== strpos( $slug, '-addon' );
+	}
+
 	/**
 	 * Deal nur für Mitglieder von AppSumo Plus („Plus exclusive“) oder die Plus-Mitgliedschaft selbst.
 	 * Plus ist ein Jahresabo: Solche Deals bekommen keine Tool-Profile, sie gehören auf eine eigene Plus-Seite.

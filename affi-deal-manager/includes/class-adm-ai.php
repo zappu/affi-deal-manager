@@ -54,12 +54,17 @@ class ADM_AI {
 			}
 			$body = array(
 				'model'       => $model,
-				'max_tokens'  => (int) $max_tokens,
 				'messages'    => array(
 					array( 'role' => 'system', 'content' => $system ),
 					array( 'role' => 'user', 'content' => $user ),
 				),
 			);
+			if ( 'openai' === $provider ) {
+				// Neuere OpenAI-Modelle (GPT-5 und später) kennen nur max_completion_tokens; Denk-Tokens zählen mit, daher mehr Luft.
+				$body['max_completion_tokens'] = max( 4000, 2 * (int) $max_tokens );
+			} else {
+				$body['max_tokens'] = (int) $max_tokens;
+			}
 		}
 
 		$res = wp_remote_post( $url, array(
@@ -95,6 +100,106 @@ class ADM_AI {
 			return new WP_Error( 'adm_ai_empty', 'Die KI hat keinen Text geliefert.' );
 		}
 		return $text;
+	}
+
+	/** Zwischenspeicher der Modelllisten (Stunden). */
+	const MODELS_CACHE_HOURS = 12;
+
+	/**
+	 * Modelle eines Anbieters für die Auswahl in den Einstellungen, live von der API, 12 Stunden zwischengespeichert.
+	 * OpenRouter: öffentliche Liste; OpenAI und Anthropic: mit dem Schlüssel aus der wp-config.php.
+	 * Ohne Schlüssel oder bei Fehlern die Ersatzliste ADM_Settings::MODEL_SUGGESTIONS.
+	 *
+	 * @param string $provider openrouter, openai oder anthropic.
+	 * @return array array( 'live' => bool, 'models' => array( array( id, label ) ) )
+	 */
+	public static function models( $provider ) {
+		if ( ! isset( ADM_Settings::AI_PROVIDERS[ $provider ] ) ) {
+			return array( 'live' => false, 'models' => array() );
+		}
+		$cached = get_transient( 'adm_models_' . $provider );
+		if ( is_array( $cached ) && ! empty( $cached['models'] ) ) {
+			return $cached;
+		}
+		$list = self::fetch_models( $provider );
+		if ( is_wp_error( $list ) || ! $list ) {
+			$fallback = array();
+			foreach ( ADM_Settings::MODEL_SUGGESTIONS[ $provider ] as $m ) {
+				$fallback[] = array( 'id' => $m, 'label' => $m );
+			}
+			$out = array( 'live' => false, 'models' => $fallback, 'error' => is_wp_error( $list ) ? $list->get_error_message() : 'Leere Liste' );
+			set_transient( 'adm_models_' . $provider, $out, HOUR_IN_SECONDS ); // Fehler nicht bei jedem Seitenaufruf neu versuchen
+			return $out;
+		}
+		$out = array( 'live' => true, 'models' => $list, 'time' => time() );
+		set_transient( 'adm_models_' . $provider, $out, self::MODELS_CACHE_HOURS * HOUR_IN_SECONDS );
+		return $out;
+	}
+
+	/** Zwischenspeicher leeren (Knopf „Modelllisten neu laden“). */
+	public static function forget_models() {
+		foreach ( array_keys( ADM_Settings::AI_PROVIDERS ) as $p ) {
+			delete_transient( 'adm_models_' . $p );
+		}
+	}
+
+	/** @return array|WP_Error Liste aus array( id, label ), neueste zuerst. */
+	private static function fetch_models( $provider ) {
+		$key = ADM_Settings::ai_key( $provider );
+		$req = array( 'timeout' => 10, 'headers' => array() );
+		if ( 'openrouter' === $provider ) {
+			$url = 'https://openrouter.ai/api/v1/models';
+		} elseif ( '' === $key ) {
+			return new WP_Error( 'adm_models_key', 'Kein Schlüssel für diesen Anbieter.' );
+		} elseif ( 'openai' === $provider ) {
+			$url                               = 'https://api.openai.com/v1/models';
+			$req['headers']['Authorization'] = 'Bearer ' . $key;
+		} else {
+			$url                                   = 'https://api.anthropic.com/v1/models?limit=100';
+			$req['headers']['x-api-key']         = $key;
+			$req['headers']['anthropic-version'] = '2023-06-01';
+		}
+		$res = wp_remote_get( $url, $req );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $res );
+		$json = json_decode( (string) wp_remote_retrieve_body( $res ), true );
+		if ( 200 !== $code || ! is_array( $json ) || ! isset( $json['data'] ) || ! is_array( $json['data'] ) ) {
+			return new WP_Error( 'adm_models_http', 'Modellliste nicht abrufbar (HTTP ' . $code . ').' );
+		}
+		$rows = array();
+		foreach ( $json['data'] as $m ) {
+			$id = isset( $m['id'] ) ? (string) $m['id'] : '';
+			if ( '' === $id || ! preg_match( '#^[A-Za-z0-9._:~@/\-]{2,100}$#', $id ) ) {
+				continue;
+			}
+			if ( 'openrouter' === $provider ) {
+				$out_mod = isset( $m['architecture']['output_modalities'] ) && is_array( $m['architecture']['output_modalities'] ) ? $m['architecture']['output_modalities'] : array( 'text' );
+				if ( ! in_array( 'text', $out_mod, true ) ) {
+					continue;
+				}
+				$label = isset( $m['name'] ) ? (string) $m['name'] : $id;
+				$time  = isset( $m['created'] ) ? (int) $m['created'] : 0;
+			} elseif ( 'openai' === $provider ) {
+				// Nur Text-Modelle für Chat Completions.
+				if ( ! preg_match( '/^(gpt-|chatgpt-|chat-latest|o\d)/', $id ) || preg_match( '/(audio|realtime|tts|transcribe|image|search|embedding|moderation|instruct|whisper|dall-e|codex|computer-use|cyber|daybreak)/', $id ) ) {
+					continue;
+				}
+				$label = $id;
+				$time  = isset( $m['created'] ) ? (int) $m['created'] : 0;
+			} else {
+				$label = isset( $m['display_name'] ) ? (string) $m['display_name'] . ' (' . $id . ')' : $id;
+				$time  = isset( $m['created_at'] ) ? (int) strtotime( (string) $m['created_at'] ) : 0;
+			}
+			$rows[] = array( 'id' => $id, 'label' => wp_strip_all_tags( $label ), 'time' => $time );
+		}
+		usort( $rows, function ( $a, $b ) {
+			return $b['time'] <=> $a['time'] ?: strcmp( $a['id'], $b['id'] );
+		} );
+		return array_map( function ( $r ) {
+			return array( 'id' => $r['id'], 'label' => $r['label'] );
+		}, array_slice( $rows, 0, 400 ) );
 	}
 
 	/** Ausweichmodell, wenn das eingestellte Gemini-Modell überlastet ist. */

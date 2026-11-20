@@ -15,7 +15,7 @@
   - `includes/class-adm-sync.php`: Abgleich per WP-Cron (`adm_sync_tick`, Zeitplan `adm_every_<Minuten>`) oder Server-Cron (REST `affi-deal-manager/v1/tick`, Schlüssel `X-ADM-Key`), Zeitfenster, Sitemap-Uhrzeit, Fehler-Mail
   - Reihenfolge der Prüfung: kaufbar, dann Sitemap-Priorität (AppSumo: 0.5 aktiv, 0.25 alt), dann ungeprüft, dann neuestes lastmod
   - `includes/class-adm-links.php`: Impact-Deep-Links, Shortcode `[adm_link]` (`deal` oder `url`), `mark_links()` ergänzt `rel="sponsored nofollow"` an Links zu AppSumo und zum Tracking-Host (auch in Elementor-Inhalten)
-  - `includes/class-adm-ai.php`: KI-Anbindung OpenRouter, OpenAI, Anthropic; Schlüssel nur aus der wp-config.php (`THOKA_OPENROUTER_API_KEY`, `THOKA_OPENAI_API_KEY`, `THOKA_ANTHROPIC_API_KEY`, `THOKA_YOUTUBE_API_KEY`, `THOKA_GEMINI_API_KEY` für Videozusammenfassungen, `THOKA_IMPACT_ACCOUNT_SID` und `THOKA_IMPACT_AUTH_TOKEN` für die Impact-API), nie in der Datenbank
+  - `includes/class-adm-ai.php`: KI-Anbindung OpenRouter, OpenAI (mit `max_completion_tokens`), Anthropic; Modelllisten live über `ADM_AI::models()` (Transient `adm_models_<anbieter>`, 12 h, Ersatz `ADM_Settings::MODEL_SUGGESTIONS`), Auswahl wechselt mit dem Anbieter, `ADM_Settings::model_fits()` verwirft unpassende Modelle; Schlüssel nur aus der wp-config.php (`THOKA_OPENROUTER_API_KEY`, `THOKA_OPENAI_API_KEY`, `THOKA_ANTHROPIC_API_KEY`, `THOKA_YOUTUBE_API_KEY`, `THOKA_GEMINI_API_KEY` für Videozusammenfassungen, `THOKA_IMPACT_ACCOUNT_SID` und `THOKA_IMPACT_AUTH_TOKEN` für die Impact-API), nie in der Datenbank
   - `includes/class-adm-sources.php`: AppSumo-Bewertungen (`/api/v2/deals/<appsumo_id>/reviews/`, neueste per `sort=created`, kritischste per `sort=rating&order=asc`) und YouTube-Suche
   - `includes/class-adm-rubrics.php`: Taxonomie `adm_rubrik` (`/rubrik/`), Zuordnung AppSumo-Kategorie zu Rubrik (Regeln `RULES`, Filter `adm_rubric_rules`)
   - `includes/class-adm-style.php`: Stilprüfung nach „vermenschlichen“ (Hinweise in `_adm_style_hints`), Korrektur von großem „Du“
@@ -64,7 +64,7 @@ Vor jedem Release prüfen, ob auf mediainfo.space eine neuere Version liegt als 
 
 1. Version erhöhen: Plugin-Kopf und `ADM_VERSION` in `affi-deal-manager.php`
 2. `affi-deal-manager/CHANGELOG.md` ergänzen
-3. Tests: `php tests/run-sync-test.php <wp-pfad>`, danach `php tests/run-profile-test.php <wp-pfad>` und `php tests/run-plus-test.php <wp-pfad>` in einem Test-WordPress mit `tests/adm-test-http.php` als Mu-Plugin und `tests/fixtures/` als `mu-plugins/adm-fixtures/`
+3. Tests: `php tests/run-sync-test.php <wp-pfad>`, danach `php tests/run-profile-test.php <wp-pfad>`, `php tests/run-plus-test.php <wp-pfad>` und `php tests/run-ai-test.php <wp-pfad>` in einem Test-WordPress mit `tests/adm-test-http.php` als Mu-Plugin und `tests/fixtures/` als `mu-plugins/adm-fixtures/`
    - Der Sync-Test braucht eine frisch installierte Datenbank (bei SQLite den Ordner `wp-content/database/.ht.*` löschen und neu installieren) und läuft ohne sprechende Permalinks
    - Vor dem Profiltest Permalinks auf `/%postname%/` stellen, sonst schlägt „Startseite: Kacheln aller Rubriken“ fehl
    - Plugin für den Test aus dem gebauten ZIP installieren

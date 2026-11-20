@@ -86,7 +86,7 @@ class ADM_Admin {
 			wp_die( 'Keine Berechtigung.' );
 		}
 		check_admin_referer( 'adm_action' );
-		$do  = isset( $_POST['do'] ) ? sanitize_key( $_POST['do'] ) : '';
+		$do  = isset( $_REQUEST['do'] ) ? sanitize_key( $_REQUEST['do'] ) : '';
 		$msg = '';
 		if ( 'run' === $do ) {
 			$r   = ADM_Sync::tick( true );
@@ -94,6 +94,10 @@ class ADM_Admin {
 		} elseif ( 'sitemap' === $do ) {
 			delete_option( ADM_Sync::SITEMAP_READ );
 			$msg = 'Sitemap: ' . ADM_Sync::read_sitemap();
+		} elseif ( 'models' === $do ) {
+			ADM_AI::forget_models();
+			wp_safe_redirect( add_query_arg( array( 'page' => self::SLUG_SETTINGS ), admin_url( 'admin.php' ) ) . '#tab-ki' );
+			exit;
 		} elseif ( 'unlock' === $do ) {
 			delete_transient( ADM_Sync::LOCK );
 			$msg = 'Sperre aufgehoben.';
@@ -364,8 +368,7 @@ class ADM_Admin {
 						<td><?php self::key_status(); ?></td>
 					</tr>
 					<?php
-					self::model_suggestions();
-					self::field( 'ai_model', 'Modell', $s, 'Leer lassen für das Standardmodell (' . ADM_Settings::AI_PROVIDERS[ isset( ADM_Settings::AI_PROVIDERS[ $s['ai_provider'] ] ) ? $s['ai_provider'] : 'openrouter' ]['model'] . ').' );
+					self::model_row( $s );
 					?>
 					<tr>
 						<th scope="row">Videos zusammenfassen</th>
@@ -618,7 +621,7 @@ class ADM_Admin {
 			esc_attr( $key ),
 			esc_attr( (string) $s[ $key ] ),
 			$help ? '<p class="description">' . esc_html( $help ) . '</p>' : '',
-			'ai_model' === $key ? ' list="adm-models" autocomplete="off"' : ''
+			''
 		);
 	}
 
@@ -676,14 +679,72 @@ class ADM_Admin {
 	}
 
 	/** Vorschlagsliste für das Modellfeld (je Anbieter). */
-	private static function model_suggestions() {
-		echo '<datalist id="adm-models">';
-		foreach ( ADM_Settings::MODEL_SUGGESTIONS as $provider => $models ) {
-			foreach ( $models as $m ) {
-				printf( '<option value="%s" label="%s">', esc_attr( $m ), esc_attr( ADM_Settings::AI_PROVIDERS[ $provider ]['label'] ) );
-			}
+	/**
+	 * Modellauswahl passend zum Anbieter: Liste live vom Anbieter (ADM_AI::models), wechselt mit der Anbieter-Auswahl,
+	 * dazu „Eigenes Modell …“ mit Textfeld für Namen, die nicht in der Liste stehen.
+	 */
+	private static function model_row( array $s ) {
+		$data = array();
+		foreach ( ADM_Settings::AI_PROVIDERS as $key => $p ) {
+			$m            = ADM_AI::models( $key );
+			$data[ $key ] = array(
+				'default' => $p['model'],
+				'live'    => ! empty( $m['live'] ),
+				'note'    => ! empty( $m['live'] ) ? count( $m['models'] ) . ' Modelle, live von ' . $p['label'] : 'Kurzliste (' . ( isset( $m['error'] ) ? $m['error'] : 'Liste nicht abrufbar' ) . ')',
+				'models'  => $m['models'],
+			);
 		}
-		echo '</datalist>';
+		$reload = wp_nonce_url( add_query_arg( array( 'action' => 'adm_action', 'do' => 'models' ), admin_url( 'admin-post.php' ) ), 'adm_action' );
+		?>
+		<tr>
+			<th scope="row"><label for="adm-ai_model">Modell</label></th>
+			<td>
+				<select id="adm-ai_model" name="adm[ai_model]" style="max-width:100%;min-width:320px"></select>
+				<input type="text" id="adm-ai_model_custom" name="adm[ai_model_custom]" class="regular-text" value="" placeholder="Modellname" autocomplete="off" style="display:none;margin-top:6px">
+				<p class="description"><span id="adm-model-note"></span> · <a href="<?php echo esc_url( $reload ); ?>">Modelllisten neu laden</a>. Passt ein gespeichertes Modell nicht zum Anbieter, nimmt das Plugin das Standardmodell.</p>
+				<script>
+				(function(){
+					var data = <?php echo wp_json_encode( $data ); ?>;
+					var saved = <?php echo wp_json_encode( (string) $s['ai_model'] ); ?>;
+					var prov = document.getElementById('adm-ai_provider');
+					var sel = document.getElementById('adm-ai_model');
+					var custom = document.getElementById('adm-ai_model_custom');
+					var note = document.getElementById('adm-model-note');
+					function opt(v, t, parent){ var o = document.createElement('option'); o.value = v; o.textContent = t; (parent || sel).appendChild(o); return o; }
+					function fill(keep){
+						var d = data[prov.value] || data.openrouter;
+						var want = keep ? saved : '';
+						sel.innerHTML = '';
+						opt('', 'Standard: ' + d['default']);
+						var groups = {}, found = false;
+						d.models.forEach(function(m){
+							var parent = sel;
+							if (prov.value === 'openrouter' && m.id.indexOf('/') > 0) {
+								var g = m.id.split('/')[0].replace(/^~/, '');
+								if (!groups[g]) { groups[g] = document.createElement('optgroup'); groups[g].label = g; }
+								parent = groups[g];
+							}
+							opt(m.id, m.label === m.id ? m.id : m.label + ' – ' + m.id, parent);
+							if (m.id === want) { found = true; }
+						});
+						Object.keys(groups).sort(function(a,b){
+							var top = ['anthropic','openai','google','meta-llama','mistralai','deepseek','x-ai','qwen'];
+							var ia = top.indexOf(a), ib = top.indexOf(b);
+							return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+						}).forEach(function(g){ sel.appendChild(groups[g]); });
+						opt('__custom', 'Eigenes Modell …');
+						if (want && !found) { sel.value = '__custom'; custom.value = want; } else { sel.value = want; custom.value = ''; }
+						custom.style.display = sel.value === '__custom' ? '' : 'none';
+						note.textContent = d.note;
+					}
+					sel.addEventListener('change', function(){ custom.style.display = sel.value === '__custom' ? '' : 'none'; if (sel.value === '__custom') { custom.focus(); } });
+					prov.addEventListener('change', function(){ fill(false); });
+					fill(true);
+				})();
+				</script>
+			</td>
+		</tr>
+		<?php
 	}
 
 	/** Status der Schlüssel aus der wp-config.php, ohne die Schlüssel zu zeigen. */

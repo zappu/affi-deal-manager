@@ -33,14 +33,15 @@ class ADM_Settings {
 	/** KI-Anbieter => Beschriftung, Standardmodell und Konstante in der wp-config.php. */
 	const AI_PROVIDERS = array(
 		'openrouter' => array( 'label' => 'OpenRouter', 'model' => 'anthropic/claude-sonnet-5.5', 'constant' => 'THOKA_OPENROUTER_API_KEY' ),
-		'openai'     => array( 'label' => 'OpenAI', 'model' => 'gpt-4.1', 'constant' => 'THOKA_OPENAI_API_KEY' ),
+		'openai'     => array( 'label' => 'OpenAI', 'model' => 'gpt-5.6-sol', 'constant' => 'THOKA_OPENAI_API_KEY' ),
 		'anthropic'  => array( 'label' => 'Anthropic', 'model' => 'claude-sonnet-5-5', 'constant' => 'THOKA_ANTHROPIC_API_KEY' ),
 	);
 
 	/** Vorschläge für das Modellfeld (Stand 06.11.2026, OpenRouter-Modellliste). Freie Eingabe bleibt möglich. */
+	/** Ersatzliste, wenn die Modellliste des Anbieters nicht abrufbar ist (sonst live über ADM_AI::models()). */
 	const MODEL_SUGGESTIONS = array(
 		'openrouter' => array( 'anthropic/claude-sonnet-5.5', '~anthropic/claude-sonnet-latest', 'anthropic/claude-opus-5.5', 'anthropic/claude-haiku-5.5' ),
-		'openai'     => array( 'gpt-4.1' ),
+		'openai'     => array( 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'chat-latest' ),
 		'anthropic'  => array( 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5' ),
 	);
 
@@ -120,14 +121,43 @@ class ADM_Settings {
 		);
 	}
 
-	/** Eingestelltes Modell oder Standardmodell des Anbieters. */
+	/** Modell aus dem Formular: eigene Eingabe vor Auswahl; passt es nicht zum Anbieter, Standardmodell (leer). */
+	private static function clean_model( array $in, array $cur ) {
+		$raw = isset( $in['ai_model_custom'] ) && '' !== trim( (string) $in['ai_model_custom'] ) ? $in['ai_model_custom'] : ( isset( $in['ai_model'] ) ? $in['ai_model'] : $cur['ai_model'] );
+		$raw = '__custom' === $raw ? '' : $raw;
+		$m   = substr( preg_replace( '/[^A-Za-z0-9._:~@\/\-]/', '', (string) $raw ), 0, 100 );
+		$p   = isset( $in['ai_provider'], self::AI_PROVIDERS[ $in['ai_provider'] ] ) ? $in['ai_provider'] : $cur['ai_provider'];
+		return self::model_fits( $p, $m ) ? $m : '';
+	}
+
+	/** Eingestelltes Modell oder Standardmodell des Anbieters (auch, wenn das gespeicherte Modell nicht zum Anbieter passt). */
 	public static function ai_model() {
 		$all = self::all();
-		if ( '' !== trim( (string) $all['ai_model'] ) ) {
-			return (string) $all['ai_model'];
+		$p   = isset( self::AI_PROVIDERS[ $all['ai_provider'] ] ) ? $all['ai_provider'] : 'openrouter';
+		$m   = trim( (string) $all['ai_model'] );
+		if ( '' !== $m && self::model_fits( $p, $m ) ) {
+			return $m;
 		}
-		$p = isset( self::AI_PROVIDERS[ $all['ai_provider'] ] ) ? $all['ai_provider'] : 'openrouter';
 		return self::AI_PROVIDERS[ $p ]['model'];
+	}
+
+	/**
+	 * Passt der Modellname zum Anbieter? OpenRouter: „anbieter/modell“; OpenAI: ohne Schrägstrich, nicht Claude;
+	 * Anthropic: claude-… ohne Schrägstrich. Verhindert z. B. „anthropic/claude-sonnet-5.5“ mit OpenAI.
+	 */
+	public static function model_fits( $provider, $model ) {
+		$model = strtolower( trim( (string) $model ) );
+		if ( '' === $model ) {
+			return true;
+		}
+		if ( 'openrouter' === $provider ) {
+			return false !== strpos( $model, '/' );
+		}
+		if ( false !== strpos( $model, '/' ) ) {
+			return false;
+		}
+		$claude = 0 === strpos( $model, 'claude' );
+		return 'anthropic' === $provider ? $claude : ! $claude;
 	}
 
 	public static function all() {
@@ -188,7 +218,7 @@ class ADM_Settings {
 			'update_token'          => isset( $in['update_token'] ) ? sanitize_text_field( (string) $in['update_token'] ) : '',
 			'cron_secret'           => $cur['cron_secret'],
 			'ai_provider'           => isset( $in['ai_provider'], self::AI_PROVIDERS[ $in['ai_provider'] ] ) ? $in['ai_provider'] : $cur['ai_provider'],
-			'ai_model'              => isset( $in['ai_model'] ) ? substr( preg_replace( '/[^A-Za-z0-9._:~@\/\-]/', '', (string) $in['ai_model'] ), 0, 100 ) : $cur['ai_model'],
+			'ai_model'              => self::clean_model( $in, $cur ),
 			'title_template'        => self::template( $in, 'title_template', $cur ),
 			'seo_title_template'    => self::template( $in, 'seo_title_template', $cur ),
 			'batch_profiles'        => self::range( $in, 'batch_profiles', 1, 50, $cur['batch_profiles'] ),

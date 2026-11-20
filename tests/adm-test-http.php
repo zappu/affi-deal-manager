@@ -15,7 +15,7 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 	};
 	// KI: Anfrage merken, feste Antwort liefern (Szenario über adm_test_ai: ok, error, anthropic)
 	if ( false !== strpos( $url, 'openrouter.ai' ) || false !== strpos( $url, 'api.openai.com' ) || false !== strpos( $url, 'api.anthropic.com' ) ) {
-		$GLOBALS['adm_test_ai_requests'][] = array( 'url' => $url, 'headers' => $args['headers'], 'body' => json_decode( $args['body'], true ) );
+		$GLOBALS['adm_test_ai_requests'][] = array( 'url' => $url, 'headers' => $args['headers'], 'body' => json_decode( isset( $args['body'] ) ? (string) $args['body'] : '', true ) );
 		if ( 'error' === get_option( 'adm_test_ai', 'ok' ) ) {
 			return $json( array( 'error' => array( 'message' => 'Invalid API key' ) ), 401 );
 		}

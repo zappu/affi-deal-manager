@@ -1,5 +1,12 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.18.0 (20.11.2026)
+
+- Einstellungen, Reiter KI: Das Modell wird jetzt aus einer Liste gewählt, die zum gewählten Anbieter passt und beim Wechsel des Anbieters mitwechselt. Die Listen kommen live von OpenRouter (öffentlich), OpenAI und Anthropic (mit dem Schlüssel aus der wp-config.php), 12 Stunden zwischengespeichert, Link „Modelllisten neu laden“. Ohne Schlüssel oder bei Fehlern eine Kurzliste. „Eigenes Modell …“ für Namen, die nicht in der Liste stehen. Bisher war es ein Textfeld mit wenigen Vorschlägen für alle Anbieter zusammen
+- Passt das gespeicherte Modell nicht zum Anbieter (z. B. OpenAI mit „anthropic/claude-sonnet-5.5“), nimmt das Plugin das Standardmodell des Anbieters statt eine fehlschlagende Anfrage zu schicken; beim Speichern wird so ein Modell verworfen
+- OpenAI: Anfragen schicken `max_completion_tokens` statt `max_tokens` (neuere Modelle lehnen `max_tokens` ab), mit Luft für Denk-Tokens. Standardmodell OpenAI jetzt `gpt-5.6-sol` statt `gpt-4.1`
+- Neuer Test `tests/run-ai-test.php`
+
 ## 0.17.0 (20.11.2026)
 
 - Vorschaubilder für alle kaufbaren Deals, nicht nur Plus: Software, Kurse, E-Books und Vorlagen bekommen in `[adm_deals]` ein kleines Bild. Neue Klasse `ADM_Thumbs`, die Kurztexte bleiben in `ADM_Plus` und nur für Plus-Deals

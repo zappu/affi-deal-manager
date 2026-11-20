@@ -116,6 +116,12 @@ class ADM_Sync {
 		if ( class_exists( 'ADM_Shots' ) && ADM_Shots::enabled() ) {
 			$report['screenshots'] = ADM_Shots::process( 3 );
 		}
+		if ( class_exists( 'ADM_Plus' ) ) {
+			$report['plus'] = ADM_Plus::cron();
+		}
+		if ( class_exists( 'ADM_Thumbs' ) ) {
+			$report['thumbs'] = ADM_Thumbs::cron();
+		}
 		return new WP_REST_Response( $report, 200 );
 	}
 

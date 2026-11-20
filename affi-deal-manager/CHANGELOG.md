@@ -1,5 +1,18 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.17.0 (20.11.2026)
+
+- Vorschaubilder für alle kaufbaren Deals, nicht nur Plus: Software, Kurse, E-Books und Vorlagen bekommen in `[adm_deals]` ein kleines Bild. Neue Klasse `ADM_Thumbs`, die Kurztexte bleiben in `ADM_Plus` und nur für Plus-Deals
+- Deals mit Tool-Profil zeigen den Screenshot des Profils, ohne zweiten Abruf. Läuft der Profil-Screenshot noch, wartet der Deal; ist er gescheitert, kommt gleich das erste Bild bei AppSumo
+- Profil-Karten (Übersichten, Startseite, Kopfbereich) ohne Screenshot zeigen das Vorschaubild des Deals statt des Rubrikbilds; das Beitragsbild bleibt unverändert
+- 4 Bilder pro Schritt, meiste Bewertungen zuerst. „Vorschaubild neu holen“ und die Bildvorschau in der Deal-Liste jetzt bei allen kaufbaren Deals. Server-Cron meldet die Bilder unter `thumbs`
+- Das erste Bild bei AppSumo kennt das Plugin nach dem nächsten regulären Abruf eines Deals; bis dahin bekommen Deals ohne Website noch kein Bild
+
+## 0.16.1 (20.11.2026)
+
+- Plus-Karten: Ein Deal, der beim ersten Durchlauf noch keine Beschreibung hatte, bekam nie einen Kurztext. Der Abgleichschritt nimmt jetzt nur Deals mit Beschreibung und holt solche Deals nach, sobald der Abgleich eine Beschreibung geliefert hat
+- Plus-Karten: Texte und Vorschaubilder entstehen jetzt bei jedem WP-Cron- oder Server-Cron-Aufruf (wie Screenshots und Profile), auch außerhalb des Zeitfensters für den Abgleich. Der Server-Cron meldet sie unter `plus`
+
 ## 0.16.0 (20.11.2026)
 
 - Plus-Seite (`[adm_deals plus="only"]`): Jede Karte bekommt eine deutsche Kurzbeschreibung und ein kleines Vorschaubild

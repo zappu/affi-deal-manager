@@ -104,17 +104,17 @@ adm_check( ! in_array( (string) $e, $ids, true ), 'Mitgliedschaft AppSumo Plus w
 // ---------- Vorschaubild ----------
 update_option( 'adm_test_shot_calls', 0 );
 $GLOBALS['adm_test_shot_requests'] = array();
-$r1 = ADM_Plus::fetch_thumb( ADM_DB::get( $a ) );
+$r1 = ADM_Thumbs::fetch_thumb( ADM_DB::get( $a ) );
 adm_check( 'waiting' === $r1, 'Screenshot: erster Abruf wartet auf mShots' );
 adm_check( 1 === count( $GLOBALS['adm_test_shot_requests'] ) && false !== strpos( $GLOBALS['adm_test_shot_requests'][0], rawurlencode( 'https://screpy.com/' ) ), 'mShots mit der Hersteller-Website aufgerufen' );
-$r2 = ADM_Plus::fetch_thumb( ADM_DB::get( $a ) );
+$r2 = ADM_Thumbs::fetch_thumb( ADM_DB::get( $a ) );
 $ra = ADM_DB::get( $a );
 adm_check( is_int( $r2 ) && $r2 > 0 && (int) $ra['thumb_id'] === $r2 && 'website' === $ra['thumb_src'], 'Screenshot gespeichert (Quelle website)' );
 adm_check( 0 === count( $GLOBALS['adm_plus_cdn'] ), 'Mit Screenshot kein Abruf bei AppSumo' );
 adm_check( false !== strpos( get_attached_file( $r2 ), 'screenshot-plustest-screpy-plus-exclusive' ), 'Dateiname des Screenshots' );
 adm_check( 'Screenshot der Website von Screpy' === get_post_meta( $r2, '_wp_attachment_image_alt', true ), 'Alt-Text Screenshot mit bereinigtem Namen' );
 
-$r3 = ADM_Plus::fetch_thumb( ADM_DB::get( $b ) );
+$r3 = ADM_Thumbs::fetch_thumb( ADM_DB::get( $b ) );
 $rb = ADM_DB::get( $b );
 adm_check( is_int( $r3 ) && $r3 > 0 && 'appsumo' === $rb['thumb_src'], 'Ohne Website: erstes Bild von AppSumo gespeichert' );
 adm_check( 1 === count( $GLOBALS['adm_plus_cdn'] ) && false !== strpos( $GLOBALS['adm_plus_cdn'][0], 'width=800' ), 'AppSumo-Bild verkleinert abgerufen (width=800)' );
@@ -122,15 +122,15 @@ $meta = wp_get_attachment_metadata( $r3 );
 adm_check( isset( $meta['sizes'] ) && ! empty( $meta['sizes'] ), 'Kleinere Größen erzeugt' );
 adm_check( 'Bild: AppSumo' === get_post_field( 'post_excerpt', $r3 ), 'Bildunterschrift nennt AppSumo als Quelle' );
 
-$r4 = ADM_Plus::fetch_thumb( ADM_DB::get( $c ) );
+$r4 = ADM_Thumbs::fetch_thumb( ADM_DB::get( $c ) );
 adm_check( is_wp_error( $r4 ) && 'none' === ADM_DB::get( $c )['thumb_src'], 'Ohne Website und Bild: kein Vorschaubild (none)' );
-$r5 = ADM_Plus::fetch_thumb( ADM_DB::get( $f ) );
+$r5 = ADM_Thumbs::fetch_thumb( ADM_DB::get( $f ) );
 adm_check( is_wp_error( $r5 ) && 'none' === ADM_DB::get( $f )['thumb_src'], 'Bild bei AppSumo 404: aufgegeben (none)' );
 
 // Website, aber mShots liefert nie ein Bild: nach den Versuchen AppSumo-Bild
 $g = $mk( 'plustest-noshot-plus-exclusive', 'NoShot - Plus exclusive', array( 'website' => 'https://noshot.example/', 'image_url' => 'https://appsumo2-cdn.appsumo.com/media/noshot.jpg', 'thumb_tries' => ADM_Shots::MAX_TRIES - 1, 'review_count' => 1 ) );
 update_option( 'adm_test_shot_calls', 0 ); // nächster Abruf liefert den Platzhalter
-$r6 = ADM_Plus::fetch_thumb( ADM_DB::get( $g ) );
+$r6 = ADM_Thumbs::fetch_thumb( ADM_DB::get( $g ) );
 adm_check( is_int( $r6 ) && 'appsumo' === ADM_DB::get( $g )['thumb_src'], 'Letzter Screenshot-Versuch scheitert: AppSumo-Bild als Ersatz' );
 
 // ---------- Kurztext ----------
@@ -155,13 +155,40 @@ $i = $mk( 'plustest-i-plus-exclusive', 'I Tool - Plus exclusive', array( 'review
 $j = $mk( 'plustest-j-plus-exclusive', 'J Tool - Plus exclusive', array( 'review_count' => 1 ) );
 $wpdb->query( "UPDATE {$t} SET teaser = NULL, teaser_source = '' WHERE status = 'kaufbar' AND " . ADM_DB::PLUS_SQL . " AND slug NOT LIKE 'plustest-%'" ); // phpcs:ignore
 $before = count( $GLOBALS['adm_plus_ai'] );
+ADM_Plus::reset_run();
 ADM_Plus::cron();
 adm_check( 2 === count( $GLOBALS['adm_plus_ai'] ) - $before, 'Ein Abgleichschritt: 2 Kurztexte (' . ( count( $GLOBALS['adm_plus_ai'] ) - $before ) . ')' );
 adm_check( 'Eigener Text zum Kurs.' === ADM_DB::get( $b )['teaser'], 'Eigener Text bleibt' );
+ADM_Plus::reset_run();
 ADM_Plus::cron();
+ADM_Plus::reset_run();
 ADM_Plus::cron();
 adm_check( '' !== (string) ADM_DB::get( $j )['teaser'], 'Nach drei Schritten alle Kurztexte da' );
 adm_check( '' === (string) ADM_DB::get( $d )['teaser'], 'Normaler Deal ohne Kurztext' );
+// Deal ohne Beschreibung („leer“) bekommt seinen Text, sobald der Abgleich eine Beschreibung liefert
+$before = count( $GLOBALS['adm_plus_ai'] );
+ADM_Plus::reset_run();
+ADM_Plus::cron();
+adm_check( $before === count( $GLOBALS['adm_plus_ai'] ) && '' === (string) ADM_DB::get( $c )['teaser'], 'Ohne Beschreibung keine KI-Anfrage im Abgleichschritt' );
+ADM_DB::update( $c, array( 'description' => 'Collect survey answers with a simple form builder.' ) );
+ADM_Plus::reset_run();
+ADM_Plus::cron();
+adm_check( '' !== (string) ADM_DB::get( $c )['teaser'] && 'ki' === ADM_DB::get( $c )['teaser_source'], 'Nach neuer Beschreibung: Kurztext für zuvor leeren Deal' );
+// Auch wenn der Abgleich ausgeschaltet ist oder außerhalb des Zeitfensters liegt
+ADM_DB::update( $h, array( 'teaser' => '', 'teaser_source' => '' ) );
+$mode = ADM_Settings::get( 'mode' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'mode' => 'off' ) ) );
+ADM_Plus::reset_run();
+do_action( ADM_Sync::HOOK );
+adm_check( '' !== (string) ADM_DB::get( $h )['teaser'], 'WP-Cron-Takt erzeugt Kurztexte auch bei ausgeschaltetem Abgleich' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'mode' => 'servercron' ) ) );
+ADM_DB::update( $h, array( 'teaser' => '', 'teaser_source' => '' ) );
+ADM_Plus::reset_run();
+$req = new WP_REST_Request( 'POST', '/affi-deal-manager/v1/tick' );
+$res = ADM_Sync::rest_tick( $req );
+$dat = $res->get_data();
+adm_check( isset( $dat['plus'] ) && '' !== (string) ADM_DB::get( $h )['teaser'], 'Server-Cron erzeugt Kurztexte und meldet sie (' . wp_json_encode( isset( $dat['plus'] ) ? $dat['plus'] : null ) . ')' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'mode' => $mode ) ) );
 $GLOBALS['adm_plus_ai_on'] = false;
 
 // ---------- Karten ----------
@@ -181,7 +208,9 @@ adm_check( false === strpos( $normal, 'Screpy' ), 'Normale Liste ohne Plus-Deals
 wp_set_current_user( 1 );
 $cell = ADM_Plus::list_cell( (array) $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $a ), ARRAY_A ) ); // phpcs:ignore
 adm_check( false !== strpos( $cell, 'form="adm-plus-form"' ) && false !== strpos( $cell, 'name="teaser[' . $a . ']"' ), 'Kurztext-Feld zeigt auf das Formular außerhalb der Tabelle' );
-adm_check( false !== strpos( $cell, 'Screenshot der Website' ) && false !== strpos( $cell, '(KI)' ), 'Bildquelle und Textquelle angezeigt' );
+adm_check( false !== strpos( $cell, '(KI)' ), 'Textquelle angezeigt' );
+$tcell = ADM_Thumbs::list_cell( (array) $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $a ), ARRAY_A ) ); // phpcs:ignore
+adm_check( false !== strpos( $tcell, 'Screenshot der Website' ) && false !== strpos( $tcell, '<img' ), 'Bild und Bildquelle in der Deal-Liste' );
 adm_check( false !== strpos( ADM_Plus::edit_form(), 'id="adm-plus-form"' ), 'Formular vorhanden' );
 require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 require_once ADM_DIR . 'includes/class-adm-list-table.php';
@@ -192,7 +221,53 @@ $ref->setAccessible( true );
 $col = $ref->invoke( $lt, (array) $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $a ), ARRAY_A ) ); // phpcs:ignore
 adm_check( false !== strpos( $col, 'Kurztext neu erzeugen' ) && false !== strpos( $col, 'Vorschaubild neu holen' ), 'Zeilenaktionen in der Deal-Liste' );
 $col2 = $ref->invoke( $lt, (array) $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $d ), ARRAY_A ) ); // phpcs:ignore
-adm_check( false === strpos( $col2, 'Kurztext neu erzeugen' ), 'Keine Plus-Aktionen bei normalen Deals' );
+adm_check( false === strpos( $col2, 'Kurztext neu erzeugen' ) && false !== strpos( $col2, 'Vorschaubild neu holen' ), 'Normale Deals: Bild ja, Kurztext nein' );
+
+// ---------- Vorschaubilder für alle Deals (0.17.0) ----------
+ADM_Thumbs::reset_thumb( $d ); // der Server-Cron-Test oben hat schon Bilder geholt
+$wpdb->query( "UPDATE {$t} SET thumb_last = NULL" ); // phpcs:ignore
+$pend = wp_list_pluck( ADM_Thumbs::pending( 50 ), 'id' );
+adm_check( in_array( (string) $d, $pend, true ), 'Normaler Deal wartet auf ein Vorschaubild' );
+adm_check( ! in_array( (string) $a, $pend, true ), 'Deal mit Bild nicht mehr in der Warteliste' );
+// Deal mit Profil und Screenshot: kein eigener Abruf, Karte zeigt den Profil-Screenshot
+$pp   = wp_insert_post( array( 'post_type' => ADM_Profiles::CPT, 'post_title' => 'Prof', 'post_status' => 'publish' ) );
+$k    = $mk( 'plustest-profil', 'Profil Tool', array( 'post_id' => $pp, 'website' => 'https://profil.example/', 'image_url' => 'https://appsumo2-cdn.appsumo.com/media/p.jpg' ) );
+$shot = wp_insert_attachment( array( 'post_mime_type' => 'image/jpeg', 'post_title' => 'shot', 'post_status' => 'inherit' ), get_attached_file( $r3 ) );
+update_post_meta( $pp, ADM_Shots::META, $shot );
+$pend = wp_list_pluck( ADM_Thumbs::pending( 50 ), 'id' );
+adm_check( ! in_array( (string) $k, $pend, true ), 'Deal mit Profil-Screenshot: kein eigener Abruf' );
+adm_check( $shot === ADM_Thumbs::card_image( ADM_DB::get( $k ) ), 'Karte nimmt den Screenshot des Profils' );
+// Profil, dessen Screenshot noch läuft: wartet
+delete_post_meta( $pp, ADM_Shots::META );
+$pend = wp_list_pluck( ADM_Thumbs::pending( 50 ), 'id' );
+adm_check( ! in_array( (string) $k, $pend, true ), 'Profil-Screenshot läuft noch: Deal wartet' );
+// Profil-Screenshot gescheitert: AppSumo-Bild direkt, ohne mShots
+update_post_meta( $pp, ADM_Shots::META_FAIL, time() );
+$pend = wp_list_pluck( ADM_Thumbs::pending( 50 ), 'id' );
+adm_check( in_array( (string) $k, $pend, true ), 'Profil-Screenshot gescheitert: Deal bekommt eigenes Bild' );
+$shots_before = count( $GLOBALS['adm_test_shot_requests'] );
+$rk = ADM_Thumbs::fetch_thumb( ADM_DB::get( $k ) );
+adm_check( is_int( $rk ) && 'appsumo' === ADM_DB::get( $k )['thumb_src'] && count( $GLOBALS['adm_test_shot_requests'] ) === $shots_before, 'Gleich das AppSumo-Bild, kein weiterer Screenshot-Versuch' );
+list( $pimg, $pshot ) = ADM_Shots::display_image_id( $pp );
+adm_check( $rk === $pimg && false === $pshot, 'Profil-Karte ohne Screenshot zeigt das Vorschaubild des Deals' );
+// Abgleichschritt holt Bilder für normale Deals; Karte in der normalen Liste mit Bild
+ADM_Thumbs::reset_run();
+$rep = ADM_Thumbs::cron();
+adm_check( $rep['saved'] + $rep['waiting'] + $rep['failed'] >= 1 && $rep['saved'] + $rep['waiting'] + $rep['failed'] <= ADM_Thumbs::PER_TICK, 'Schritt arbeitet höchstens ' . ADM_Thumbs::PER_TICK . ' Bilder ab: ' . wp_json_encode( $rep ) );
+adm_check( ADM_Thumbs::image_id( ADM_DB::get( $d ) ) > 0 && 'appsumo' === ADM_DB::get( $d )['thumb_src'], 'Normaler Deal ohne Website: AppSumo-Bild' );
+$normal = do_shortcode( '[adm_deals limit="48"]' );
+adm_check( false !== strpos( $normal, 'adm-card__thumb' ) && false !== strpos( $normal, 'vorschau-plustest-normal' ), 'Normale Deal-Karten mit Vorschaubild' );
+ADM_Thumbs::reset_run();
+$req = new WP_REST_Request( 'POST', '/affi-deal-manager/v1/tick' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'mode' => 'servercron' ) ) );
+$dat = ADM_Sync::rest_tick( $req )->get_data();
+adm_check( isset( $dat['thumbs'] ), 'Server-Cron meldet Bilder unter thumbs' );
+ADM_Settings::save( array_merge( ADM_Settings::all(), array( 'mode' => $mode ) ) );
+wp_delete_post( $pp, true );
+wp_delete_attachment( $shot, false );
+if ( is_int( $rk ) ) {
+	wp_delete_attachment( $rk, true );
+}
 
 // Aufräumen
 foreach ( array( $r2, $r3, $r6 ) as $att ) {

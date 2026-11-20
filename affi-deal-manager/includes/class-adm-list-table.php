@@ -160,10 +160,15 @@ class ADM_List_Table extends WP_List_Table {
 		$actions = array(
 			'appsumo' => '<a href="' . esc_url( $item['url'] ) . '" target="_blank" rel="noopener">Bei AppSumo ansehen</a>',
 		);
-		if ( ADM_DB::is_plus( $item ) && 'kaufbar' === $item['status'] && '' !== $item['name'] && ! ADM_Shortcodes::is_membership( $item ) ) {
-			$out .= ADM_Plus::list_cell( $item );
-			$actions['plus_teaser'] = '<a href="' . esc_url( ADM_Plus::action_url( (int) $item['id'], 'teaser' ) ) . '">Kurztext neu erzeugen</a>';
-			$actions['plus_thumb']  = '<a href="' . esc_url( ADM_Plus::action_url( (int) $item['id'], 'thumb' ) ) . '">Vorschaubild neu holen</a>';
+		if ( 'kaufbar' === $item['status'] && '' !== $item['name'] && ! ADM_Shortcodes::is_membership( $item ) ) {
+			$out .= ADM_Thumbs::list_cell( $item );
+			if ( ! ( (int) $item['post_id'] && ADM_Shots::image_id( (int) $item['post_id'] ) ) ) {
+				$actions['thumb'] = '<a href="' . esc_url( ADM_Thumbs::action_url( (int) $item['id'] ) ) . '">Vorschaubild neu holen</a>';
+			}
+			if ( ADM_DB::is_plus( $item ) ) {
+				$out .= ADM_Plus::list_cell( $item );
+				$actions['plus_teaser'] = '<a href="' . esc_url( ADM_Plus::action_url( (int) $item['id'], 'teaser' ) ) . '">Kurztext neu erzeugen</a>';
+			}
 		}
 		$post = (int) $item['post_id'] ? get_post( (int) $item['post_id'] ) : null;
 		if ( $post ) {

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * [adm_alternatives]  bis zu drei andere Tool-Profile aus derselben Rubrik, kaufbare zuerst;
  *                     heading="1" setzt Karte und Überschrift drumherum, ohne Alternativen bleibt alles leer
  * [adm_deals]         kaufbare Deals als Karten mit Werbelink, z. B. plus="only" für die AppSumo-Plus-Seite
- *                     (mit Kurztext und Vorschaubild aus ADM_Plus; desc="0" ohne Text, img="0" ohne Bild)
+ *                     (Vorschaubild aus ADM_Thumbs, Kurztext Plus aus ADM_Plus; desc="0" ohne Text, img="0" ohne Bild)
  *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage,
  *                     desc="0" ohne die englische Kurzbeschreibung von AppSumo);
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
@@ -565,7 +565,7 @@ class ADM_Shortcodes {
 				$chips[] = '<span class="adm-chip" title="' . esc_attr( self::rating( $d ) ) . '"><span aria-hidden="true">★ ' . esc_html( number_format_i18n( (float) $d['rating'], 1 ) . ' (' . number_format_i18n( (int) $d['review_count'] ) . ')' ) . '</span><span class="screen-reader-text">' . esc_html( self::rating( $d ) ) . '</span></span>';
 			}
 			$link = ADM_Links::url( $d['url'], 'liste-' . $d['slug'] );
-			$img  = '0' !== (string) $atts['img'] ? ADM_Plus::image_id( $d ) : 0;
+			$img  = '0' !== (string) $atts['img'] ? ADM_Thumbs::card_image( $d ) : 0;
 			$lead = '0' !== (string) $atts['desc'] ? self::lead( $d ) : '';
 			$out .= '<article class="adm-card adm-card--deal' . ( $img ? ' adm-card--thumb' : '' ) . '">';
 			if ( $img ) {

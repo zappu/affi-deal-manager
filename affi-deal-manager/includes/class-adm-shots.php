@@ -221,13 +221,21 @@ class ADM_Shots {
 		return false;
 	}
 
-	/** Bild für Kopf und Karten: Screenshot, sonst Beitragsbild, sonst Rubrikbild. */
+	/** Bild für Kopf und Karten: Screenshot, sonst eigenes Beitragsbild, sonst Vorschaubild des Deals, sonst Rubrikbild. */
 	public static function display_image_id( $post_id, $term = null ) {
 		$id = self::image_id( $post_id );
 		if ( $id ) {
 			return array( $id, true );
 		}
 		$id = (int) get_post_thumbnail_id( $post_id );
+		// Kein Screenshot und nur das Rubrikbild: Vorschaubild des Deals (ADM_Thumbs), falls vorhanden.
+		if ( ! $id || self::is_rubric_image( $id ) ) {
+			$deal  = ADM_DB::get_by_post( $post_id );
+			$thumb = $deal ? ADM_Thumbs::image_id( $deal ) : 0;
+			if ( $thumb ) {
+				return array( $thumb, 'website' === $deal['thumb_src'] );
+			}
+		}
 		if ( ! $id && $term ) {
 			$id = ADM_Rubrics::image_id( $term->term_id );
 		}

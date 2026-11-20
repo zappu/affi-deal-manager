@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * [adm_alternatives]  bis zu drei andere Tool-Profile aus derselben Rubrik, kaufbare zuerst;
  *                     heading="1" setzt Karte und Überschrift drumherum, ohne Alternativen bleibt alles leer
  * [adm_deals]         kaufbare Deals als Karten mit Werbelink, z. B. plus="only" für die AppSumo-Plus-Seite
+ *                     (mit Kurztext und Vorschaubild aus ADM_Plus; desc="0" ohne Text, img="0" ohne Bild)
  *                     (limit, orderby reviews|rating|price|newest, type software|kurs|ebook|vorlage,
  *                     desc="0" ohne die englische Kurzbeschreibung von AppSumo);
  *                     die Plus-Mitgliedschaft selbst erscheint nicht in der Liste
@@ -535,6 +536,19 @@ class ADM_Shortcodes {
 		return $out;
 	}
 
+	/**
+	 * Kurzbeschreibung für Karten: deutscher Auszug des veröffentlichten Tool-Profils,
+	 * sonst die deutsche Kurzbeschreibung aus der Spalte teaser (Plus-Deals, ADM_Plus).
+	 * Die AppSumo-Beschreibung ist englisch und wird auf Karten nicht gezeigt.
+	 */
+	public static function lead( array $deal ) {
+		$pid = isset( $deal['post_id'] ) ? (int) $deal['post_id'] : 0;
+		if ( $pid && 'publish' === get_post_status( $pid ) && has_excerpt( $pid ) ) {
+			return trim( wp_strip_all_tags( get_the_excerpt( $pid ) ) );
+		}
+		return isset( $deal['teaser'] ) ? trim( (string) $deal['teaser'] ) : '';
+	}
+
 	/* ---------------- Deal-Liste ---------------- */
 
 	/** Die Plus-Mitgliedschaft selbst (Produkt „AppSumo Plus …“), kein Deal für die Liste. */
@@ -543,7 +557,7 @@ class ADM_Shortcodes {
 	}
 
 	public static function deals( $atts ) {
-		$atts = shortcode_atts( array( 'plus' => 'exclude', 'limit' => 12, 'orderby' => 'reviews', 'type' => '', 'desc' => '1' ), $atts, 'adm_deals' );
+		$atts = shortcode_atts( array( 'plus' => 'exclude', 'limit' => 12, 'orderby' => 'reviews', 'type' => '', 'desc' => '1', 'img' => '1' ), $atts, 'adm_deals' );
 		$plus = in_array( $atts['plus'], array( 'only', 'all', 'exclude' ), true ) ? $atts['plus'] : 'exclude';
 		$max  = max( 1, min( 48, (int) $atts['limit'] ) );
 		$rows = adm_get_deals( array( 'plus' => $plus, 'limit' => $max + 3, 'orderby' => $atts['orderby'], 'type' => $atts['type'] ) );
@@ -563,9 +577,20 @@ class ADM_Shortcodes {
 				$chips[] = '<span class="adm-chip" title="' . esc_attr( self::rating( $d ) ) . '"><span aria-hidden="true">★ ' . esc_html( number_format_i18n( (float) $d['rating'], 1 ) . ' (' . number_format_i18n( (int) $d['review_count'] ) . ')' ) . '</span><span class="screen-reader-text">' . esc_html( self::rating( $d ) ) . '</span></span>';
 			}
 			$link = ADM_Links::url( $d['url'], 'liste-' . $d['slug'] );
+<<<<<<< Updated upstream
 			$out .= '<article class="adm-card adm-card--deal"><h3 class="adm-card__name">' . esc_html( $d['title'] ) . '</h3>';
 			$lead = '0' !== (string) $atts['desc'] ? self::lead( $d ) : '';
 			$out .= '' !== $lead ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( $lead, 22 ) ) . '</p>' : '';
+=======
+			$img  = '0' !== (string) $atts['img'] ? ADM_Plus::image_id( $d ) : 0;
+			$lead = '0' !== (string) $atts['desc'] ? self::lead( $d ) : '';
+			$out .= '<article class="adm-card adm-card--deal' . ( $img ? ' adm-card--thumb' : '' ) . '">';
+			if ( $img ) {
+				$out .= '<div class="adm-card__thumb">' . wp_get_attachment_image( $img, 'medium_large', false, array( 'loading' => 'lazy', 'decoding' => 'async', 'sizes' => '(max-width: 700px) 100vw, 360px', 'alt' => '' ) ) . '</div>';
+			}
+			$out .= '<h3 class="adm-card__name">' . esc_html( $d['title'] ) . '</h3>';
+			$out .= '' !== $lead ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( $lead, 40 ) ) . '</p>' : '';
+>>>>>>> Stashed changes
 			$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
 			$out .= '' !== $link ? '<a class="adm-btn adm-btn--small" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Bei AppSumo ansehen<span class="adm-mark" aria-label="Werbelink">*</span></a>' : '';
 			$out .= '</article>';

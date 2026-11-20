@@ -1,5 +1,18 @@
 # Changelog Thoka Affi Deal Manager
 
+<<<<<<< Updated upstream
+=======
+## 0.16.0 (20.11.2026)
+
+- Plus-Seite (`[adm_deals plus="only"]`): Jede Karte bekommt eine deutsche Kurzbeschreibung und ein kleines Vorschaubild
+- Kurzbeschreibung: einmal per KI aus Name und AppSumo-Beschreibung, ein bis zwei Sätze, höchstens 200 Zeichen (Spalten `teaser`, `teaser_source`). Danach nie automatisch überschrieben; in der Deal-Liste unter „Kurztext Plus-Seite“ änderbar oder per „Kurztext neu erzeugen“ neu schreiben lassen. Höchstens 2 Texte pro Abgleichschritt
+- Vorschaubild: erst ein Screenshot der Hersteller-Website über mShots (wie bei den Tool-Profilen), gibt es keine Website oder klappt der Screenshot nach 12 Versuchen nicht, das erste Bild des Angebots bei AppSumo (og:image, 800 px breit). Gespeichert in der Mediathek, Besucher laden nichts von fremden Servern (Spalten `image_url`, `thumb_id`, `thumb_src`, `thumb_tries`, `thumb_last`). Höchstens 3 Bilder pro Abgleichschritt, „Vorschaubild neu holen“ in der Deal-Liste
+- `[adm_deals]`: neues Attribut `img="0"` blendet das Bild aus, `desc="0"` weiter den Text. Die Kurzbeschreibung kommt aus dem Profil-Auszug, sonst aus `teaser`
+- Abgleich: Fehlt in den schema.org-Daten die Beschreibung, nimmt der Parser das Meta-Tag description (ohne „Rated …/5 from … reviews“)
+- Seiten-Cache: Nach neuen Texten oder Bildern werden nur die Seiten mit Bausteinen geleert (`ADM_Cache::mark_lists()`), auch mit Elementor gebaute Seiten
+- Datenbankversion 8; kaufbare Plus-Deals werden nach dem Update gleich neu gelesen, damit das erste Bild bekannt ist
+
+>>>>>>> Stashed changes
 ## 0.15.4 (20.11.2026)
 
 - Alternativen im Profil und Deal-Karten `[adm_deals]`: Die Kurzbeschreibung kommt jetzt aus dem deutschen Auszug des Tool-Profils statt aus der englischen AppSumo-Beschreibung. Deals ohne veröffentlichtes Profil (oder Profile ohne Auszug) zeigen keine Beschreibung mehr

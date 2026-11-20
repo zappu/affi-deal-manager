@@ -67,6 +67,15 @@ class ADM_Cache {
 		}
 	}
 
+	/** Nur die Seiten mit Bausteinen und die Übersichten leeren (z. B. neue Plus-Karten). */
+	public static function mark_lists() {
+		self::$lists = true;
+		if ( ! self::$hooked ) {
+			self::$hooked = true;
+			add_action( 'shutdown', array( __CLASS__, 'flush' ) );
+		}
+	}
+
 	/** Profil veröffentlicht oder zurückgezogen: Listen und Übersichten ändern sich. */
 	public static function on_transition( $new, $old, $post ) {
 		if ( $post instanceof WP_Post && ADM_Profiles::CPT === $post->post_type && $new !== $old && ( 'publish' === $new || 'publish' === $old ) ) {
@@ -103,6 +112,9 @@ class ADM_Cache {
 	public static function block_pages() {
 		global $wpdb;
 		$ids  = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish' AND ( post_content LIKE '%[adm\\_%' OR post_content LIKE '%adm-home%' ) LIMIT 200" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// Mit Elementor gebaute Seiten: Shortcode-Widgets stehen nur in _elementor_data.
+		$el   = $wpdb->get_col( "SELECT p.ID FROM {$wpdb->posts} p INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_elementor_data' WHERE p.post_type = 'page' AND p.post_status = 'publish' AND m.meta_value LIKE '%[adm\\_%' LIMIT 200" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$ids  = array_unique( array_merge( (array) $ids, (array) $el ) );
 		$urls = array( home_url( '/' ) );
 		foreach ( (array) $ids as $id ) {
 			$urls[] = get_permalink( (int) $id );

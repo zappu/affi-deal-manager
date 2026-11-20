@@ -44,6 +44,13 @@ class ADM_DB {
 			brand varchar(255) NOT NULL DEFAULT '',
 			website varchar(255) NOT NULL DEFAULT '',
 			description text NULL,
+			teaser text NULL,
+			teaser_source varchar(10) NOT NULL DEFAULT '',
+			image_url varchar(255) NOT NULL DEFAULT '',
+			thumb_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			thumb_src varchar(10) NOT NULL DEFAULT '',
+			thumb_tries smallint(5) unsigned NOT NULL DEFAULT 0,
+			thumb_last datetime NULL,
 			price decimal(10,2) NULL,
 			currency varchar(8) NOT NULL DEFAULT '',
 			availability varchar(40) NOT NULL DEFAULT '',
@@ -95,6 +102,11 @@ class ADM_DB {
 		if ( $old && version_compare( (string) $old, '2', '<' ) ) {
 			// Neue Spalte sitemap_priority: Sitemap beim nächsten Schritt neu lesen.
 			delete_option( 'adm_sitemap_read' );
+		}
+		if ( $old && version_compare( (string) $old, '8', '<' ) ) {
+			// Neue Spalten für die Plus-Karten (teaser, image_url, thumb_*): kaufbare Plus-Deals gleich neu lesen, damit das erste Bild bekannt ist.
+			global $wpdb;
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table() . " SET next_check = %s WHERE status = 'kaufbar' AND " . self::PLUS_SQL, self::now() ) ); // phpcs:ignore
 		}
 		// Version 5: Spalte display_name (Anzeigename) kommt über dbDelta, keine Datenänderung nötig.
 		if ( $old && version_compare( (string) $old, '7', '<' ) ) {

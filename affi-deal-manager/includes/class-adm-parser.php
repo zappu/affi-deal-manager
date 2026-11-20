@@ -118,6 +118,10 @@ class ADM_Parser {
 		$data['name']            = $name;
 		$data['brand']           = self::text( isset( $p['brand']['name'] ) ? $p['brand']['name'] : '', 255 );
 		$data['description']     = self::text( isset( $p['description'] ) ? $p['description'] : '', 2000 );
+		if ( '' === $data['description'] ) {
+			$data['description'] = self::meta_description( $html );
+		}
+		$data['image_url']       = self::first_image( $html, isset( $p['image'] ) ? $p['image'] : '' );
 		$data['price']           = $price;
 		$data['currency']        = isset( $offer['priceCurrency'] ) ? substr( preg_replace( '/[^A-Z]/', '', strtoupper( (string) $offer['priceCurrency'] ) ), 0, 8 ) : '';
 		$data['availability']    = substr( $availability, 0, 40 );
@@ -135,6 +139,81 @@ class ADM_Parser {
 		$data['ranks']           = self::ranks( $html );
 		$data['deal_type']       = self::classify( $data['appsumo_type'], $name, $data['description'] );
 		return $data;
+	}
+
+	/**
+	 * Kurzbeschreibung aus dem Meta-Tag, falls die schema.org-Daten keine haben.
+	 * AppSumo hängt „Rated 4.6/5 from 915 reviews.“ an, das fällt weg.
+	 */
+	public static function meta_description( $html ) {
+		$text = self::meta( $html, array( 'description', 'og:description' ) );
+		if ( '' === $text ) {
+			return '';
+		}
+		$text = self::text( $text, 2000 );
+		$text = preg_replace( '#\s*Rated\s+[\d.]+\s*/\s*5\b.*$#iu', '', $text );
+		return trim( (string) $text );
+	}
+
+	/** Inhalt des ersten Meta-Tags mit einem der Namen (name= oder property=), Reihenfolge der Namen zählt. */
+	public static function meta( $html, array $names ) {
+		if ( ! preg_match_all( '#<meta\s[^>]*>#i', (string) $html, $tags ) ) {
+			return '';
+		}
+		$found = array();
+		foreach ( $tags[0] as $tag ) {
+			if ( preg_match( '#\s(?:name|property)\s*=\s*(["\'])(.*?)\1#is', $tag, $n ) && preg_match( '#\scontent\s*=\s*(["\'])(.*?)\1#is', $tag, $c ) ) {
+				$key = strtolower( trim( $n[2] ) );
+				if ( ! isset( $found[ $key ] ) ) {
+					$found[ $key ] = html_entity_decode( $c[2], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				}
+			}
+		}
+		foreach ( $names as $name ) {
+			if ( isset( $found[ $name ] ) && '' !== trim( $found[ $name ] ) ) {
+				return trim( $found[ $name ] );
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Erstes Bild des Deals (Galerie bei AppSumo): og:image, sonst image aus den schema.org-Daten.
+	 * Nur HTTPS-Adressen auf appsumo.com und Subdomains (CDN), ohne Abfrage; Größe setzt ADM_Plus beim Abruf.
+	 *
+	 * @param string       $html  Produktseite.
+	 * @param string|array $ld    Feld image aus JSON-LD.
+	 * @return string
+	 */
+	public static function first_image( $html, $ld = '' ) {
+		$cands = array( self::meta( $html, array( 'og:image' ) ) );
+		if ( is_array( $ld ) ) {
+			$ld = isset( $ld['url'] ) ? $ld['url'] : reset( $ld );
+			if ( is_array( $ld ) ) {
+				$ld = isset( $ld['url'] ) ? $ld['url'] : '';
+			}
+		}
+		$cands[] = (string) $ld;
+		foreach ( $cands as $url ) {
+			$clean = self::appsumo_image_url( $url );
+			if ( '' !== $clean ) {
+				return $clean;
+			}
+		}
+		return '';
+	}
+
+	/** Bildadresse von AppSumo prüfen: https, Host appsumo.com oder Subdomain, Endung jpg/jpeg/png/webp/gif, ohne Abfrage. */
+	public static function appsumo_image_url( $url ) {
+		$p = wp_parse_url( trim( (string) $url ) );
+		if ( ! $p || empty( $p['host'] ) || empty( $p['path'] ) || 'https' !== strtolower( isset( $p['scheme'] ) ? $p['scheme'] : '' ) ) {
+			return '';
+		}
+		$host = strtolower( $p['host'] );
+		if ( ! preg_match( '/(^|\.)appsumo\.com$/', $host ) || ! preg_match( '#\.(jpe?g|png|webp|gif)$#i', $p['path'] ) ) {
+			return '';
+		}
+		return substr( 'https://' . $host . $p['path'], 0, 255 );
 	}
 
 	/** Käufe laut AppSumo („16,660 bought“, Feld current_purchases). */

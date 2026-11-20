@@ -278,6 +278,7 @@ class ADM_Admin {
 				<?php $table->search_box( 'Deals durchsuchen', 'adm-search' ); ?>
 				<?php $table->display(); ?>
 			</form>
+			<?php echo ADM_Plus::edit_form(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</div>
 		<?php
 	}

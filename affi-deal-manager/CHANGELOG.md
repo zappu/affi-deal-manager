@@ -1,7 +1,5 @@
 # Changelog Thoka Affi Deal Manager
 
-<<<<<<< Updated upstream
-=======
 ## 0.16.0 (20.11.2026)
 
 - Plus-Seite (`[adm_deals plus="only"]`): Jede Karte bekommt eine deutsche Kurzbeschreibung und ein kleines Vorschaubild
@@ -12,7 +10,6 @@
 - Seiten-Cache: Nach neuen Texten oder Bildern werden nur die Seiten mit Bausteinen geleert (`ADM_Cache::mark_lists()`), auch mit Elementor gebaute Seiten
 - Datenbankversion 8; kaufbare Plus-Deals werden nach dem Update gleich neu gelesen, damit das erste Bild bekannt ist
 
->>>>>>> Stashed changes
 ## 0.15.4 (20.11.2026)
 
 - Alternativen im Profil und Deal-Karten `[adm_deals]`: Die Kurzbeschreibung kommt jetzt aus dem deutschen Auszug des Tool-Profils statt aus der englischen AppSumo-Beschreibung. Deals ohne veröffentlichtes Profil (oder Profile ohne Auszug) zeigen keine Beschreibung mehr

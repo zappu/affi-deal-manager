@@ -434,8 +434,9 @@ class ADM_Shortcodes {
 		$cards = '';
 		foreach ( $list as $alt ) {
 			$cards .= '<a class="adm-alt" href="' . esc_url( get_permalink( (int) $alt['post_id'] ) ) . '"><p class="adm-alt__name">' . esc_html( $alt['title'] ) . '</p>';
-			if ( '' !== $alt['description'] ) {
-				$cards .= '<p class="adm-alt__desc">' . esc_html( wp_trim_words( $alt['description'], 18 ) ) . '</p>';
+			$lead   = self::lead( $alt );
+			if ( '' !== $lead ) {
+				$cards .= '<p class="adm-alt__desc">' . esc_html( wp_trim_words( $lead, 18 ) ) . '</p>';
 			}
 			$cards .= 'kaufbar' === $alt['status']
 				? '<span class="adm-chip adm-chip--price">' . esc_html( self::price( $alt ) ) . '</span>'
@@ -447,6 +448,18 @@ class ADM_Shortcodes {
 			return self::assets() . '<section class="adm-sec" id="alternativen"><h2>Alternativen</h2>' . $grid . '</section>';
 		}
 		return self::assets() . $grid;
+	}
+
+	/**
+	 * Kurzbeschreibung für Karten: deutscher Auszug des veröffentlichten Tool-Profils.
+	 * Die AppSumo-Beschreibung ist englisch und wird auf Karten nicht gezeigt.
+	 */
+	public static function lead( array $deal ) {
+		$pid = (int) $deal['post_id'];
+		if ( $pid && 'publish' === get_post_status( $pid ) && has_excerpt( $pid ) ) {
+			return trim( wp_strip_all_tags( get_the_excerpt( $pid ) ) );
+		}
+		return '';
 	}
 
 	/**
@@ -551,7 +564,8 @@ class ADM_Shortcodes {
 			}
 			$link = ADM_Links::url( $d['url'], 'liste-' . $d['slug'] );
 			$out .= '<article class="adm-card adm-card--deal"><h3 class="adm-card__name">' . esc_html( $d['title'] ) . '</h3>';
-			$out .= '0' !== (string) $atts['desc'] && '' !== trim( (string) $d['description'] ) ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( $d['description'], 22 ) ) . '</p>' : '';
+			$lead = '0' !== (string) $atts['desc'] ? self::lead( $d ) : '';
+			$out .= '' !== $lead ? '<p class="adm-card__lead">' . esc_html( wp_trim_words( $lead, 22 ) ) . '</p>' : '';
 			$out .= $chips ? '<div class="adm-chips">' . implode( '', $chips ) . '</div>' : '';
 			$out .= '' !== $link ? '<a class="adm-btn adm-btn--small" href="' . esc_url( $link ) . '" rel="sponsored nofollow noopener" target="_blank">Bei AppSumo ansehen<span class="adm-mark" aria-label="Werbelink">*</span></a>' : '';
 			$out .= '</article>';

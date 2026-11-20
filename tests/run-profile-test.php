@@ -146,6 +146,10 @@ wp_set_object_terms( $other_post, array( 'verkauf-und-kurse' ), 'adm_rubrik' );
 ADM_DB::update( $other_id, array( 'post_id' => $other_post ) );
 $alt = do_shortcode( '[adm_alternatives heading="1"]' );
 adm_check( false !== strpos( $alt, 'adm-alt__name">Other Leads</p>' ) && false === strpos( $alt, 'Plus exclusive' ) && false !== strpos( $alt, '39 $ einmalig' ) && 0 === strpos( $alt, '<section class="adm-sec" id="alternativen"><h2>Alternativen</h2>' ), 'Alternativen: über die Rubrik, bereinigter Name, Live-Preis, Karte mit Überschrift' );
+adm_check( false === strpos( $alt, 'Lead lists for sales teams' ) && false === strpos( $alt, 'adm-alt__desc' ), 'Alternativen: keine englische AppSumo-Beschreibung ohne Auszug' );
+wp_update_post( array( 'ID' => $other_post, 'post_excerpt' => 'Leadlisten für Vertriebsteams als Einmalkauf.' ) );
+$alt = do_shortcode( '[adm_alternatives heading="1"]' );
+adm_check( false !== strpos( $alt, '<p class="adm-alt__desc">Leadlisten für Vertriebsteams als Einmalkauf.</p>' ), 'Alternativen: deutsche Beschreibung aus dem Profil-Auszug' );
 adm_check( false !== strpos( do_shortcode( '[adm_toc]' ), '#alternativen' ), 'Sprungmenü nennt Alternativen, sobald es welche gibt' );
 $box = do_shortcode( '[adm_deal_box]' );
 adm_check( false !== strpos( $box, 'Kaufbare Alternativen ansehen' ) && false !== strpos( $box, 'Zur Warteliste bei AppSumo' ), 'Ausgelaufen mit Alternativen: Knopf zu den Alternativen und Warteliste' );
@@ -410,6 +414,7 @@ $GLOBALS['wpdb']->insert( ADM_DB::table(), array( 'slug' => 'plus-2019', 'name' 
 $list = do_shortcode( '[adm_deals plus="only"]' );
 adm_check( false !== strpos( $list, '<h3 class="adm-card__name">Test Tool</h3>' ) && false === strpos( $list, 'Yearly Plan' ) && false !== strpos( $list, 'rel="sponsored nofollow noopener"' ) && false !== strpos( $list, 'aria-label="Werbelink"' ), 'Plus-Liste: Plus-Deal mit Werbelink, ohne die Mitgliedschaft' );
 adm_check( false === strpos( do_shortcode( '[adm_deals]' ), 'Test Tool' ), 'Normale Liste ohne Plus-Deals' );
+adm_check( false === strpos( $list, 'Ein Testwerkzeug' ) && false !== strpos( $list, 'adm-card__lead">Leadlisten für Vertriebsteams' ), 'Deal-Karten: Beschreibung aus dem Profil-Auszug, ohne Profil keine AppSumo-Beschreibung' );
 adm_check( false === strpos( do_shortcode( '[adm_deals plus="only" desc="0"]' ), 'Ein Testwerkzeug' ), 'Plus-Liste ohne Kurzbeschreibung mit desc="0"' );
 $pl = do_shortcode( '[adm_link url="https://appsumo.com/products/plus-2019/" subid="appsumo-plus"]AppSumo Plus[/adm_link]' );
 adm_check( false !== strpos( $pl, 'subId1=appsumo-plus' ) && false !== strpos( $pl, 'sponsored nofollow' ) && 'X' === do_shortcode( '[adm_link url="https://example.com/"]X[/adm_link]' ), 'adm_link mit url: Werbelink nur für appsumo.com' );

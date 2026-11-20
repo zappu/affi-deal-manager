@@ -1,5 +1,9 @@
 # Changelog Thoka Affi Deal Manager
 
+## 0.15.4 (20.11.2026)
+
+- Alternativen im Profil und Deal-Karten `[adm_deals]`: Die Kurzbeschreibung kommt jetzt aus dem deutschen Auszug des Tool-Profils statt aus der englischen AppSumo-Beschreibung. Deals ohne veröffentlichtes Profil (oder Profile ohne Auszug) zeigen keine Beschreibung mehr
+
 ## 0.15.3 (09.11.2026)
 
 - Artikel mit Deal (Seiten und Beiträge mit `[adm_deal_box deal="…"]` oder `[adm_link deal="…"]`): Läuft der Deal aus, steht über dem Artikel automatisch ein Hinweis „Angebot ausgelaufen“ mit dem Datum und einem Link zu kaufbaren Alternativen. Ist der Deal wieder kaufbar, verschwindet der Hinweis

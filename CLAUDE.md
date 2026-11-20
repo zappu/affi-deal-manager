@@ -21,9 +21,12 @@
   - `includes/class-adm-style.php`: Stilprüfung nach „vermenschlichen“ (Hinweise in `_adm_style_hints`), Korrektur von großem „Du“
   - `includes/class-adm-profiles.php`: Beitragstyp `adm_tool` (`/tools/`), Warteschlange `adm_profile_queue`, Prompt und Zusammenbau der Profile
   - `includes/class-adm-shortcodes.php`: Live-Bausteine `[adm_deal_header]`, `[adm_deal_box]` (placement content/sidebar), `[adm_toc]`, `[adm_deal_details]`, `[adm_video]` (Zwei-Klick), `[adm_alternatives]`, `[adm_deals]` (Deal-Karten, `plus="only"` für die Plus-Seite), `[adm_rubrics]` und `[adm_tools]` (Startseite, Block-Gruppe mit Klasse `adm-home`), `[adm_bestenliste]` (Rangliste nach `best_score()`, Seiten unter `/beste/`), `[adm_bestenlisten]` (Übersicht der Unterseiten mit Top-Empfehlung), `[adm_best_top page=…]` (Teaser zu Platz 1 einer Liste); Gestaltung in `assets/adm-frontend.css` (Variablen `--adm-*`, Stil „Verzeichnis“)
+  - Kurzbeschreibung auf Karten (`[adm_alternatives]`, `[adm_deals]`) über `ADM_Shortcodes::lead()`: deutscher Auszug des veröffentlichten Tool-Profils (`post_excerpt`, von der KI als `auszug` geschrieben). Die AppSumo-Beschreibung (`description`) ist englisch und erscheint auf Karten nie; ohne Profil-Auszug bleibt die Beschreibung leer
   - Profil-Layout (Einstellung „Deal-Kasten“ = `sidebar`): Filter `the_content` legt `[adm_deal_header]` und `[adm_deal_box placement="sidebar"]` um den Inhalt; Elementor-Single für `adm_tool` enthält nur `theme-post-content` (Elementor-MCP kann keine Shortcode-Widgets setzen)
   - `includes/class-adm-archive.php` und `templates/archive.php`: Übersichten `/tools/` und `/rubrik/<slug>/` (mit Profil-Layout, Elementor-Archivvorlage hat Vorrang), Sortierung kaufbar zuerst über `posts_clauses` (`adm_sort`)
   - `includes/class-adm-shots.php`: Website des Herstellers (Spalte `website` aus `product_url` der AppSumo-Seitendaten, Meta `_adm_website` überschreibt) und Screenshot per mShots (Meta `_adm_shot`, Versuche `_adm_shot_tries`, Abbruch `_adm_shot_failed`), wird Beitragsbild statt Rubrikbild; Handy-Leiste mit Kauf-Button in `ADM_Shortcodes::sticky_bar()`
+  - `includes/class-adm-articles.php`: Artikel mit Deals (Seiten und Beiträge mit `[adm_deal_box deal="…"]` oder `[adm_link deal="…"]`): Hinweis „Angebot ausgelaufen“ über dem Artikel mit Link zu Alternativen, E-Mail an die Störungsadresse beim Auslaufen (Hook `adm_deal_status_changed`, Datum in Option `adm_deal_ended`), `alternatives_url()` für den Alternativen-Button im Deal-Kasten
+  - `includes/class-adm-social.php`: JPG-Kopie für WebP-Beitragsbilder als og:image in Rank Math (Meta `_adm_og_jpg`, Filter `adm_og_jpg`), Feed `/tools/feed/` zeigt neue Profile erst mit Screenshot, höchstens 24 Stunden später (Filter `adm_feed_wait`)
   - `includes/class-adm-cache.php`: leert den Seiten-Cache (FlyingPress `Purge::purge_urls`) bei geändertem Preis, Status oder Stufe, bei Veröffentlichung eines Profils und neuem Screenshot; Filter `adm_purge_urls`
   - `includes/class-adm-impact.php`: Impact-Partner-API nur lesend (`THOKA_IMPACT_ACCOUNT_SID`, `THOKA_IMPACT_AUTH_TOKEN` in der wp-config.php), Verbindungstest in den Einstellungen (Option `adm_impact_test`)
   - `includes/class-adm-stats.php`: Reiter „Einnahmen“ (`affi-deal-manager-stats`), Impact-Bericht `partner_performance_by_subid` je subId1 für 7/30/90 Tage, täglich über `adm_tick_done`
@@ -48,6 +51,7 @@ Gemeinsames Menü „Thoka“ (Eintrag „Affi Deal Manager“, Hauptseite `affi
 - Keine Produktbilder von AppSumo übernehmen; das AppSumo-eigene Deal-Video ist in `videos` mit `appsumo = 1` markiert und wird nicht eingebettet.
 - Affiliate-Links immer mit `rel="sponsored nofollow"` und Kennzeichnung.
 - AppSumo Plus (Jahresabo): Plus-Deals (`ADM_DB::is_plus()`, „Plus exclusive“, Slug `plus-…`) bekommen keine Tool-Profile; `adm_get_deals( array( 'plus' => 'only' ) )` für die eigene Plus-Seite
+- Auf der Website keine englischen AppSumo-Texte: für Beschreibungen immer den deutschen Profil-Auszug nehmen (`ADM_Shortcodes::lead()`).
 - Tool-Profile: keine erfundenen Tests oder Erfahrungen, keine Preise im Fließtext (kommen live), keine Nutzernamen und wörtlichen Zitate aus Bewertungen, Bewertungstexte werden nicht gespeichert, veröffentlichte Profile nie automatisch überschreiben.
 - Menü: Die Profil-Liste hängt per `show_in_menu` an „Thoka“, ist dort ausgeblendet und als Reiter erreichbar; auf Profil-Seiten wird „Affi Deal Manager“ markiert.
 
@@ -58,7 +62,10 @@ Vor jedem Release prüfen, ob auf mediainfo.space eine neuere Version liegt als 
 1. Version erhöhen: Plugin-Kopf und `ADM_VERSION` in `affi-deal-manager.php`
 2. `affi-deal-manager/CHANGELOG.md` ergänzen
 3. Tests: `php tests/run-sync-test.php <wp-pfad>` und danach `php tests/run-profile-test.php <wp-pfad>` in einem Test-WordPress mit `tests/adm-test-http.php` als Mu-Plugin und `tests/fixtures/` als `mu-plugins/adm-fixtures/`
+   - Der Sync-Test braucht eine frisch installierte Datenbank (bei SQLite den Ordner `wp-content/database/.ht.*` löschen und neu installieren) und läuft ohne sprechende Permalinks
+   - Vor dem Profiltest Permalinks auf `/%postname%/` stellen, sonst schlägt „Startseite: Kacheln aller Rubriken“ fehl
+   - Plugin für den Test aus dem gebauten ZIP installieren
 4. ZIP `affi-deal-manager-<V>.zip` mit Wurzelordner `affi-deal-manager/` bauen (ohne `tests/`)
 5. `update.json`: `version`, `download_url`, `sha256`, `last_updated`, `sections.changelog`
 6. ZIP und danach `update.json` nach mediainfo.space/Thoka_Plugins/affi-deal-manager/ hochladen
-7. Commit, Tag `v<V>`, Push
+7. Commit, Tag `v<V>`, Push (aus der Cloud ist der Tag-Push gesperrt, dann den Tag lokal auf dem Laptop setzen und pushen)
